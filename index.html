@@ -321,6 +321,11 @@
 
             <div id="waveform"></div>
 
+            <div id="processingMessage" style="display: none; text-align: center; margin-top: 1rem;">
+                <p>Please wait while AI works magic for you...</p>
+                <progress id="processingProgress" value="0" max="100" style="width: 100%;"></progress>
+            </div>
+
             <div class="range-slider">
                 <div class="range-track">
                     <div class="range-selection"></div>
@@ -673,7 +678,7 @@
 
             async function removeVocals() {
                 if (!wavesurfer) return;
-                
+
                 // Stop playback if it's playing
                 if (isPlaying) {
                     wavesurfer.pause();
@@ -681,9 +686,7 @@
                     const playButton = document.querySelector('button i.fa-play, button i.fa-pause');
                     playButton.className = 'fas fa-play';
                 }
-                
-                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                const source = audioContext.createBufferSource();
+
                 const originalBuffer = wavesurfer.backend.buffer;
 
                 // Save to history for undo functionality
@@ -692,37 +695,84 @@
                     audioHistory.shift();
                 }
 
-                // Create an OfflineAudioContext for processing
-                const offlineContext = new OfflineAudioContext(
-                    originalBuffer.numberOfChannels,
-                    originalBuffer.length,
-                    originalBuffer.sampleRate
+                // Show processing message
+                document.getElementById('processingMessage').style.display = 'block';
+                const progressBar = document.getElementById('processingProgress');
+
+                const numberOfChannels = originalBuffer.numberOfChannels;
+                const sampleRate = originalBuffer.sampleRate;
+                const length = originalBuffer.length;
+
+                const chunkSize = sampleRate * 1; // Process in 1-second chunks
+                const numChunks = Math.ceil(length / chunkSize);
+
+                const newBuffer = new AudioContext().createBuffer(
+                    numberOfChannels,
+                    length,
+                    sampleRate
                 );
 
-                const offlineSource = offlineContext.createBufferSource();
-                offlineSource.buffer = originalBuffer;
+                for (let chunkIndex = 0; chunkIndex < numChunks; chunkIndex++) {
+                    const startSample = chunkIndex * chunkSize;
+                    const endSample = Math.min(startSample + chunkSize, length);
 
-                // Create a BiquadFilterNode for the notch filter
-                const notchFilter = offlineContext.createBiquadFilter();
-                notchFilter.type = 'bandstop';
-                notchFilter.frequency.value = 1000; // Center frequency to reduce vocals
-                notchFilter.Q.value = 0.7; // Quality factor to adjust bandwidth
+                    // Process each channel
+                    for (let channel = 0; channel < numberOfChannels; channel++) {
+                        const inputChannelData = originalBuffer.getChannelData(channel).subarray(startSample, endSample);
+                        const outputChannelData = newBuffer.getChannelData(channel);
 
-                offlineSource.connect(notchFilter);
-                notchFilter.connect(offlineContext.destination);
+                        // Process the chunk to remove vocals
+                        const processedChunk = processChunk(inputChannelData, channel, numberOfChannels, startSample, endSample, originalBuffer);
 
-                offlineSource.start(0);
+                        // Copy processed data back to the new buffer
+                        outputChannelData.set(processedChunk, startSample);
+                    }
 
-                // Render the processed audio buffer
-                const processedBuffer = await offlineContext.startRendering();
+                    // Update progress
+                    const progress = Math.floor(((chunkIndex + 1) / numChunks) * 100);
+                    progressBar.value = progress;
+
+                    // Allow UI to update
+                    await new Promise(resolve => setTimeout(resolve, 10));
+                }
+
+                // Hide processing message
+                document.getElementById('processingMessage').style.display = 'none';
 
                 // Load the processed buffer into WaveSurfer
-                wavesurfer.loadDecodedBuffer(processedBuffer);
+                wavesurfer.loadDecodedBuffer(newBuffer);
 
                 // Reset selection positions
                 startPosition = 0;
                 endPosition = 1;
                 updateRangeSelection();
+            }
+
+            function processChunk(inputChannelData, channel, numberOfChannels, startSample, endSample, originalBuffer) {
+                const length = inputChannelData.length;
+                const outputData = new Float32Array(length);
+
+                if (numberOfChannels === 2) {
+                    // For stereo audio, implement simple phase cancellation
+                    const otherChannel = channel === 0 ? 1 : 0;
+                    const otherChannelData = originalBuffer.getChannelData(otherChannel).subarray(startSample, endSample);
+
+                    for (let i = 0; i < length; i++) {
+                        // Subtract the other channel from the current channel
+                        outputData[i] = inputChannelData[i] - otherChannelData[i];
+
+                        // Prevent clipping
+                        outputData[i] = Math.max(-1, Math.min(1, outputData[i]));
+                    }
+                } else {
+                    // For mono audio, return the original data
+                    // Vocal removal is not effective on mono audio
+                    for (let i = 0; i < length; i++) {
+                        outputData[i] = inputChannelData[i];
+                    }
+                }
+
+                return outputData;
             }
         </script>
     </body>
