@@ -1,340 +1,354 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Audio Trimmer</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/wavesurfer.js/6.6.3/wavesurfer.min.js"></script>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 48rem; /* 3xl in tailwind */
-            margin: 0 auto;
-            padding: 20px;
-            background: #f5f5f5;
-        }
-        
-        .container {
-            background: white;
-            padding: 1.5rem; /* p-6 in tailwind */
-            border-radius: 0.5rem;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Audio Trimmer</title>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/wavesurfer.js/6.6.3/wavesurfer.min.js"></script>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                max-width: 48rem; /* 3xl in tailwind */
+                margin: 0 auto;
+                padding: 20px;
+                background: #f5f5f5;
+            }
+            
+            .container {
+                background: white;
+                padding: 1.5rem; /* p-6 in tailwind */
+                border-radius: 0.5rem;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            }
 
-        .upload-area {
-            border: 2px dashed #e5e7eb;
-            border-radius: 0.5rem;
-            padding: 3rem;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
+            .upload-area {
+                border: 2px dashed #e5e7eb;
+                border-radius: 0.5rem;
+                padding: 3rem;
+                text-align: center;
+                cursor: pointer;
+                transition: all 0.2s;
+            }
 
-        .upload-area:hover {
-            border-color: #a855f7;
-            background: #faf5ff;
-        }
+            .upload-area:hover {
+                border-color: #a855f7;
+                background: #faf5ff;
+            }
 
-        .upload-icon {
-            height: 3rem;
-            width: 3rem;
-            margin: 0 auto;
-            color: #9ca3af;
-        }
+            .upload-icon {
+                height: 3rem;
+                width: 3rem;
+                margin: 0 auto;
+                color: #9ca3af;
+            }
 
-        #waveform {
-            margin-top: 1rem;
-            border-radius: 0.5rem;
-            overflow: hidden;
-        }
+            #waveform {
+                margin-top: 1rem;
+                border-radius: 0.5rem;
+                overflow: hidden;
+            }
 
-        .controls {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 1rem;
-        }
+            .controls {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-top: 1rem;
+            }
 
-        button {
-            display: inline-flex;
-            align-items: center;
-            padding: 0.5rem 1rem;
-            border: none;
-            border-radius: 0.375rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
+            button {
+                display: inline-flex;
+                align-items: center;
+                padding: 0.5rem 1rem;
+                border: none;
+                border-radius: 0.375rem;
+                font-weight: 500;
+                cursor: pointer;
+                transition: all 0.2s;
+            }
 
-        button.primary {
-            background: #a855f7;
-            color: white;
-        }
+            button.primary {
+                background: #a855f7;
+                color: white;
+            }
 
-        button.outline {
-            background: transparent;
-            border: 1px solid #e5e7eb;
-            color: #374151;
-        }
+            button.outline {
+                background: transparent;
+                border: 1px solid #e5e7eb;
+                color: #374151;
+            }
 
-        button:hover {
-            opacity: 0.9;
-        }
+            button:hover {
+                opacity: 0.9;
+            }
 
-        .range-slider {
-            margin-top: 1.5rem;
-            position: relative;
-            height: 1.75rem;
-        }
+            .range-slider {
+                margin-top: 1.5rem;
+                position: relative;
+                height: 1.75rem;
+                touch-action: none;
+                -webkit-user-select: none;
+                user-select: none;
+            }
 
-        .range-track {
-            height: 0.25rem;
-            width: 100%;
-            background: #e5e7eb;
-            border-radius: 9999px;
-            position: relative;
-            top: 50%;
-            transform: translateY(-50%);
-        }
+            .range-track {
+                height: 0.25rem;
+                width: 100%;
+                background: #e5e7eb;
+                border-radius: 9999px;
+                position: relative;
+                top: 50%;
+                transform: translateY(-50%);
+            }
 
-        .range-selection {
-            position: absolute;
-            height: 100%;
-            background: #a855f7;
-        }
+            .range-selection {
+                position: absolute;
+                height: 100%;
+                background: #a855f7;
+            }
 
-        .range-handle {
-            width: 1.25rem;
-            height: 1.25rem;
-            background: white;
-            border-radius: 50%;
-            position: absolute;
-            top: 50%;
-            transform: translate(-50%, -50%);
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            cursor: ew-resize;
-        }
+            .range-handle {
+                width: 1.25rem;
+                height: 1.25rem;
+                background: white;
+                border-radius: 50%;
+                position: absolute;
+                top: 50%;
+                transform: translate(-50%, -50%);
+                box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+                cursor: ew-resize;
+                touch-action: none;
+                -webkit-user-select: none;
+                user-select: none;
+            }
 
-        .range-handle::after {
-            content: '';
-            width: 0.5rem;
-            height: 0.5rem;
-            background: #a855f7;
-            border-radius: 50%;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-        }
+            .range-handle::after {
+                content: '';
+                width: 0.5rem;
+                height: 0.5rem;
+                background: #a855f7;
+                border-radius: 50%;
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+            }
 
-        .time-display {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 0.5rem;
-            font-size: 0.875rem;
-            color: #6b7280;
-        }
+            .time-display {
+                display: flex;
+                justify-content: space-between;
+                margin-top: 0.5rem;
+                font-size: 0.875rem;
+                color: #6b7280;
+            }
 
-        #audioInput {
-            display: none;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>Audio Trimmer</h1>
-        
-        <div class="upload-area" onclick="document.getElementById('audioInput').click()">
-            <p>Click or drag audio file here</p>
-            <input type="file" id="audioInput" accept="audio/*">
-        </div>
+            #audioInput {
+                display: none;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>Audio Trimmer</h1>
+            
+            <div class="upload-area" onclick="document.getElementById('audioInput').click()">
+                <p>Click or drag audio file here</p>
+                <input type="file" id="audioInput" accept="audio/*">
+            </div>
 
-        <div id="waveform"></div>
+            <div id="waveform"></div>
 
-        <div class="range-slider">
-            <div class="range-track">
-                <div class="range-selection"></div>
-                <div class="range-handle left"></div>
-                <div class="range-handle right"></div>
+            <div class="range-slider">
+                <div class="range-track">
+                    <div class="range-selection"></div>
+                    <div class="range-handle left"></div>
+                    <div class="range-handle right"></div>
+                </div>
+            </div>
+
+            <div class="time-display">
+                <span id="startTime">00:00</span>
+                <span id="endTime">00:00</span>
+            </div>
+
+            <div class="controls">
+                <button onclick="playSelection()">Play Selection</button>
+                <button onclick="trimAudio()">Download Trimmed</button>
             </div>
         </div>
 
-        <div class="time-display">
-            <span id="startTime">00:00</span>
-            <span id="endTime">00:00</span>
-        </div>
-
-        <div class="controls">
-            <button onclick="playSelection()">Play Selection</button>
-            <button onclick="trimAudio()">Download Trimmed</button>
-        </div>
-    </div>
-
-    <script>
-        let wavesurfer = WaveSurfer.create({
-            container: '#waveform',
-            waveColor: '#4a4a4a',
-            progressColor: '#00ff9d',
-            cursorColor: '#00ff9d',
-            height: 128,
-            responsive: true,
-            barWidth: 2,
-            barGap: 1
-        });
-
-        const rangeSlider = document.querySelector('.range-slider');
-        const rangeSelection = document.querySelector('.range-selection');
-        const leftHandle = document.querySelector('.range-handle.left');
-        const rightHandle = document.querySelector('.range-handle.right');
-
-        document.getElementById('audioInput').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            wavesurfer.loadBlob(file);
-        });
-
-        wavesurfer.on('ready', function() {
-            startPosition = 0;
-            endPosition = 1;
-            updateRangeSelection();
-            document.getElementById('endTime').textContent = formatTime(wavesurfer.getDuration());
-        });
-
-        function formatTime(seconds) {
-            return new Date(seconds * 1000).toISOString().substr(14, 5);
-        }
-
-        function updateRangeSelection() {
-            const width = rangeSlider.offsetWidth;
-            const leftPos = startPosition * width;
-            const rightPos = endPosition * width;
-            
-            rangeSelection.style.left = `${leftPos}px`;
-            rangeSelection.style.width = `${rightPos - leftPos}px`;
-            leftHandle.style.left = `${leftPos}px`;
-            rightHandle.style.left = `${rightPos}px`;
-
-            const duration = wavesurfer.getDuration();
-            document.getElementById('startTime').textContent = formatTime(startPosition * duration);
-            document.getElementById('endTime').textContent = formatTime(endPosition * duration);
-        }
-
-        [leftHandle, rightHandle].forEach(handle => {
-            handle.addEventListener('mousedown', function(e) {
-                e.preventDefault();
-                const isLeft = handle === leftHandle;
-                const initialX = e.clientX;
-                const initialPos = isLeft ? startPosition : endPosition;
-                const width = rangeSlider.offsetWidth;
-
-                function onMouseMove(e) {
-                    const delta = (e.clientX - initialX) / width;
-                    let newPos = initialPos + delta;
-                    newPos = Math.max(0, Math.min(1, newPos));
-
-                    if (isLeft) {
-                        if (newPos < endPosition) {
-                            startPosition = newPos;
-                            wavesurfer.seekTo(startPosition);
-                        }
-                    } else {
-                        if (newPos > startPosition) {
-                            endPosition = newPos;
-                        }
-                    }
-                    updateRangeSelection();
-                }
-
-                function onMouseUp() {
-                    document.removeEventListener('mousemove', onMouseMove);
-                    document.removeEventListener('mouseup', onMouseUp);
-                }
-
-                document.addEventListener('mousemove', onMouseMove);
-                document.addEventListener('mouseup', onMouseUp);
+        <script>
+            let wavesurfer = WaveSurfer.create({
+                container: '#waveform',
+                waveColor: '#4a4a4a',
+                progressColor: '#00ff9d',
+                cursorColor: '#00ff9d',
+                height: 128,
+                responsive: true,
+                barWidth: 2,
+                barGap: 1
             });
-        });
 
-        function playSelection() {
-            const duration = wavesurfer.getDuration();
-            wavesurfer.play(startPosition * duration, endPosition * duration);
-        }
+            const rangeSlider = document.querySelector('.range-slider');
+            const rangeSelection = document.querySelector('.range-selection');
+            const leftHandle = document.querySelector('.range-handle.left');
+            const rightHandle = document.querySelector('.range-handle.right');
 
-        async function trimAudio() {
-            const duration = wavesurfer.getDuration();
-            const startTime = startPosition * duration;
-            const endTime = endPosition * duration;
-            
-            // Get the audio data
-            const audioData = wavesurfer.backend.buffer;
-            const sampleRate = audioData.sampleRate;
-            const startOffset = Math.floor(startTime * sampleRate);
-            const endOffset = Math.floor(endTime * sampleRate);
-            const frameCount = endOffset - startOffset;
-            
-            // Create new buffer for trimmed audio
-            const trimmedBuffer = new AudioContext().createBuffer(
-                audioData.numberOfChannels,
-                frameCount,
-                sampleRate
-            );
-            
-            // Copy the trimmed portion
-            for (let channel = 0; channel < audioData.numberOfChannels; channel++) {
-                const channelData = audioData.getChannelData(channel);
-                const trimmedData = trimmedBuffer.getChannelData(channel);
-                for (let i = 0; i < frameCount; i++) {
-                    trimmedData[i] = channelData[i + startOffset];
+            document.getElementById('audioInput').addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                wavesurfer.loadBlob(file);
+            });
+
+            wavesurfer.on('ready', function() {
+                startPosition = 0;
+                endPosition = 1;
+                updateRangeSelection();
+                document.getElementById('endTime').textContent = formatTime(wavesurfer.getDuration());
+            });
+
+            function formatTime(seconds) {
+                return new Date(seconds * 1000).toISOString().substr(14, 5);
+            }
+
+            function updateRangeSelection() {
+                const width = rangeSlider.offsetWidth;
+                const leftPos = startPosition * width;
+                const rightPos = endPosition * width;
+                
+                rangeSelection.style.left = `${leftPos}px`;
+                rangeSelection.style.width = `${rightPos - leftPos}px`;
+                leftHandle.style.left = `${leftPos}px`;
+                rightHandle.style.left = `${rightPos}px`;
+
+                const duration = wavesurfer.getDuration();
+                document.getElementById('startTime').textContent = formatTime(startPosition * duration);
+                document.getElementById('endTime').textContent = formatTime(endPosition * duration);
+            }
+
+            [leftHandle, rightHandle].forEach(handle => {
+                handle.addEventListener('mousedown', initDrag);
+                handle.addEventListener('touchstart', initDrag, { passive: false });
+
+                function initDrag(e) {
+                    e.preventDefault();
+                    const isLeft = handle === leftHandle;
+                    const initialX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+                    const initialPos = isLeft ? startPosition : endPosition;
+                    const width = rangeSlider.offsetWidth;
+
+                    function onMove(e) {
+                        const currentX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+                        const delta = (currentX - initialX) / width;
+                        let newPos = initialPos + delta;
+                        newPos = Math.max(0, Math.min(1, newPos));
+
+                        if (isLeft) {
+                            if (newPos < endPosition) {
+                                startPosition = newPos;
+                                wavesurfer.seekTo(startPosition);
+                            }
+                        } else {
+                            if (newPos > startPosition) {
+                                endPosition = newPos;
+                            }
+                        }
+                        updateRangeSelection();
+                    }
+
+                    function onEnd() {
+                        document.removeEventListener('mousemove', onMove);
+                        document.removeEventListener('mouseup', onEnd);
+                        document.removeEventListener('touchmove', onMove);
+                        document.removeEventListener('touchend', onEnd);
+                    }
+
+                    document.addEventListener('mousemove', onMove);
+                    document.addEventListener('mouseup', onEnd);
+                    document.addEventListener('touchmove', onMove, { passive: false });
+                    document.addEventListener('touchend', onEnd);
                 }
-            }
-            
-            // Convert to WAV and download
-            const wav = audioBufferToWav(trimmedBuffer);
-            const blob = new Blob([wav], { type: 'audio/wav' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'trimmed_audio.wav';
-            a.click();
-            URL.revokeObjectURL(url);
-        }
+            });
 
-        // Helper function to convert AudioBuffer to WAV format
-        function audioBufferToWav(buffer) {
-            const interleaved = new Float32Array(buffer.length);
-            const channelData = buffer.getChannelData(0);
-            for (let i = 0; i < buffer.length; i++) {
-                interleaved[i] = channelData[i];
+            function playSelection() {
+                const duration = wavesurfer.getDuration();
+                wavesurfer.play(startPosition * duration, endPosition * duration);
             }
-            
-            const dataView = new DataView(new ArrayBuffer(44 + interleaved.length * 2));
-            const writeString = (view, offset, string) => {
-                for (let i = 0; i < string.length; i++) {
-                    view.setUint8(offset + i, string.charCodeAt(i));
+
+            async function trimAudio() {
+                const duration = wavesurfer.getDuration();
+                const startTime = startPosition * duration;
+                const endTime = endPosition * duration;
+                
+                // Get the audio data
+                const audioData = wavesurfer.backend.buffer;
+                const sampleRate = audioData.sampleRate;
+                const startOffset = Math.floor(startTime * sampleRate);
+                const endOffset = Math.floor(endTime * sampleRate);
+                const frameCount = endOffset - startOffset;
+                
+                // Create new buffer for trimmed audio
+                const trimmedBuffer = new AudioContext().createBuffer(
+                    audioData.numberOfChannels,
+                    frameCount,
+                    sampleRate
+                );
+                
+                // Copy the trimmed portion
+                for (let channel = 0; channel < audioData.numberOfChannels; channel++) {
+                    const channelData = audioData.getChannelData(channel);
+                    const trimmedData = trimmedBuffer.getChannelData(channel);
+                    for (let i = 0; i < frameCount; i++) {
+                        trimmedData[i] = channelData[i + startOffset];
+                    }
                 }
-            };
-
-            writeString(dataView, 0, 'RIFF');
-            dataView.setUint32(4, 36 + interleaved.length * 2, true);
-            writeString(dataView, 8, 'WAVE');
-            writeString(dataView, 12, 'fmt ');
-            dataView.setUint32(16, 16, true);
-            dataView.setUint16(20, 1, true);
-            dataView.setUint16(22, 1, true);
-            dataView.setUint32(24, buffer.sampleRate, true);
-            dataView.setUint32(28, buffer.sampleRate * 2, true);
-            dataView.setUint16(32, 2, true);
-            dataView.setUint16(34, 16, true);
-            writeString(dataView, 36, 'data');
-            dataView.setUint32(40, interleaved.length * 2, true);
-
-            const volume = 0.5;
-            for (let i = 0; i < interleaved.length; i++) {
-                const sample = Math.max(-1, Math.min(1, interleaved[i]));
-                dataView.setInt16(44 + i * 2, sample * 0x7FFF * volume, true);
+                
+                // Convert to WAV and download
+                const wav = audioBufferToWav(trimmedBuffer);
+                const blob = new Blob([wav], { type: 'audio/wav' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'trimmed_audio.wav';
+                a.click();
+                URL.revokeObjectURL(url);
             }
 
-            return dataView.buffer;
-        }
-    </script>
-</body>
-</html> 
+            // Helper function to convert AudioBuffer to WAV format
+            function audioBufferToWav(buffer) {
+                const interleaved = new Float32Array(buffer.length);
+                const channelData = buffer.getChannelData(0);
+                for (let i = 0; i < buffer.length; i++) {
+                    interleaved[i] = channelData[i];
+                }
+                
+                const dataView = new DataView(new ArrayBuffer(44 + interleaved.length * 2));
+                const writeString = (view, offset, string) => {
+                    for (let i = 0; i < string.length; i++) {
+                        view.setUint8(offset + i, string.charCodeAt(i));
+                    }
+                };
+
+                writeString(dataView, 0, 'RIFF');
+                dataView.setUint32(4, 36 + interleaved.length * 2, true);
+                writeString(dataView, 8, 'WAVE');
+                writeString(dataView, 12, 'fmt ');
+                dataView.setUint32(16, 16, true);
+                dataView.setUint16(20, 1, true);
+                dataView.setUint16(22, 1, true);
+                dataView.setUint32(24, buffer.sampleRate, true);
+                dataView.setUint32(28, buffer.sampleRate * 2, true);
+                dataView.setUint16(32, 2, true);
+                dataView.setUint16(34, 16, true);
+                writeString(dataView, 36, 'data');
+                dataView.setUint32(40, interleaved.length * 2, true);
+
+                const volume = 0.5;
+                for (let i = 0; i < interleaved.length; i++) {
+                    const sample = Math.max(-1, Math.min(1, interleaved[i]));
+                    dataView.setInt16(44 + i * 2, sample * 0x7FFF * volume, true);
+                }
+
+                return dataView.buffer;
+            }
+        </script>
+    </body>
+    </html> 
