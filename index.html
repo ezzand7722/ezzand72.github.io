@@ -701,49 +701,80 @@
                     loadingMsg.innerHTML = `
                         <p>Processing sheet music...</p>
                         <div class="processing-steps">
-                            <div class="step">1. Analyzing Image ⏳</div>
-                            <div class="step">2. Recognizing Notes ⏳</div>
+                            <div class="step">1. Uploading Image ⏳</div>
+                            <div class="step">2. Analyzing Score ⏳</div>
                             <div class="step">3. Generating Audio ⏳</div>
                         </div>
                     `;
                     document.querySelector('.container').appendChild(loadingMsg);
 
-                    // Create a URL for the uploaded image
-                    const imageUrl = URL.createObjectURL(file);
+                    // Create FormData and upload
+                    const formData = new FormData();
+                    formData.append('sheet_music', file);
+
+                    // Send to server
+                    const response = await fetch('/api/process-sheet-music', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Failed to process sheet music');
+                    }
+
+                    const result = await response.json();
                     
-                    // Create an image element to display the sheet music
-                    const img = document.createElement('img');
-                    img.src = imageUrl;
-                    img.style.maxWidth = '100%';
-                    img.style.borderRadius = '0.5rem';
-                    img.style.marginTop = '1rem';
-                    document.querySelector('.container').appendChild(img);
-
-                    // Update step 1
-                    loadingMsg.querySelector('.step:nth-child(1)').innerHTML += ' ✓';
-
-                    // Simulated note detection (replace with actual OMR API)
-                    const notes = await detectNotes(imageUrl);
+                    // Update UI to show recognized notes
+                    displayRecognizedNotes(result.notes);
                     
-                    // Update step 2
-                    loadingMsg.querySelector('.step:nth-child(2)').innerHTML += ' ✓';
-
-                    // Convert notes to audio
-                    await generateAudio(notes);
+                    // Create audio using better synthesis
+                    await createAudioFromNotes(result.notes);
                     
-                    // Update step 3
-                    loadingMsg.querySelector('.step:nth-child(3)').innerHTML += ' ✓';
-
-                    // Add play button for the generated music
-                    const playButton = document.createElement('button');
-                    playButton.className = 'outline';
-                    playButton.innerHTML = '<i class="fas fa-play"></i> Play Generated Music';
-                    playButton.onclick = () => playGeneratedMusic(notes);
-                    document.querySelector('.container').appendChild(playButton);
+                    // Add playback controls
+                    addPlaybackControls(result);
 
                 } catch (error) {
+                    console.error('Error:', error);
                     alert('Error processing sheet music: ' + error.message);
                 }
+            }
+
+            function displayRecognizedNotes(notes) {
+                const scoreDisplay = document.createElement('div');
+                scoreDisplay.className = 'score-display';
+                
+                // Use a music notation library like VexFlow to display the score
+                const VF = Vex.Flow;
+                const div = document.createElement('div');
+                const renderer = new VF.Renderer(div, VF.Renderer.Backends.SVG);
+                
+                // Render the score
+                // ... VexFlow implementation
+                
+                document.querySelector('.container').appendChild(scoreDisplay);
+            }
+
+            async function createAudioFromNotes(notes) {
+                // Use a better sound library like Soundfont-Player
+                const ac = new AudioContext();
+                const player = new Soundfont.Player(ac);
+                
+                // Load a realistic piano soundfont
+                const instrument = await player.load('acoustic_grand_piano');
+                
+                return {
+                    play: () => {
+                        notes.forEach(note => {
+                            instrument.play(note.pitch, ac.currentTime + note.time, {
+                                duration: note.duration,
+                                gain: note.velocity / 127
+                            });
+                        });
+                    },
+                    stop: () => {
+                        instrument.stop();
+                    }
+                };
             }
 
             document.getElementById('sheetInput').addEventListener('change', function(e) {
@@ -752,45 +783,6 @@
                     processSheetMusic(file);
                 }
             });
-
-            async function detectNotes(imageUrl) {
-                // Simulated note detection
-                // In reality, this would call an OMR API
-                await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate processing time
-                
-                // Return sample notes (replace with actual detected notes)
-                return [
-                    { note: 'C4', duration: '4n', time: 0 },
-                    { note: 'E4', duration: '4n', time: 0.5 },
-                    { note: 'G4', duration: '4n', time: 1 },
-                    { note: 'C5', duration: '2n', time: 1.5 }
-                ];
-            }
-
-            async function generateAudio(notes) {
-                // Initialize ToneJS
-                await Tone.start();
-                const synth = new Tone.PolySynth(Tone.Synth).toDestination();
-                
-                // Create a new part
-                const part = new Tone.Part((time, note) => {
-                    synth.triggerAttackRelease(note.note, note.duration, time);
-                }, notes);
-
-                return part;
-            }
-
-            async function playGeneratedMusic(notes) {
-                const part = await generateAudio(notes);
-                
-                // Stop any playing audio
-                Tone.Transport.stop();
-                Tone.Transport.cancel();
-                
-                // Start the new part
-                part.start(0);
-                Tone.Transport.start();
-            }
         </script>
     </body>
     </html> 
