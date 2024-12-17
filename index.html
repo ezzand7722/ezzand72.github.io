@@ -5,6 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Audio Trimmer</title>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/wavesurfer.js/6.6.3/wavesurfer.min.js"></script>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
         <style>
             body {
                 font-family: Arial, sans-serif;
@@ -59,12 +60,17 @@
             button {
                 display: inline-flex;
                 align-items: center;
+                gap: 8px;
                 padding: 0.5rem 1rem;
                 border: none;
                 border-radius: 0.375rem;
                 font-weight: 500;
                 cursor: pointer;
                 transition: all 0.2s;
+            }
+
+            button i {
+                font-size: 1rem;
             }
 
             button.primary {
@@ -188,11 +194,26 @@
             </div>
 
             <div class="controls">
-                <button onclick="playSelection()">Play Selection</button>
-                <button onclick="stopAudio()" class="outline">Stop</button>
-                <button onclick="deleteSelection()" class="delete">Delete Selection</button>
-                <button onclick="undoLastChange()" class="outline">Undo</button>
-                <button onclick="saveAudio()">Save Audio</button>
+                <button onclick="playSelection()">
+                    <i class="fas fa-play"></i>
+                    Play
+                </button>
+                <button onclick="stopAudio()" class="outline">
+                    <i class="fas fa-stop"></i>
+                    Stop
+                </button>
+                <button onclick="deleteSelection()" class="delete">
+                    <i class="fas fa-scissors"></i>
+                    Cut
+                </button>
+                <button onclick="undoLastChange()" class="outline">
+                    <i class="fas fa-undo"></i>
+                    Undo
+                </button>
+                <button onclick="saveAudio()">
+                    <i class="fas fa-download"></i>
+                    Save
+                </button>
             </div>
         </div>
 
