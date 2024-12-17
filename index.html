@@ -9,31 +9,39 @@
         <style>
             body {
                 font-family: Arial, sans-serif;
-                max-width: 48rem; /* 3xl in tailwind */
+                max-width: 48rem;
                 margin: 0 auto;
                 padding: 20px;
-                background: #f5f5f5;
+                background: #111827;
+                color: #e5e7eb;
             }
             
             .container {
-                background: white;
-                padding: 1.5rem; /* p-6 in tailwind */
+                background: #1f2937;
+                padding: 1.5rem;
                 border-radius: 0.5rem;
-                box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            }
+
+            h1 {
+                color: #a855f7;
+                text-align: center;
+                margin-bottom: 1.5rem;
             }
 
             .upload-area {
-                border: 2px dashed #e5e7eb;
+                border: 2px dashed #374151;
                 border-radius: 0.5rem;
                 padding: 3rem;
                 text-align: center;
                 cursor: pointer;
                 transition: all 0.2s;
+                background: #1f2937;
             }
 
             .upload-area:hover {
                 border-color: #a855f7;
-                background: #faf5ff;
+                background: rgba(168, 85, 247, 0.1);
             }
 
             .upload-icon {
@@ -47,6 +55,7 @@
                 margin-top: 1rem;
                 border-radius: 0.5rem;
                 overflow: hidden;
+                background: #374151;
             }
 
             .controls {
@@ -56,7 +65,7 @@
                 justify-content: center;
                 margin-top: 1rem;
                 padding: 0.5rem;
-                background: #f8f9fa;
+                background: #2d3748;
                 border-radius: 0.5rem;
             }
 
@@ -66,19 +75,18 @@
                 padding: 0.75rem 1rem;
                 font-size: 0.875rem;
                 transition: all 0.2s ease;
+                background: #4b5563;
+                color: #e5e7eb;
             }
 
-            .controls button:hover {
-                transform: translateY(-1px);
-                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            button.outline {
+                background: transparent;
+                border: 1px solid #4b5563;
+                color: #e5e7eb;
             }
 
-            .controls button.outline {
-                border: 1px solid #e5e7eb;
-            }
-
-            .controls button.outline:hover {
-                background: #fff;
+            button.outline:hover {
+                background: #374151;
                 border-color: #a855f7;
                 color: #a855f7;
             }
@@ -130,7 +138,7 @@
             .range-track {
                 height: 0.25rem;
                 width: 100%;
-                background: #e5e7eb;
+                background: #4b5563;
                 border-radius: 9999px;
                 position: relative;
                 top: 50%;
@@ -146,7 +154,7 @@
             .range-handle {
                 width: 1.25rem;
                 height: 1.25rem;
-                background: white;
+                background: #2d3748;
                 border-radius: 50%;
                 position: absolute;
                 top: 50%;
@@ -156,6 +164,7 @@
                 touch-action: none;
                 -webkit-user-select: none;
                 user-select: none;
+                border: 2px solid #a855f7;
             }
 
             .range-handle::after {
@@ -175,7 +184,7 @@
                 justify-content: space-between;
                 margin-top: 0.5rem;
                 font-size: 0.875rem;
-                color: #6b7280;
+                color: #a855f7;
             }
 
             #audioInput {
@@ -183,8 +192,8 @@
             }
 
             button.delete {
-                background: #ef4444;
-                color: white;
+                background: #991b1b;
+                color: #e5e7eb;
             }
 
             .deleted-region {
@@ -228,10 +237,6 @@
                     <i class="fas fa-play"></i>
                     Play
                 </button>
-                <button onclick="stopAudio()" class="outline">
-                    <i class="fas fa-pause"></i>
-                    Pause
-                </button>
                 <button onclick="restartAudio()" class="outline">
                     <i class="fas fa-redo"></i>
                     Restart
@@ -254,9 +259,9 @@
         <script>
             let wavesurfer = WaveSurfer.create({
                 container: '#waveform',
-                waveColor: '#4a4a4a',
-                progressColor: '#00ff9d',
-                cursorColor: '#00ff9d',
+                waveColor: '#4b5563',
+                progressColor: '#a855f7',
+                cursorColor: '#a855f7',
                 height: 128,
                 responsive: true,
                 barWidth: 2,
@@ -449,6 +454,14 @@
             async function deleteSelection() {
                 if (!wavesurfer) return;
                 
+                // Stop playback if playing
+                if (isPlaying) {
+                    wavesurfer.pause();
+                    isPlaying = false;
+                    const playButton = document.querySelector('button i.fa-play, button i.fa-pause');
+                    playButton.className = 'fas fa-play';
+                }
+                
                 const duration = wavesurfer.getDuration();
                 const startTime = startPosition * duration;
                 const endTime = endPosition * duration;
@@ -517,16 +530,6 @@
                 a.download = 'edited_audio.wav';
                 a.click();
                 URL.revokeObjectURL(url);
-            }
-
-            function stopAudio() {
-                if (wavesurfer) {
-                    wavesurfer.pause();
-                    isPlaying = false;
-                    // Update play button icon
-                    const playButton = document.querySelector('button i.fa-play, button i.fa-pause');
-                    playButton.className = 'fas fa-play';
-                }
             }
 
             function restartAudio() {
