@@ -684,59 +684,54 @@
                 
                 const buffer = wavesurfer.backend.buffer;
                 
-                // Save current state to history
-                audioHistory.push(buffer.slice(0));
-                if (audioHistory.length > MAX_HISTORY) {
-                    audioHistory.shift();
-                }
-                
-                // Create new buffer for instrumental
-                const numberOfChannels = buffer.numberOfChannels;
-                if (numberOfChannels !== 2) {
+                // Check if audio is stereo
+                if (buffer.numberOfChannels !== 2) {
                     alert('Vocal removal requires stereo audio (2 channels)');
                     return;
                 }
                 
-                const sampleRate = buffer.sampleRate;
-                const length = buffer.length;
-                const newBuffer = new AudioContext().createBuffer(
-                    numberOfChannels,
-                    length,
-                    sampleRate
+                // Create audio context
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                
+                // Create new buffer
+                const newBuffer = audioCtx.createBuffer(
+                    2,
+                    buffer.length,
+                    buffer.sampleRate
                 );
                 
-                // Get left and right channels
+                // Get audio channels
                 const leftChannel = buffer.getChannelData(0);
                 const rightChannel = buffer.getChannelData(1);
+                const newLeft = newBuffer.getChannelData(0);
+                const newRight = newBuffer.getChannelData(1);
                 
-                // Create new channels with reduced vocals
-                const newLeftChannel = newBuffer.getChannelData(0);
-                const newRightChannel = newBuffer.getChannelData(1);
-                
-                // Process each sample with improved algorithm
-                for (let i = 0; i < length; i++) {
-                    // Phase cancellation with improved weighting
-                    const mid = (leftChannel[i] + rightChannel[i]) * 0.5;
-                    const side = (leftChannel[i] - rightChannel[i]) * 0.5;
+                // Process audio
+                for (let i = 0; i < buffer.length; i++) {
+                    // Get center and side signals
+                    const center = (leftChannel[i] + rightChannel[i]) / 2;
+                    const side = (leftChannel[i] - rightChannel[i]) / 2;
                     
-                    // Reduce center channel (where vocals usually are)
-                    // and enhance the sides (where instruments usually are)
-                    newLeftChannel[i] = side * 1.5;  // Enhance stereo separation
-                    newRightChannel[i] = -side * 1.5; // Invert for proper stereo image
+                    // Reduce center channel and boost sides
+                    const centerReduction = 0.7; // Adjust this value to control vocal removal strength
+                    const sideBoost = 1.5;      // Adjust this value to boost instruments
+                    
+                    // Apply to both channels
+                    newLeft[i] = (leftChannel[i] - (center * centerReduction)) * sideBoost;
+                    newRight[i] = (rightChannel[i] - (center * centerReduction)) * sideBoost;
+                    
+                    // Prevent clipping
+                    newLeft[i] = Math.max(-1, Math.min(1, newLeft[i]));
+                    newRight[i] = Math.max(-1, Math.min(1, newRight[i]));
                 }
                 
-                // Apply some post-processing to enhance the remaining audio
-                for (let i = 0; i < length; i++) {
-                    // Add some of the original signal back to maintain fullness
-                    newLeftChannel[i] = newLeftChannel[i] * 0.8 + leftChannel[i] * 0.2;
-                    newRightChannel[i] = newRightChannel[i] * 0.8 + rightChannel[i] * 0.2;
-                    
-                    // Ensure we don't exceed [-1, 1] range
-                    newLeftChannel[i] = Math.max(-1, Math.min(1, newLeftChannel[i]));
-                    newRightChannel[i] = Math.max(-1, Math.min(1, newRightChannel[i]));
+                // Save to history before applying changes
+                audioHistory.push(buffer);
+                if (audioHistory.length > MAX_HISTORY) {
+                    audioHistory.shift();
                 }
                 
-                // Load the new buffer into wavesurfer
+                // Load processed audio
                 wavesurfer.loadDecodedBuffer(newBuffer);
                 
                 // Reset positions
