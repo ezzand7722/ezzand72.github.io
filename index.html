@@ -55,6 +55,36 @@
                 flex-wrap: wrap;
                 justify-content: center;
                 margin-top: 1rem;
+                padding: 0.5rem;
+                background: #f8f9fa;
+                border-radius: 0.5rem;
+            }
+
+            .controls button {
+                min-width: 100px;
+                justify-content: center;
+                padding: 0.75rem 1rem;
+                font-size: 0.875rem;
+                transition: all 0.2s ease;
+            }
+
+            .controls button:hover {
+                transform: translateY(-1px);
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+
+            .controls button.outline {
+                border: 1px solid #e5e7eb;
+            }
+
+            .controls button.outline:hover {
+                background: #fff;
+                border-color: #a855f7;
+                color: #a855f7;
+            }
+
+            .controls button.delete:hover {
+                background: #dc2626;
             }
 
             button {
@@ -199,8 +229,12 @@
                     Play
                 </button>
                 <button onclick="stopAudio()" class="outline">
-                    <i class="fas fa-stop"></i>
-                    Stop
+                    <i class="fas fa-pause"></i>
+                    Pause
+                </button>
+                <button onclick="restartAudio()" class="outline">
+                    <i class="fas fa-redo"></i>
+                    Restart
                 </button>
                 <button onclick="deleteSelection()" class="delete">
                     <i class="fas fa-scissors"></i>
@@ -322,8 +356,17 @@
 
             function playSelection() {
                 const duration = wavesurfer.getDuration();
-                wavesurfer.play(startPosition * duration, endPosition * duration);
-                isPlaying = true;
+                if (!isPlaying) {
+                    // If not playing, start from current position
+                    wavesurfer.play();
+                } else {
+                    wavesurfer.pause();
+                }
+                isPlaying = !isPlaying;
+                
+                // Update play button icon
+                const playButton = document.querySelector('button i.fa-play, button i.fa-pause');
+                playButton.className = isPlaying ? 'fas fa-pause' : 'fas fa-play';
             }
 
             async function trimAudio() {
@@ -478,8 +521,21 @@
 
             function stopAudio() {
                 if (wavesurfer) {
+                    wavesurfer.pause();
+                    isPlaying = false;
+                    // Update play button icon
+                    const playButton = document.querySelector('button i.fa-play, button i.fa-pause');
+                    playButton.className = 'fas fa-play';
+                }
+            }
+
+            function restartAudio() {
+                if (wavesurfer) {
                     wavesurfer.stop();
                     isPlaying = false;
+                    // Update play button icon
+                    const playButton = document.querySelector('button i.fa-play, button i.fa-pause');
+                    playButton.className = 'fas fa-play';
                 }
             }
 
