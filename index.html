@@ -48,11 +48,12 @@
             border-radius: 8px;
             position: relative;
             margin: 40px 0;
+            height: 128px;
         }
 
         .trim-handle {
             width: 4px;
-            height: 100%;
+            height: 128px;
             background: #00ff9d;
             position: absolute;
             top: 0;
@@ -82,7 +83,8 @@
 
         .selection-area {
             position: absolute;
-            height: 100%;
+            top: 0;
+            height: 128px;
             background: rgba(0, 255, 157, 0.2);
             pointer-events: none;
             z-index: 1;
@@ -173,8 +175,14 @@
         });
 
         wavesurfer.on('ready', function() {
+            startPosition = 0;
+            endPosition = 1;
             updateSelection();
             document.getElementById('endTime').textContent = formatTime(wavesurfer.getDuration());
+            
+            const waveformRect = wavesurfer.container.getBoundingClientRect();
+            leftHandle.style.left = waveformRect.left + 'px';
+            rightHandle.style.left = (waveformRect.right - 4) + 'px';
         });
 
         function formatTime(seconds) {
@@ -182,24 +190,32 @@
         }
 
         function updateSelection() {
-            const width = wavesurfer.container.offsetWidth;
-            selectionArea.style.left = (startPosition * width) + 'px';
-            selectionArea.style.width = ((endPosition - startPosition) * width) + 'px';
-            leftHandle.style.left = (startPosition * width) + 'px';
-            rightHandle.style.left = (endPosition * width) + 'px';
+            const waveformRect = wavesurfer.container.getBoundingClientRect();
+            const containerRect = wavesurfer.container.parentElement.getBoundingClientRect();
+            const offsetLeft = waveformRect.left - containerRect.left;
+            
+            const width = waveformRect.width;
+            const leftPos = offsetLeft + (startPosition * width);
+            const rightPos = offsetLeft + (endPosition * width);
+            
+            selectionArea.style.left = leftPos + 'px';
+            selectionArea.style.width = (rightPos - leftPos) + 'px';
+            leftHandle.style.left = leftPos + 'px';
+            rightHandle.style.left = (rightPos - 4) + 'px';
 
             const duration = wavesurfer.getDuration();
             document.getElementById('startTime').textContent = formatTime(startPosition * duration);
             document.getElementById('endTime').textContent = formatTime(endPosition * duration);
         }
 
-        // Handle dragging
         [leftHandle, rightHandle].forEach(handle => {
             handle.addEventListener('mousedown', function(e) {
+                e.preventDefault();
                 const isLeft = handle === leftHandle;
                 const initialX = e.clientX;
                 const initialPos = isLeft ? startPosition : endPosition;
-                const width = wavesurfer.container.offsetWidth;
+                const waveformRect = wavesurfer.container.getBoundingClientRect();
+                const width = waveformRect.width;
 
                 function onMouseMove(e) {
                     const delta = (e.clientX - initialX) / width;
