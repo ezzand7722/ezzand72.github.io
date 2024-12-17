@@ -7,6 +7,8 @@
         <script src="https://cdnjs.cloudflare.com/ajax/libs/wavesurfer.js/6.6.3/wavesurfer.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+        <script src="https://unpkg.com/vexflow/releases/vexflow-min.js"></script>
+        <script src="https://unpkg.com/soundfont-player"></script>
         <style>
             body {
                 font-family: Arial, sans-serif;
@@ -695,7 +697,6 @@
 
             async function processSheetMusic(file) {
                 try {
-                    // Show loading message
                     const loadingMsg = document.createElement('div');
                     loadingMsg.className = 'loading-message';
                     loadingMsg.innerHTML = `
@@ -708,12 +709,11 @@
                     `;
                     document.querySelector('.container').appendChild(loadingMsg);
 
-                    // Create FormData and upload
                     const formData = new FormData();
                     formData.append('sheet_music', file);
 
-                    // Send to server
-                    const response = await fetch('/api/process-sheet-music', {
+                    // Send to your local server
+                    const response = await fetch('http://localhost:3000/api/process-sheet-music', {
                         method: 'POST',
                         body: formData
                     });
@@ -724,15 +724,16 @@
 
                     const result = await response.json();
                     
-                    // Update UI to show recognized notes
-                    displayRecognizedNotes(result.notes);
+                    // Display the recognized sheet music
+                    await displayRecognizedNotes(result.notes);
                     
-                    // Create audio using better synthesis
-                    await createAudioFromNotes(result.notes);
+                    // Create the audio player
+                    const player = await createAudioFromNotes(result.notes);
                     
                     // Add playback controls
-                    addPlaybackControls(result);
+                    addPlaybackControls(player);
 
+                    loadingMsg.remove();
                 } catch (error) {
                     console.error('Error:', error);
                     alert('Error processing sheet music: ' + error.message);
@@ -743,27 +744,53 @@
                 const scoreDisplay = document.createElement('div');
                 scoreDisplay.className = 'score-display';
                 
-                // Use a music notation library like VexFlow to display the score
                 const VF = Vex.Flow;
                 const div = document.createElement('div');
                 const renderer = new VF.Renderer(div, VF.Renderer.Backends.SVG);
+                renderer.resize(800, 200);
+                const context = renderer.getContext();
                 
-                // Render the score
-                // ... VexFlow implementation
+                // Create a stave
+                const stave = new VF.Stave(10, 40, 750);
+                stave.addClef('treble').addTimeSignature('4/4');
+                stave.setContext(context).draw();
                 
+                // Convert notes to VexFlow format
+                const vfNotes = notes.map(note => {
+                    return new VF.StaveNote({
+                        clef: "treble",
+                        keys: [note.pitch],
+                        duration: note.duration
+                    });
+                });
+                
+                // Create a voice and add notes
+                const voice = new VF.Voice({num_beats: 4, beat_value: 4});
+                voice.addTickables(vfNotes);
+                
+                // Format and draw
+                new VF.Formatter().joinVoices([voice]).format([voice], 750);
+                voice.draw(context, stave);
+                
+                scoreDisplay.appendChild(div);
                 document.querySelector('.container').appendChild(scoreDisplay);
             }
 
             async function createAudioFromNotes(notes) {
-                // Use a better sound library like Soundfont-Player
                 const ac = new AudioContext();
                 const player = new Soundfont.Player(ac);
                 
-                // Load a realistic piano soundfont
+                // Load a piano soundfont
                 const instrument = await player.load('acoustic_grand_piano');
+                
+                let isPlaying = false;
+                let currentTime = 0;
                 
                 return {
                     play: () => {
+                        if (isPlaying) return;
+                        isPlaying = true;
+                        
                         notes.forEach(note => {
                             instrument.play(note.pitch, ac.currentTime + note.time, {
                                 duration: note.duration,
@@ -772,9 +799,38 @@
                         });
                     },
                     stop: () => {
+                        if (!isPlaying) return;
+                        isPlaying = false;
                         instrument.stop();
+                    },
+                    seek: (time) => {
+                        currentTime = time;
+                        if (isPlaying) {
+                            this.stop();
+                            this.play();
+                        }
                     }
                 };
+            }
+
+            function addPlaybackControls(player) {
+                const controls = document.createElement('div');
+                controls.className = 'playback-controls';
+                controls.innerHTML = `
+                    <button class="play-btn">
+                        <i class="fas fa-play"></i>
+                        Play Score
+                    </button>
+                    <button class="stop-btn">
+                        <i class="fas fa-stop"></i>
+                        Stop
+                    </button>
+                `;
+                
+                controls.querySelector('.play-btn').onclick = () => player.play();
+                controls.querySelector('.stop-btn').onclick = () => player.stop();
+                
+                document.querySelector('.container').appendChild(controls);
             }
 
             document.getElementById('sheetInput').addEventListener('change', function(e) {
