@@ -780,12 +780,19 @@
                     });
                 });
                 
-                // Create a voice and add notes
-                const voice = new VF.Voice({num_beats: 4, beat_value: 4});
+                // Create a voice with the correct total duration
+                const voice = new VF.Voice({
+                    num_beats: 4,  
+                    beat_value: 4,
+                    resolution: VF.RESOLUTION
+                });
+                
+                // Add the notes to the voice
                 voice.addTickables(vfNotes);
                 
                 // Format and draw
-                new VF.Formatter().joinVoices([voice]).format([voice], 750);
+                const formatter = new VF.Formatter();
+                formatter.joinVoices([voice]).format([voice], 750);
                 voice.draw(context, stave);
                 
                 scoreDisplay.appendChild(div);
