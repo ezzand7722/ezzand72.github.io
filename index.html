@@ -383,21 +383,24 @@
             }
 
             async function deleteSelection() {
-                if (!wavesurfer || !audioBuffer) return;
-                
-                // Save current state to history
-                audioHistory.push(audioBuffer.slice(0));
-                if (audioHistory.length > MAX_HISTORY) {
-                    audioHistory.shift();
-                }
+                if (!wavesurfer) return;
                 
                 const duration = wavesurfer.getDuration();
                 const startTime = startPosition * duration;
                 const endTime = endPosition * duration;
                 
+                // Get the current buffer directly from wavesurfer
+                const currentBuffer = wavesurfer.backend.buffer;
+                
+                // Save current state to history
+                audioHistory.push(currentBuffer);
+                if (audioHistory.length > MAX_HISTORY) {
+                    audioHistory.shift();
+                }
+                
                 // Create new buffer without the selected region
-                const sampleRate = audioBuffer.sampleRate;
-                const numberOfChannels = audioBuffer.numberOfChannels;
+                const sampleRate = currentBuffer.sampleRate;
+                const numberOfChannels = currentBuffer.numberOfChannels;
                 
                 // Calculate new duration
                 const newDuration = duration - (endTime - startTime);
@@ -409,7 +412,7 @@
                 
                 // Copy audio data, excluding the selected region
                 for (let channel = 0; channel < numberOfChannels; channel++) {
-                    const channelData = audioBuffer.getChannelData(channel);
+                    const channelData = currentBuffer.getChannelData(channel);
                     const newChannelData = newBuffer.getChannelData(channel);
                     
                     const startOffset = Math.floor(startTime * sampleRate);
@@ -429,9 +432,6 @@
                         writeIndex++;
                     }
                 }
-                
-                // Update the audio buffer
-                audioBuffer = newBuffer;
                 
                 // Load the new buffer into wavesurfer
                 wavesurfer.loadDecodedBuffer(newBuffer);
