@@ -296,6 +296,14 @@
                     opacity: 0.3;
                 }
             }
+
+            button.outline i.fa-microphone-slash {
+                color: #dc2626;
+            }
+
+            button.outline:hover i.fa-microphone-slash {
+                color: #a855f7;
+            }
         </style>
     </head>
     <body>
@@ -346,6 +354,10 @@
                 <button onclick="saveAudio()">
                     <i class="fas fa-download"></i>
                     Save
+                </button>
+                <button onclick="removeVocals()" class="outline">
+                    <i class="fas fa-microphone-slash"></i>
+                    Remove Vocals
                 </button>
             </div>
         </div>
@@ -657,6 +669,65 @@
                     endPosition = 1;
                     updateRangeSelection();
                 }
+            }
+
+            async function removeVocals() {
+                if (!wavesurfer) return;
+                
+                // Stop playback if playing
+                if (isPlaying) {
+                    wavesurfer.pause();
+                    isPlaying = false;
+                    const playButton = document.querySelector('button i.fa-play, button i.fa-pause');
+                    playButton.className = 'fas fa-play';
+                }
+                
+                const buffer = wavesurfer.backend.buffer;
+                
+                // Save current state to history
+                audioHistory.push(buffer.slice(0));
+                if (audioHistory.length > MAX_HISTORY) {
+                    audioHistory.shift();
+                }
+                
+                // Create new buffer for instrumental
+                const numberOfChannels = buffer.numberOfChannels;
+                if (numberOfChannels !== 2) {
+                    alert('Vocal removal requires stereo audio (2 channels)');
+                    return;
+                }
+                
+                const sampleRate = buffer.sampleRate;
+                const length = buffer.length;
+                const newBuffer = new AudioContext().createBuffer(
+                    numberOfChannels,
+                    length,
+                    sampleRate
+                );
+                
+                // Get left and right channels
+                const leftChannel = buffer.getChannelData(0);
+                const rightChannel = buffer.getChannelData(1);
+                
+                // Create new channels with reduced vocals
+                const newLeftChannel = newBuffer.getChannelData(0);
+                const newRightChannel = newBuffer.getChannelData(1);
+                
+                // Process each sample
+                for (let i = 0; i < length; i++) {
+                    // Subtract right from left to cancel out center-panned audio (usually vocals)
+                    const centerCanceled = (leftChannel[i] - rightChannel[i]) * 0.5;
+                    newLeftChannel[i] = centerCanceled;
+                    newRightChannel[i] = centerCanceled;
+                }
+                
+                // Load the new buffer into wavesurfer
+                wavesurfer.loadDecodedBuffer(newBuffer);
+                
+                // Reset positions
+                startPosition = 0;
+                endPosition = 1;
+                updateRangeSelection();
             }
         </script>
     </body>
