@@ -6,32 +6,56 @@
     <title>Zarqa Weather</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
+        :root {
+            --bg-gradient-light: linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%);
+            --bg-gradient-dark: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            --card-bg-light: rgba(255, 255, 255, 0.15);
+            --card-bg-dark: rgba(255, 255, 255, 0.05);
+            --text-color-light: #ffffff;
+            --text-color-dark: #e1e1e1;
+            --icon-color-light: #FFD700;
+            --icon-color-dark: #ffd000;
+        }
+
         body {
             display: flex;
             flex-direction: column;
             align-items: center;
             min-height: 100vh;
             margin: 0;
-            background: linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%);
+            background: var(--bg-gradient-light);
             font-family: 'Roboto', sans-serif;
             padding: 20px;
-            color: white;
+            color: var(--text-color-light);
             position: relative;
             overflow-x: hidden;
+            transition: background 0.3s ease;
         }
 
-        /* Add subtle pattern overlay */
-        body::before {
-            content: '';
+        body.dark-mode {
+            background: var(--bg-gradient-dark);
+            color: var(--text-color-dark);
+        }
+
+        .theme-toggle {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: 
-                radial-gradient(circle at 25% 25%, rgba(255,255,255,0.1) 1%, transparent 1.5%) 0 0 / 50px 50px,
-                radial-gradient(circle at 75% 75%, rgba(255,255,255,0.1) 1%, transparent 1.5%) 0 0 / 50px 50px;
-            pointer-events: none;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            color: inherit;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            font-size: 1em;
+        }
+
+        .theme-toggle:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
         }
 
         .weather-container {
@@ -43,7 +67,7 @@
             margin: 20px 0;
         }
         .weather-card {
-            background: rgba(255, 255, 255, 0.15);
+            background: var(--card-bg-light);
             backdrop-filter: blur(10px);
             border-radius: 15px;
             padding: 25px;
@@ -51,16 +75,23 @@
                         inset 0 0 0 1px rgba(255,255,255,0.1);
             width: 200px;
             text-align: center;
-            transition: transform 0.3s ease;
+            transition: all 0.3s ease;
         }
-        .weather-card:hover {
-            transform: translateY(-5px);
+
+        body.dark-mode .weather-card {
+            background: var(--card-bg-dark);
         }
+
         .weather-icon {
             font-size: 2.5em;
             margin: 10px 0;
-            color: #FFD700;
+            color: var(--icon-color-light);
         }
+
+        body.dark-mode .weather-icon {
+            color: var(--icon-color-dark);
+        }
+
         h1 {
             color: white;
             margin-bottom: 30px;
@@ -84,16 +115,19 @@
             margin-top: 10px;
         }
         .reddit-container {
-            background: rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(10px);
-            border-radius: 15px;
-            padding: 25px;
+            background: var(--card-bg-light);
+            transition: background 0.3s ease;
             margin-top: 30px;
             max-width: 800px;
             width: 90%;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1),
                         inset 0 0 0 1px rgba(255,255,255,0.1);
         }
+
+        body.dark-mode .reddit-container {
+            background: var(--card-bg-dark);
+        }
+
         .reddit-title {
             font-size: 1.3em;
             margin-bottom: 15px;
@@ -111,6 +145,9 @@
     </style>
 </head>
 <body>
+    <button class="theme-toggle" onclick="toggleTheme()">
+        <i class="fas fa-moon"></i> Toggle Theme
+    </button>
     <h1>5-Day Weather Forecast for Zarqa</h1>
     <div class="weather-container" id="weatherContainer">
         Loading weather data...
@@ -122,6 +159,32 @@
     <div class="signature">Edited by Claude 🤖</div>
 
     <script>
+        function toggleTheme() {
+            const body = document.body;
+            const themeToggle = document.querySelector('.theme-toggle');
+            const icon = themeToggle.querySelector('i');
+            
+            body.classList.toggle('dark-mode');
+            
+            // Update icon based on theme
+            if (body.classList.contains('dark-mode')) {
+                icon.className = 'fas fa-sun';
+                localStorage.setItem('theme', 'dark');
+            } else {
+                icon.className = 'fas fa-moon';
+                localStorage.setItem('theme', 'light');
+            }
+        }
+
+        // Check for saved theme preference
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark') {
+                document.body.classList.add('dark-mode');
+                document.querySelector('.theme-toggle i').className = 'fas fa-sun';
+            }
+        });
+
         async function getWeatherData() {
             try {
                 console.log('Fetching weather data...'); // Debug log
