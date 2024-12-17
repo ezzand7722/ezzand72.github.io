@@ -218,10 +218,12 @@
                 wavesurfer.loadBlob(file);
             });
 
+            let startPosition = 0;
+            let endPosition = 1;
             let deletedRegions = [];
             let audioBuffer = null;
             let audioHistory = [];
-            const MAX_HISTORY = 10; // Maximum number of undo steps
+            const MAX_HISTORY = 10;
             let isPlaying = false;
 
             wavesurfer.on('ready', function() {
