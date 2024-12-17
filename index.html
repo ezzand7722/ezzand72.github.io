@@ -3,184 +3,180 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zarqa Weather</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <title>Audio Trimmer</title>
     <style>
-        :root {
-            --bg-gradient-light: linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%);
-            --bg-gradient-dark: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-            --card-bg-light: rgba(255, 255, 255, 0.15);
-            --card-bg-dark: rgba(255, 255, 255, 0.05);
-            --text-color-light: #ffffff;
-            --text-color-dark: #e1e1e1;
-            --icon-color-light: #FFD700;
-            --icon-color-dark: #ffd000;
-        }
-
         body {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            background: var(--bg-gradient-dark);
-            font-family: 'Roboto', sans-serif;
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
             padding: 20px;
-            color: var(--text-color-dark);
-            position: relative;
-            overflow-x: hidden;
+            background: #f5f5f5;
         }
-
-        .weather-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 20px;
-            justify-content: center;
-            max-width: 1200px;
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .controls {
             margin: 20px 0;
         }
-        .weather-card {
-            background: var(--card-bg-dark);
-            backdrop-filter: blur(10px);
-            border-radius: 15px;
-            padding: 25px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1),
-                        inset 0 0 0 1px rgba(255,255,255,0.1);
-            width: 200px;
-            text-align: center;
-            transition: all 0.3s ease;
-        }
-
-        .weather-icon {
-            font-size: 2.5em;
-            margin: 10px 0;
-            color: var(--icon-color-dark);
-        }
-
-        h1 {
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            background: #007bff;
             color: white;
-            margin-bottom: 30px;
-            font-size: 2.5em;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.15);
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
         }
-        .date {
-            font-weight: bold;
-            font-size: 1.2em;
-            margin-bottom: 15px;
+        button:hover {
+            background: #0056b3;
         }
-        .temperature {
-            font-size: 1.3em;
-            margin: 15px 0;
+        #timeControls {
+            margin: 20px 0;
         }
-        .temperature div {
-            margin: 5px 0;
-        }
-        .description {
-            font-size: 1.1em;
-            margin-top: 10px;
+        input[type="number"] {
+            width: 100px;
+            padding: 5px;
+            margin: 0 10px;
         }
     </style>
 </head>
 <body>
-    <h1>5-Day Weather Forecast for Zarqa</h1>
-    <div class="weather-container" id="weatherContainer">
-        Loading weather data...
+    <div class="container">
+        <h1>Audio Trimmer</h1>
+        
+        <input type="file" id="audioInput" accept="audio/*">
+        
+        <div class="controls">
+            <audio id="audioPlayer" controls></audio>
+        </div>
+        
+        <div id="timeControls">
+            <label>Start Time (seconds):
+                <input type="number" id="startTime" min="0" step="0.1" value="0">
+            </label>
+            <label>End Time (seconds):
+                <input type="number" id="endTime" min="0" step="0.1" value="0">
+            </label>
+        </div>
+        
+        <button onclick="trimAudio()">Trim Audio</button>
+        <button onclick="playTrimmedSection()">Preview Trimmed Section</button>
     </div>
 
     <script>
-        // Check for saved theme preference
-        document.addEventListener('DOMContentLoaded', () => {
-            document.body.classList.add('dark-mode');
-            document.querySelector('.theme-toggle i').className = 'fas fa-sun';
-            localStorage.setItem('theme', 'dark');
+        let audioContext;
+        let audioBuffer;
+        let audioSource;
+        
+        document.getElementById('audioInput').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            const audioPlayer = document.getElementById('audioPlayer');
+            audioPlayer.src = URL.createObjectURL(file);
+            
+            // Load the audio file into AudioContext
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const arrayBuffer = await file.arrayBuffer();
+            audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+            
+            // Update end time input with audio duration
+            document.getElementById('endTime').value = audioBuffer.duration.toFixed(1);
         });
 
-        async function getWeatherData() {
-            try {
-                console.log('Fetching weather data...'); // Debug log
-                const url = 'https://api.open-meteo.com/v1/forecast?latitude=32.0727&longitude=36.088&daily=temperature_2m_max,temperature_2m_min,weathercode&timezone=auto';
-                console.log('URL:', url); // Debug log
-                
-                const response = await fetch(url);
-                const data = await response.json();
-                console.log('Weather data:', data); // Debug log
-                
-                displayWeather(data);
-            } catch (error) {
-                console.error('Detailed error:', error);
-                document.getElementById('weatherContainer').innerHTML = 
-                    `Error loading weather data: ${error.message}`;
-            }
-        }
-
-        function getWeatherDescription(code) {
-            const weatherCodes = {
-                0: 'Clear sky',
-                1: 'Mainly clear',
-                2: 'Partly cloudy',
-                3: 'Overcast',
-                45: 'Foggy',
-                48: 'Depositing rime fog',
-                51: 'Light drizzle',
-                53: 'Moderate drizzle',
-                55: 'Dense drizzle',
-                61: 'Slight rain',
-                63: 'Moderate rain',
-                65: 'Heavy rain',
-                71: 'Slight snow fall',
-                73: 'Moderate snow fall',
-                75: 'Heavy snow fall',
-                95: 'Thunderstorm'
-            };
-            return weatherCodes[code] || 'Unknown';
-        }
-
-        function getWeatherIcon(code) {
-            // Clear and sunny conditions
-            if (code === 0) return '<i class="fas fa-sun"></i>';
-            // Partly cloudy conditions
-            if (code === 1 || code === 2) return '<i class="fas fa-cloud-sun"></i>';
-            // Cloudy conditions
-            if (code === 3) return '<i class="fas fa-cloud"></i>';
-            // Foggy conditions
-            if (code === 45 || code === 48) return '<i class="fas fa-smog"></i>';
-            // Rain conditions
-            if (code >= 51 && code <= 65) return '<i class="fas fa-cloud-rain"></i>';
-            // Snow conditions
-            if (code >= 71 && code <= 75) return '<i class="fas fa-snowflake"></i>';
-            // Thunderstorm
-            if (code === 95) return '<i class="fas fa-bolt"></i>';
-            // Default
-            return '<i class="fas fa-cloud"></i>';
-        }
-
-        function displayWeather(data) {
-            const container = document.getElementById('weatherContainer');
-            container.innerHTML = '';
+        function playTrimmedSection() {
+            if (!audioBuffer) return;
             
-            for(let i = 0; i < 5; i++) {
-                const date = new Date(data.daily.time[i]);
-                const card = document.createElement('div');
-                card.className = 'weather-card';
-                
-                card.innerHTML = `
-                    <div class="date">${date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</div>
-                    <div class="weather-icon">
-                        ${getWeatherIcon(data.daily.weathercode[i])}
-                    </div>
-                    <div class="temperature">
-                        <div>High: ${Math.round(data.daily.temperature_2m_max[i])}°C</div>
-                        <div>Low: ${Math.round(data.daily.temperature_2m_min[i])}°C</div>
-                    </div>
-                    <div class="description">${getWeatherDescription(data.daily.weathercode[i])}</div>
-                `;
-                
-                container.appendChild(card);
+            const startTime = parseFloat(document.getElementById('startTime').value);
+            const endTime = parseFloat(document.getElementById('endTime').value);
+            
+            if (audioSource) {
+                audioSource.stop();
             }
+            
+            audioSource = audioContext.createBufferSource();
+            audioSource.buffer = audioBuffer;
+            audioSource.connect(audioContext.destination);
+            audioSource.start(0, startTime, endTime - startTime);
         }
 
-        // Load only weather data when page loads
-        getWeatherData();
+        async function trimAudio() {
+            if (!audioBuffer) return;
+            
+            const startTime = parseFloat(document.getElementById('startTime').value);
+            const endTime = parseFloat(document.getElementById('endTime').value);
+            
+            const sampleRate = audioBuffer.sampleRate;
+            const channels = audioBuffer.numberOfChannels;
+            const startOffset = Math.floor(startTime * sampleRate);
+            const endOffset = Math.floor(endTime * sampleRate);
+            const frameCount = endOffset - startOffset;
+            
+            const trimmedAudioBuffer = audioContext.createBuffer(
+                channels, 
+                frameCount,
+                sampleRate
+            );
+            
+            for (let channel = 0; channel < channels; channel++) {
+                const channelData = audioBuffer.getChannelData(channel);
+                const trimmedData = trimmedAudioBuffer.getChannelData(channel);
+                for (let i = 0; i < frameCount; i++) {
+                    trimmedData[i] = channelData[i + startOffset];
+                }
+            }
+            
+            // Create download link
+            const audioData = await audioBufferToWav(trimmedAudioBuffer);
+            const blob = new Blob([audioData], { type: 'audio/wav' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'trimmed_audio.wav';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Helper function to convert AudioBuffer to WAV format
+        function audioBufferToWav(audioBuffer) {
+            // Implementation of WAV file format conversion
+            // This is a simplified version - you might want to use a library like wavefile
+            const interleaved = new Float32Array(audioBuffer.length);
+            const channelData = audioBuffer.getChannelData(0);
+            for (let i = 0; i < audioBuffer.length; i++) {
+                interleaved[i] = channelData[i];
+            }
+            
+            const dataView = new DataView(new ArrayBuffer(44 + interleaved.length * 2));
+            const writeString = (view, offset, string) => {
+                for (let i = 0; i < string.length; i++) {
+                    view.setUint8(offset + i, string.charCodeAt(i));
+                }
+            };
+
+            writeString(dataView, 0, 'RIFF');
+            dataView.setUint32(4, 36 + interleaved.length * 2, true);
+            writeString(dataView, 8, 'WAVE');
+            writeString(dataView, 12, 'fmt ');
+            dataView.setUint32(16, 16, true);
+            dataView.setUint16(20, 1, true);
+            dataView.setUint16(22, 1, true);
+            dataView.setUint32(24, audioBuffer.sampleRate, true);
+            dataView.setUint32(28, audioBuffer.sampleRate * 2, true);
+            dataView.setUint16(32, 2, true);
+            dataView.setUint16(34, 16, true);
+            writeString(dataView, 36, 'data');
+            dataView.setUint32(40, interleaved.length * 2, true);
+
+            const volume = 0.5;
+            for (let i = 0; i < interleaved.length; i++) {
+                const sample = Math.max(-1, Math.min(1, interleaved[i]));
+                dataView.setInt16(44 + i * 2, sample * 0x7FFF * volume, true);
+            }
+
+            return dataView.buffer;
+        }
     </script>
 </body>
 </html> 
