@@ -14,13 +14,55 @@
                 padding: 20px;
                 background: #111827;
                 color: #e5e7eb;
+                background-image: 
+                    radial-gradient(circle at 25px 25px, rgba(168, 85, 247, 0.15) 2%, transparent 0%),
+                    radial-gradient(circle at 75px 75px, rgba(168, 85, 247, 0.1) 2%, transparent 0%);
+                background-size: 100px 100px;
+                position: relative;
+                overflow-x: hidden;
             }
-            
+
+            body::before {
+                content: '♪';
+                position: fixed;
+                top: 20%;
+                left: 10%;
+                font-size: 80px;
+                color: rgba(168, 85, 247, 0.1);
+                animation: float 8s ease-in-out infinite;
+            }
+
+            body::after {
+                content: '♫';
+                position: fixed;
+                bottom: 20%;
+                right: 10%;
+                font-size: 100px;
+                color: rgba(168, 85, 247, 0.1);
+                animation: float 6s ease-in-out infinite reverse;
+            }
+
+            @keyframes float {
+                0%, 100% {
+                    transform: translateY(0) rotate(0deg);
+                }
+                50% {
+                    transform: translateY(-20px) rotate(10deg);
+                }
+            }
+
             .container {
-                background: #1f2937;
+                background: rgba(31, 41, 55, 0.95);
+                backdrop-filter: blur(10px);
+                border: 1px solid rgba(168, 85, 247, 0.1);
                 padding: 1.5rem;
                 border-radius: 0.5rem;
                 box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            }
+
+            .container:hover {
+                box-shadow: 0 8px 32px rgba(168, 85, 247, 0.15);
+                transition: box-shadow 0.3s ease;
             }
 
             h1 {
