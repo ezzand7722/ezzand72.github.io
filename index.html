@@ -780,12 +780,11 @@
                     });
                 });
                 
-                // Create a voice with the correct total duration
+                // Create a voice with 4/4 time
                 const voice = new VF.Voice({
-                    num_beats: 4,  
-                    beat_value: 4,
-                    resolution: VF.RESOLUTION
-                });
+                    num_beats: 4,
+                    beat_value: 4
+                }).setMode(VF.Voice.Mode.SOFT);  // Added SOFT mode for more flexible timing
                 
                 // Add the notes to the voice
                 voice.addTickables(vfNotes);
