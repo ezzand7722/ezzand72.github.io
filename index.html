@@ -544,6 +544,14 @@
 
             function undoLastChange() {
                 if (audioHistory.length > 0) {
+                    // Stop playback if playing
+                    if (isPlaying) {
+                        wavesurfer.pause();
+                        isPlaying = false;
+                        const playButton = document.querySelector('button i.fa-play, button i.fa-pause');
+                        playButton.className = 'fas fa-play';
+                    }
+                    
                     // Get the last state
                     audioBuffer = audioHistory.pop();
                     
