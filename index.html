@@ -4,42 +4,123 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Audio Trimmer</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/wavesurfer.js/6.6.3/wavesurfer.min.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
-            max-width: 800px;
+            max-width: 1000px;
             margin: 0 auto;
             padding: 20px;
-            background: #f5f5f5;
+            background: #1a1a1a;
+            color: #ffffff;
         }
+        
         .container {
-            background: white;
-            padding: 20px;
+            background: #2a2a2a;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        h1 {
+            text-align: center;
+            color: #00ff9d;
+            margin-bottom: 30px;
+        }
+
+        .upload-area {
+            border: 2px dashed #444;
             border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .controls {
-            margin: 20px 0;
-        }
-        button {
-            padding: 10px 20px;
-            margin: 5px;
-            background: #007bff;
-            color: white;
-            border: none;
-            border-radius: 4px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
             cursor: pointer;
+            transition: all 0.3s ease;
         }
+
+        .upload-area:hover {
+            border-color: #00ff9d;
+            background: rgba(0, 255, 157, 0.1);
+        }
+
+        #waveform {
+            background: #333;
+            border-radius: 8px;
+            position: relative;
+            margin: 40px 0;
+        }
+
+        .trim-handle {
+            width: 4px;
+            height: 100%;
+            background: #00ff9d;
+            position: absolute;
+            top: 0;
+            cursor: ew-resize;
+            z-index: 2;
+        }
+
+        .trim-handle::after {
+            content: '';
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 20px;
+            background: #00ff9d;
+            border-radius: 50%;
+        }
+
+        .trim-handle.left {
+            left: 0;
+        }
+
+        .trim-handle.right {
+            right: 0;
+        }
+
+        .selection-area {
+            position: absolute;
+            height: 100%;
+            background: rgba(0, 255, 157, 0.2);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            background: #00ff9d;
+            color: #1a1a1a;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
         button:hover {
-            background: #0056b3;
+            background: #00cc7d;
+            transform: translateY(-2px);
         }
-        #timeControls {
-            margin: 20px 0;
+
+        .time-display {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+            font-family: monospace;
+            color: #00ff9d;
         }
-        input[type="number"] {
-            width: 100px;
-            padding: 5px;
-            margin: 0 10px;
+
+        #audioInput {
+            display: none;
         }
     </style>
 </head>
@@ -47,89 +128,138 @@
     <div class="container">
         <h1>Audio Trimmer</h1>
         
-        <input type="file" id="audioInput" accept="audio/*">
+        <div class="upload-area" onclick="document.getElementById('audioInput').click()">
+            <p>Click or drag audio file here</p>
+            <input type="file" id="audioInput" accept="audio/*">
+        </div>
+
+        <div id="waveform"></div>
+        <div class="trim-handle left"></div>
+        <div class="trim-handle right"></div>
+        <div class="selection-area"></div>
         
+        <div class="time-display">
+            <span id="startTime">00:00</span>
+            <span id="endTime">00:00</span>
+        </div>
+
         <div class="controls">
-            <audio id="audioPlayer" controls></audio>
+            <button onclick="playSelection()">Play Selection</button>
+            <button onclick="trimAudio()">Download Trimmed</button>
         </div>
-        
-        <div id="timeControls">
-            <label>Start Time (seconds):
-                <input type="number" id="startTime" min="0" step="0.1" value="0">
-            </label>
-            <label>End Time (seconds):
-                <input type="number" id="endTime" min="0" step="0.1" value="0">
-            </label>
-        </div>
-        
-        <button onclick="trimAudio()">Trim Audio</button>
-        <button onclick="playTrimmedSection()">Preview Trimmed Section</button>
     </div>
 
     <script>
-        let audioContext;
-        let audioBuffer;
-        let audioSource;
-        
-        document.getElementById('audioInput').addEventListener('change', async (e) => {
-            const file = e.target.files[0];
-            const audioPlayer = document.getElementById('audioPlayer');
-            audioPlayer.src = URL.createObjectURL(file);
-            
-            // Load the audio file into AudioContext
-            audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            const arrayBuffer = await file.arrayBuffer();
-            audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-            
-            // Update end time input with audio duration
-            document.getElementById('endTime').value = audioBuffer.duration.toFixed(1);
+        let wavesurfer = WaveSurfer.create({
+            container: '#waveform',
+            waveColor: '#4a4a4a',
+            progressColor: '#00ff9d',
+            cursorColor: '#00ff9d',
+            height: 128,
+            responsive: true,
+            barWidth: 2,
+            barGap: 1
         });
 
-        function playTrimmedSection() {
-            if (!audioBuffer) return;
-            
-            const startTime = parseFloat(document.getElementById('startTime').value);
-            const endTime = parseFloat(document.getElementById('endTime').value);
-            
-            if (audioSource) {
-                audioSource.stop();
-            }
-            
-            audioSource = audioContext.createBufferSource();
-            audioSource.buffer = audioBuffer;
-            audioSource.connect(audioContext.destination);
-            audioSource.start(0, startTime, endTime - startTime);
+        let startPosition = 0;
+        let endPosition = 1;
+        const leftHandle = document.querySelector('.trim-handle.left');
+        const rightHandle = document.querySelector('.trim-handle.right');
+        const selectionArea = document.querySelector('.selection-area');
+
+        document.getElementById('audioInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            wavesurfer.loadBlob(file);
+        });
+
+        wavesurfer.on('ready', function() {
+            updateSelection();
+            document.getElementById('endTime').textContent = formatTime(wavesurfer.getDuration());
+        });
+
+        function formatTime(seconds) {
+            return new Date(seconds * 1000).toISOString().substr(14, 5);
+        }
+
+        function updateSelection() {
+            const width = wavesurfer.container.offsetWidth;
+            selectionArea.style.left = (startPosition * width) + 'px';
+            selectionArea.style.width = ((endPosition - startPosition) * width) + 'px';
+            leftHandle.style.left = (startPosition * width) + 'px';
+            rightHandle.style.left = (endPosition * width) + 'px';
+
+            const duration = wavesurfer.getDuration();
+            document.getElementById('startTime').textContent = formatTime(startPosition * duration);
+            document.getElementById('endTime').textContent = formatTime(endPosition * duration);
+        }
+
+        // Handle dragging
+        [leftHandle, rightHandle].forEach(handle => {
+            handle.addEventListener('mousedown', function(e) {
+                const isLeft = handle === leftHandle;
+                const initialX = e.clientX;
+                const initialPos = isLeft ? startPosition : endPosition;
+                const width = wavesurfer.container.offsetWidth;
+
+                function onMouseMove(e) {
+                    const delta = (e.clientX - initialX) / width;
+                    let newPos = initialPos + delta;
+                    newPos = Math.max(0, Math.min(1, newPos));
+
+                    if (isLeft) {
+                        if (newPos < endPosition) startPosition = newPos;
+                    } else {
+                        if (newPos > startPosition) endPosition = newPos;
+                    }
+                    updateSelection();
+                }
+
+                function onMouseUp() {
+                    document.removeEventListener('mousemove', onMouseMove);
+                    document.removeEventListener('mouseup', onMouseUp);
+                }
+
+                document.addEventListener('mousemove', onMouseMove);
+                document.addEventListener('mouseup', onMouseUp);
+            });
+        });
+
+        function playSelection() {
+            const duration = wavesurfer.getDuration();
+            wavesurfer.play(startPosition * duration, endPosition * duration);
         }
 
         async function trimAudio() {
-            if (!audioBuffer) return;
+            const duration = wavesurfer.getDuration();
+            const startTime = startPosition * duration;
+            const endTime = endPosition * duration;
             
-            const startTime = parseFloat(document.getElementById('startTime').value);
-            const endTime = parseFloat(document.getElementById('endTime').value);
-            
-            const sampleRate = audioBuffer.sampleRate;
-            const channels = audioBuffer.numberOfChannels;
+            // Get the audio data
+            const audioData = wavesurfer.backend.buffer;
+            const sampleRate = audioData.sampleRate;
             const startOffset = Math.floor(startTime * sampleRate);
             const endOffset = Math.floor(endTime * sampleRate);
             const frameCount = endOffset - startOffset;
             
-            const trimmedAudioBuffer = audioContext.createBuffer(
-                channels, 
+            // Create new buffer for trimmed audio
+            const trimmedBuffer = new AudioContext().createBuffer(
+                audioData.numberOfChannels,
                 frameCount,
                 sampleRate
             );
             
-            for (let channel = 0; channel < channels; channel++) {
-                const channelData = audioBuffer.getChannelData(channel);
-                const trimmedData = trimmedAudioBuffer.getChannelData(channel);
+            // Copy the trimmed portion
+            for (let channel = 0; channel < audioData.numberOfChannels; channel++) {
+                const channelData = audioData.getChannelData(channel);
+                const trimmedData = trimmedBuffer.getChannelData(channel);
                 for (let i = 0; i < frameCount; i++) {
                     trimmedData[i] = channelData[i + startOffset];
                 }
             }
             
-            // Create download link
-            const audioData = await audioBufferToWav(trimmedAudioBuffer);
-            const blob = new Blob([audioData], { type: 'audio/wav' });
+            // Convert to WAV and download
+            const wav = audioBufferToWav(trimmedBuffer);
+            const blob = new Blob([wav], { type: 'audio/wav' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
@@ -139,12 +269,10 @@
         }
 
         // Helper function to convert AudioBuffer to WAV format
-        function audioBufferToWav(audioBuffer) {
-            // Implementation of WAV file format conversion
-            // This is a simplified version - you might want to use a library like wavefile
-            const interleaved = new Float32Array(audioBuffer.length);
-            const channelData = audioBuffer.getChannelData(0);
-            for (let i = 0; i < audioBuffer.length; i++) {
+        function audioBufferToWav(buffer) {
+            const interleaved = new Float32Array(buffer.length);
+            const channelData = buffer.getChannelData(0);
+            for (let i = 0; i < buffer.length; i++) {
                 interleaved[i] = channelData[i];
             }
             
@@ -162,8 +290,8 @@
             dataView.setUint32(16, 16, true);
             dataView.setUint16(20, 1, true);
             dataView.setUint16(22, 1, true);
-            dataView.setUint32(24, audioBuffer.sampleRate, true);
-            dataView.setUint32(28, audioBuffer.sampleRate * 2, true);
+            dataView.setUint32(24, buffer.sampleRate, true);
+            dataView.setUint32(28, buffer.sampleRate * 2, true);
             dataView.setUint16(32, 2, true);
             dataView.setUint16(34, 16, true);
             writeString(dataView, 36, 'data');
