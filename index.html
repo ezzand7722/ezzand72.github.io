@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zarqa Weather</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #00b4db, #0083b0);
+            font-family: 'Roboto', sans-serif;
+            padding: 20px;
+            color: white;
+        }
+        .weather-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+            max-width: 1200px;
+            margin: 20px 0;
+        }
+        .weather-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            width: 200px;
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+        .weather-card:hover {
+            transform: translateY(-5px);
+        }
+        .weather-icon {
+            font-size: 2.5em;
+            margin: 10px 0;
+            color: #FFD700;
+        }
+        h1 {
+            color: white;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        .date {
+            font-weight: bold;
+            font-size: 1.2em;
+            margin-bottom: 15px;
+        }
+        .temperature {
+            font-size: 1.3em;
+            margin: 15px 0;
+        }
+        .temperature div {
+            margin: 5px 0;
+        }
+        .description {
+            font-size: 1.1em;
+            margin-top: 10px;
+        }
+        .reddit-container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            margin-top: 30px;
+            max-width: 800px;
+            width: 90%;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .reddit-title {
+            font-size: 1.3em;
+            margin-bottom: 15px;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <h1>5-Day Weather Forecast for Zarqa</h1>
+    <div class="weather-container" id="weatherContainer">
+        Loading weather data...
+    </div>
+    <div class="reddit-container">
+        <div class="reddit-title">From Reddit:</div>
+        <div id="redditContent">Loading Reddit content...</div>
+    </div>
+
+    <script>
+        async function getWeatherData() {
+            try {
+                console.log('Fetching weather data...'); // Debug log
+                const url = 'https://api.open-meteo.com/v1/forecast?latitude=32.0727&longitude=36.088&daily=temperature_2m_max,temperature_2m_min,weathercode&timezone=auto';
+                console.log('URL:', url); // Debug log
+                
+                const response = await fetch(url);
+                const data = await response.json();
+                console.log('Weather data:', data); // Debug log
+                
+                displayWeather(data);
+            } catch (error) {
+                console.error('Detailed error:', error);
+                document.getElementById('weatherContainer').innerHTML = 
+                    `Error loading weather data: ${error.message}`;
+            }
+        }
+
+        function getWeatherDescription(code) {
+            const weatherCodes = {
+                0: 'Clear sky',
+                1: 'Mainly clear',
+                2: 'Partly cloudy',
+                3: 'Overcast',
+                45: 'Foggy',
+                48: 'Depositing rime fog',
+                51: 'Light drizzle',
+                53: 'Moderate drizzle',
+                55: 'Dense drizzle',
+                61: 'Slight rain',
+                63: 'Moderate rain',
+                65: 'Heavy rain',
+                71: 'Slight snow fall',
+                73: 'Moderate snow fall',
+                75: 'Heavy snow fall',
+                95: 'Thunderstorm'
+            };
+            return weatherCodes[code] || 'Unknown';
+        }
+
+        function getWeatherIcon(code) {
+            // Clear and sunny conditions
+            if (code === 0) return '<i class="fas fa-sun"></i>';
+            // Partly cloudy conditions
+            if (code === 1 || code === 2) return '<i class="fas fa-cloud-sun"></i>';
+            // Cloudy conditions
+            if (code === 3) return '<i class="fas fa-cloud"></i>';
+            // Foggy conditions
+            if (code === 45 || code === 48) return '<i class="fas fa-smog"></i>';
+            // Rain conditions
+            if (code >= 51 && code <= 65) return '<i class="fas fa-cloud-rain"></i>';
+            // Snow conditions
+            if (code >= 71 && code <= 75) return '<i class="fas fa-snowflake"></i>';
+            // Thunderstorm
+            if (code === 95) return '<i class="fas fa-bolt"></i>';
+            // Default
+            return '<i class="fas fa-cloud"></i>';
+        }
+
+        function displayWeather(data) {
+            const container = document.getElementById('weatherContainer');
+            container.innerHTML = '';
+            
+            for(let i = 0; i < 5; i++) {
+                const date = new Date(data.daily.time[i]);
+                const card = document.createElement('div');
+                card.className = 'weather-card';
+                
+                card.innerHTML = `
+                    <div class="date">${date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</div>
+                    <div class="weather-icon">
+                        ${getWeatherIcon(data.daily.weathercode[i])}
+                    </div>
+                    <div class="temperature">
+                        <div>High: ${Math.round(data.daily.temperature_2m_max[i])}°C</div>
+                        <div>Low: ${Math.round(data.daily.temperature_2m_min[i])}°C</div>
+                    </div>
+                    <div class="description">${getWeatherDescription(data.daily.weathercode[i])}</div>
+                `;
+                
+                container.appendChild(card);
+            }
+        }
+
+        async function getRedditPost() {
+            try {
+                const response = await fetch(
+                    'https://www.reddit.com/r/Adblock/comments/179pbfl/100_ad_free_youtube_alternative.json'
+                );
+                const data = await response.json();
+                const postTitle = data[0].data.children[0].data.title;
+                document.getElementById('redditContent').textContent = postTitle;
+            } catch (error) {
+                document.getElementById('redditContent').textContent = 
+                    'Error loading Reddit content. Please try again later.';
+                console.error('Error:', error);
+            }
+        }
+
+        // Load both weather and Reddit data when page loads
+        getWeatherData();
+        getRedditPost();
+    </script>
+</body>
+</html> 
