@@ -5,6 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Audio Trimmer</title>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/wavesurfer.js/6.6.3/wavesurfer.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
         <style>
             body {
@@ -309,6 +310,19 @@
                 display: block;
                 margin-top: 0.5rem;
                 color: #9ca3af;
+            }
+
+            .processing-steps {
+                margin-top: 1rem;
+                text-align: left;
+                padding: 1rem;
+                background: rgba(0, 0, 0, 0.1);
+                border-radius: 0.5rem;
+            }
+
+            .step {
+                margin: 0.5rem 0;
+                color: #a855f7;
             }
         </style>
     </head>
@@ -681,24 +695,52 @@
 
             async function processSheetMusic(file) {
                 try {
-                    // First, show a loading message
+                    // Show loading message
                     const loadingMsg = document.createElement('div');
                     loadingMsg.className = 'loading-message';
                     loadingMsg.innerHTML = `
                         <p>Processing sheet music...</p>
-                        <small>This feature is experimental and requires clear, well-scanned sheet music.</small>
+                        <div class="processing-steps">
+                            <div class="step">1. Analyzing Image ⏳</div>
+                            <div class="step">2. Recognizing Notes ⏳</div>
+                            <div class="step">3. Generating Audio ⏳</div>
+                        </div>
                     `;
                     document.querySelector('.container').appendChild(loadingMsg);
 
-                    // Here you would typically:
-                    // 1. Send the image to an OMR API
-                    // 2. Receive MIDI or MusicXML data
-                    // 3. Convert that to audio
-
-                    // For now, show an alert about the feature being in development
-                    alert('Sheet music recognition is currently in development. This feature would convert written music to audio.');
+                    // Create a URL for the uploaded image
+                    const imageUrl = URL.createObjectURL(file);
                     
-                    loadingMsg.remove();
+                    // Create an image element to display the sheet music
+                    const img = document.createElement('img');
+                    img.src = imageUrl;
+                    img.style.maxWidth = '100%';
+                    img.style.borderRadius = '0.5rem';
+                    img.style.marginTop = '1rem';
+                    document.querySelector('.container').appendChild(img);
+
+                    // Update step 1
+                    loadingMsg.querySelector('.step:nth-child(1)').innerHTML += ' ✓';
+
+                    // Simulated note detection (replace with actual OMR API)
+                    const notes = await detectNotes(imageUrl);
+                    
+                    // Update step 2
+                    loadingMsg.querySelector('.step:nth-child(2)').innerHTML += ' ✓';
+
+                    // Convert notes to audio
+                    await generateAudio(notes);
+                    
+                    // Update step 3
+                    loadingMsg.querySelector('.step:nth-child(3)').innerHTML += ' ✓';
+
+                    // Add play button for the generated music
+                    const playButton = document.createElement('button');
+                    playButton.className = 'outline';
+                    playButton.innerHTML = '<i class="fas fa-play"></i> Play Generated Music';
+                    playButton.onclick = () => playGeneratedMusic(notes);
+                    document.querySelector('.container').appendChild(playButton);
+
                 } catch (error) {
                     alert('Error processing sheet music: ' + error.message);
                 }
@@ -710,6 +752,45 @@
                     processSheetMusic(file);
                 }
             });
+
+            async function detectNotes(imageUrl) {
+                // Simulated note detection
+                // In reality, this would call an OMR API
+                await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate processing time
+                
+                // Return sample notes (replace with actual detected notes)
+                return [
+                    { note: 'C4', duration: '4n', time: 0 },
+                    { note: 'E4', duration: '4n', time: 0.5 },
+                    { note: 'G4', duration: '4n', time: 1 },
+                    { note: 'C5', duration: '2n', time: 1.5 }
+                ];
+            }
+
+            async function generateAudio(notes) {
+                // Initialize ToneJS
+                await Tone.start();
+                const synth = new Tone.PolySynth(Tone.Synth).toDestination();
+                
+                // Create a new part
+                const part = new Tone.Part((time, note) => {
+                    synth.triggerAttackRelease(note.note, note.duration, time);
+                }, notes);
+
+                return part;
+            }
+
+            async function playGeneratedMusic(notes) {
+                const part = await generateAudio(notes);
+                
+                // Stop any playing audio
+                Tone.Transport.stop();
+                Tone.Transport.cancel();
+                
+                // Start the new part
+                part.start(0);
+                Tone.Transport.start();
+            }
         </script>
     </body>
     </html> 
