@@ -144,6 +144,18 @@
             #audioInput {
                 display: none;
             }
+
+            button.delete {
+                background: #ef4444;
+                color: white;
+            }
+
+            .deleted-region {
+                position: absolute;
+                height: 100%;
+                background: rgba(239, 68, 68, 0.2);
+                pointer-events: none;
+            }
         </style>
     </head>
     <body>
@@ -172,7 +184,8 @@
 
             <div class="controls">
                 <button onclick="playSelection()">Play Selection</button>
-                <button onclick="trimAudio()">Download Trimmed</button>
+                <button onclick="deleteSelection()" class="delete">Delete Selection</button>
+                <button onclick="saveAudio()">Save Audio</button>
             </div>
         </div>
 
@@ -198,11 +211,16 @@
                 wavesurfer.loadBlob(file);
             });
 
+            let deletedRegions = [];
+            let audioBuffer = null;
+
             wavesurfer.on('ready', function() {
                 startPosition = 0;
                 endPosition = 1;
                 updateRangeSelection();
                 document.getElementById('endTime').textContent = formatTime(wavesurfer.getDuration());
+                audioBuffer = wavesurfer.backend.buffer;
+                deletedRegions = []; // Reset deleted regions when loading new audio
             });
 
             function formatTime(seconds) {
@@ -348,6 +366,92 @@
                 }
 
                 return dataView.buffer;
+            }
+
+            async function deleteSelection() {
+                const duration = wavesurfer.getDuration();
+                const startTime = startPosition * duration;
+                const endTime = endPosition * duration;
+                
+                // Add the region to deleted regions
+                deletedRegions.push({
+                    start: startTime,
+                    end: endTime
+                });
+                
+                // Sort regions by start time
+                deletedRegions.sort((a, b) => a.start - b.start);
+                
+                // Visualize deleted region
+                const waveformRect = wavesurfer.container.getBoundingClientRect();
+                const deletedRegion = document.createElement('div');
+                deletedRegion.className = 'deleted-region';
+                deletedRegion.style.left = `${startPosition * 100}%`;
+                deletedRegion.style.width = `${(endPosition - startPosition) * 100}%`;
+                wavesurfer.container.appendChild(deletedRegion);
+            }
+
+            async function saveAudio() {
+                if (!audioBuffer || deletedRegions.length === 0) {
+                    trimAudio(); // Use existing trim function if no regions are deleted
+                    return;
+                }
+
+                const sampleRate = audioBuffer.sampleRate;
+                const numberOfChannels = audioBuffer.numberOfChannels;
+                
+                // Calculate total duration after removing deleted regions
+                let newDuration = audioBuffer.duration;
+                for (const region of deletedRegions) {
+                    newDuration -= (region.end - region.start);
+                }
+                
+                // Create new buffer for the audio without deleted regions
+                const newBuffer = new AudioContext().createBuffer(
+                    numberOfChannels,
+                    Math.floor(newDuration * sampleRate),
+                    sampleRate
+                );
+
+                // Copy audio data, skipping deleted regions
+                for (let channel = 0; channel < numberOfChannels; channel++) {
+                    const channelData = audioBuffer.getChannelData(channel);
+                    const newChannelData = newBuffer.getChannelData(channel);
+                    let writeIndex = 0;
+                    let readIndex = 0;
+                    
+                    for (const region of deletedRegions) {
+                        const startOffset = Math.floor(region.start * sampleRate);
+                        const endOffset = Math.floor(region.end * sampleRate);
+                        
+                        // Copy audio up to the deleted region
+                        while (readIndex < startOffset) {
+                            newChannelData[writeIndex] = channelData[readIndex];
+                            writeIndex++;
+                            readIndex++;
+                        }
+                        
+                        // Skip the deleted region
+                        readIndex = endOffset;
+                    }
+                    
+                    // Copy remaining audio
+                    while (readIndex < channelData.length) {
+                        newChannelData[writeIndex] = channelData[readIndex];
+                        writeIndex++;
+                        readIndex++;
+                    }
+                }
+                
+                // Convert to WAV and download
+                const wav = audioBufferToWav(newBuffer);
+                const blob = new Blob([wav], { type: 'audio/wav' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'edited_audio.wav';
+                a.click();
+                URL.revokeObjectURL(url);
             }
         </script>
     </body>
