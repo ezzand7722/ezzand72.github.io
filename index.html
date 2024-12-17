@@ -12,7 +12,7 @@
                 max-width: 48rem;
                 margin: 0 auto;
                 padding: 20px;
-                background: #111827;
+                background: #1a1e2e;
                 color: #e5e7eb;
                 background-image: 
                     radial-gradient(circle at 25px 25px, rgba(168, 85, 247, 0.15) 2%, transparent 0%),
@@ -25,9 +25,9 @@
             body::before {
                 content: '♪';
                 position: fixed;
-                top: 20%;
-                left: 10%;
-                font-size: 80px;
+                top: 15%;
+                left: 15%;
+                font-size: 60px;
                 color: rgba(168, 85, 247, 0.1);
                 animation: float 8s ease-in-out infinite;
             }
@@ -35,9 +35,9 @@
             body::after {
                 content: '♫';
                 position: fixed;
-                bottom: 20%;
-                right: 10%;
-                font-size: 100px;
+                bottom: 15%;
+                right: 15%;
+                font-size: 80px;
                 color: rgba(168, 85, 247, 0.1);
                 animation: float 6s ease-in-out infinite reverse;
             }
@@ -248,9 +248,61 @@
             button.outline:hover {
                 background: #f3f4f6;
             }
+
+            .musical-note-1 {
+                content: '♩';
+                position: fixed;
+                top: 30%;
+                right: 20%;
+                font-size: 50px;
+                color: rgba(168, 85, 247, 0.08);
+                animation: floatRotate 7s ease-in-out infinite;
+            }
+
+            .musical-note-2 {
+                content: '♬';
+                position: fixed;
+                bottom: 40%;
+                left: 25%;
+                font-size: 70px;
+                color: rgba(168, 85, 247, 0.12);
+                animation: floatRotate 9s ease-in-out infinite reverse;
+            }
+
+            .musical-note-3 {
+                content: '♪';
+                position: fixed;
+                top: 60%;
+                right: 30%;
+                font-size: 45px;
+                color: rgba(168, 85, 247, 0.1);
+                animation: float 10s ease-in-out infinite;
+            }
+
+            @keyframes floatRotate {
+                0%, 100% {
+                    transform: translateY(0) rotate(0deg);
+                }
+                50% {
+                    transform: translateY(-30px) rotate(15deg);
+                }
+            }
+
+            @keyframes pulse {
+                0%, 100% {
+                    opacity: 0.1;
+                }
+                50% {
+                    opacity: 0.3;
+                }
+            }
         </style>
     </head>
     <body>
+        <div class="musical-note-1">♩</div>
+        <div class="musical-note-2">♬</div>
+        <div class="musical-note-3">♪</div>
+
         <div class="container">
             <h1>Audio Trimmer</h1>
             
