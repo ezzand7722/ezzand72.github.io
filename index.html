@@ -8,7 +8,7 @@
         <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
         <script src="https://unpkg.com/vexflow/releases/vexflow-min.js"></script>
-        <script src="https://unpkg.com/soundfont-player"></script>
+        <script src="https://unpkg.com/soundfont-player@0.12.0/dist/soundfont-player.min.js"></script>
         <style>
             body {
                 font-family: Arial, sans-serif;
@@ -799,40 +799,48 @@
             }
 
             async function createAudioFromNotes(notes) {
-                const ac = new AudioContext();
-                const player = new Soundfont.Player(ac);
-                
-                // Load a piano soundfont
-                const instrument = await player.load('acoustic_grand_piano');
-                
-                let isPlaying = false;
-                let currentTime = 0;
-                
-                return {
-                    play: () => {
-                        if (isPlaying) return;
-                        isPlaying = true;
-                        
-                        notes.forEach(note => {
-                            instrument.play(note.pitch, ac.currentTime + note.time, {
-                                duration: note.duration,
-                                gain: note.velocity / 127
-                            });
-                        });
-                    },
-                    stop: () => {
-                        if (!isPlaying) return;
-                        isPlaying = false;
-                        instrument.stop();
-                    },
-                    seek: (time) => {
-                        currentTime = time;
-                        if (isPlaying) {
-                            this.stop();
-                            this.play();
-                        }
+                try {
+                    const ac = new AudioContext();
+                    // Make sure Soundfont is loaded
+                    if (typeof Soundfont === 'undefined') {
+                        throw new Error('Soundfont library not loaded');
                     }
-                };
+                    
+                    // Create player
+                    const player = await Soundfont.instrument(ac, 'acoustic_grand_piano');
+                    
+                    let isPlaying = false;
+                    let currentTime = 0;
+                    
+                    return {
+                        play: () => {
+                            if (isPlaying) return;
+                            isPlaying = true;
+                            
+                            notes.forEach(note => {
+                                player.play(note.pitch, ac.currentTime + note.time, {
+                                    duration: note.duration,
+                                    gain: note.velocity / 127
+                                });
+                            });
+                        },
+                        stop: () => {
+                            if (!isPlaying) return;
+                            isPlaying = false;
+                            player.stop();
+                        },
+                        seek: (time) => {
+                            currentTime = time;
+                            if (isPlaying) {
+                                this.stop();
+                                this.play();
+                            }
+                        }
+                    };
+                } catch (error) {
+                    console.error('Error creating audio player:', error);
+                    throw error;
+                }
             }
 
             function addPlaybackControls(player) {
