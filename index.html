@@ -968,52 +968,59 @@
             let videoEndTime = 0;
             let currentVideoPath = '';
 
-            document.getElementById('mediaInput').addEventListener('change', function(e) {
+            document.getElementById('mediaInput').addEventListener('change', async function(e) {
                 const file = e.target.files[0];
                 if (!file) return;
 
-                if (file.type.startsWith('video/')) {
-                    handleVideoUpload(file);
-                } else if (file.type.startsWith('audio/')) {
-                    // Existing audio handling code
-                    wavesurfer.loadBlob(file);
-                }
-            });
-
-            async function handleVideoUpload(file) {
                 const formData = new FormData();
-                formData.append('video', file);
+                formData.append('media', file);
 
                 try {
-                    const response = await fetch('/api/process-video', {
+                    const response = await fetch('http://localhost:3000/api/process-media', {
                         method: 'POST',
                         body: formData
                     });
 
+                    if (!response.ok) {
+                        throw new Error('Failed to process media');
+                    }
+
                     const data = await response.json();
-                    if (!response.ok) throw new Error(data.error);
 
-                    currentVideoPath = data.path;
-                    document.getElementById('videoContainer').style.display = 'block';
-                    document.getElementById('waveform').style.display = 'none';
+                    if (file.type.startsWith('video/')) {
+                        // Handle video
+                        document.getElementById('videoContainer').style.display = 'block';
+                        document.getElementById('waveform').style.display = 'none';
 
-                    // Initialize video player
-                    if (videoPlayer) videoPlayer.dispose();
-                    
-                    videoPlayer = videojs('videoPlayer', {
-                        controls: true,
-                        fluid: true
-                    });
+                        if (videoPlayer) videoPlayer.dispose();
+                        
+                        videoPlayer = videojs('videoPlayer', {
+                            controls: true,
+                            fluid: true
+                        });
 
-                    videoPlayer.src({ type: 'video/mp4', src: URL.createObjectURL(file) });
-                    videoEndTime = data.duration;
-                    
-                    initializeVideoTrimming();
+                        videoPlayer.src({ 
+                            type: file.type, 
+                            src: data.url 
+                        });
+                        
+                        videoEndTime = data.duration;
+                        currentVideoPath = data.path;
+                        initializeVideoTrimming();
+
+                    } else if (file.type.startsWith('audio/')) {
+                        // Handle audio
+                        document.getElementById('videoContainer').style.display = 'none';
+                        document.getElementById('waveform').style.display = 'block';
+                        
+                        wavesurfer.load(data.url);
+                    }
+
                 } catch (error) {
-                    console.error('Error uploading video:', error);
-                    alert('Error uploading video: ' + error.message);
+                    console.error('Error processing media:', error);
+                    alert('Error processing media file: ' + error.message);
                 }
-            }
+            });
 
             function initializeVideoTrimming() {
                 const trimMarkers = document.querySelector('.trim-markers');
