@@ -296,6 +296,20 @@
                     opacity: 0.3;
                 }
             }
+
+            .loading-message {
+                text-align: center;
+                margin-top: 1rem;
+                padding: 1rem;
+                background: rgba(168, 85, 247, 0.1);
+                border-radius: 0.5rem;
+            }
+
+            .loading-message small {
+                display: block;
+                margin-top: 0.5rem;
+                color: #9ca3af;
+            }
         </style>
     </head>
     <body>
@@ -347,8 +361,14 @@
                     <i class="fas fa-download"></i>
                     Save
                 </button>
+                <button onclick="document.getElementById('sheetInput').click()" class="outline">
+                    <i class="fas fa-music"></i>
+                    Read Sheet Music
+                </button>
             </div>
         </div>
+
+        <input type="file" id="sheetInput" accept="image/*" style="display: none;">
 
         <script>
             let wavesurfer = WaveSurfer.create({
@@ -658,6 +678,38 @@
                     updateRangeSelection();
                 }
             }
+
+            async function processSheetMusic(file) {
+                try {
+                    // First, show a loading message
+                    const loadingMsg = document.createElement('div');
+                    loadingMsg.className = 'loading-message';
+                    loadingMsg.innerHTML = `
+                        <p>Processing sheet music...</p>
+                        <small>This feature is experimental and requires clear, well-scanned sheet music.</small>
+                    `;
+                    document.querySelector('.container').appendChild(loadingMsg);
+
+                    // Here you would typically:
+                    // 1. Send the image to an OMR API
+                    // 2. Receive MIDI or MusicXML data
+                    // 3. Convert that to audio
+
+                    // For now, show an alert about the feature being in development
+                    alert('Sheet music recognition is currently in development. This feature would convert written music to audio.');
+                    
+                    loadingMsg.remove();
+                } catch (error) {
+                    alert('Error processing sheet music: ' + error.message);
+                }
+            }
+
+            document.getElementById('sheetInput').addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    processSheetMusic(file);
+                }
+            });
         </script>
     </body>
     </html> 
