@@ -296,14 +296,6 @@
                     opacity: 0.3;
                 }
             }
-
-            button.outline i.fa-microphone-slash {
-                color: #dc2626;
-            }
-
-            button.outline:hover i.fa-microphone-slash {
-                color: #a855f7;
-            }
         </style>
     </head>
     <body>
@@ -320,11 +312,6 @@
             </div>
 
             <div id="waveform"></div>
-
-            <div id="processingMessage" style="display: none; text-align: center; margin-top: 1rem;">
-                <p>Please wait while AI works magic for you...</p>
-                <progress id="processingProgress" value="0" max="100" style="width: 100%;"></progress>
-            </div>
 
             <div class="range-slider">
                 <div class="range-track">
@@ -359,10 +346,6 @@
                 <button onclick="saveAudio()">
                     <i class="fas fa-download"></i>
                     Save
-                </button>
-                <button onclick="removeVocals()" class="outline">
-                    <i class="fas fa-microphone-slash"></i>
-                    Remove Vocals
                 </button>
             </div>
         </div>
@@ -674,113 +657,6 @@
                     endPosition = 1;
                     updateRangeSelection();
                 }
-            }
-
-            async function removeVocals() {
-                if (!wavesurfer) return;
-
-                // Stop playback if it's playing
-                if (isPlaying) {
-                    wavesurfer.pause();
-                    isPlaying = false;
-                    const playButton = document.querySelector('button i.fa-play, button i.fa-pause');
-                    playButton.className = 'fas fa-play';
-                }
-
-                const originalBuffer = wavesurfer.backend.buffer;
-
-                // Save to history for undo functionality
-                audioHistory.push(originalBuffer);
-                if (audioHistory.length > MAX_HISTORY) {
-                    audioHistory.shift();
-                }
-
-                // Show processing message
-                document.getElementById('processingMessage').style.display = 'block';
-                const progressBar = document.getElementById('processingProgress');
-
-                const numberOfChannels = originalBuffer.numberOfChannels;
-                const sampleRate = originalBuffer.sampleRate;
-                const length = originalBuffer.length;
-
-                const chunkSize = sampleRate * 1; // Process in 1-second chunks
-                const numChunks = Math.ceil(length / chunkSize);
-
-                const newBuffer = new AudioContext().createBuffer(
-                    numberOfChannels,
-                    length,
-                    sampleRate
-                );
-
-                for (let chunkIndex = 0; chunkIndex < numChunks; chunkIndex++) {
-                    const startSample = chunkIndex * chunkSize;
-                    const endSample = Math.min(startSample + chunkSize, length);
-
-                    // Process each channel
-                    for (let channel = 0; channel < numberOfChannels; channel++) {
-                        const inputChannelData = originalBuffer.getChannelData(channel).subarray(startSample, endSample);
-                        const outputChannelData = newBuffer.getChannelData(channel);
-
-                        // Process the chunk to remove vocals
-                        const processedChunk = processChunk(inputChannelData, channel, numberOfChannels, startSample, endSample, originalBuffer);
-
-                        // Copy processed data back to the new buffer
-                        outputChannelData.set(processedChunk, startSample);
-                    }
-
-                    // Update progress
-                    const progress = Math.floor(((chunkIndex + 1) / numChunks) * 100);
-                    progressBar.value = progress;
-
-                    // Allow UI to update
-                    await new Promise(resolve => setTimeout(resolve, 10));
-                }
-
-                // Hide processing message
-                document.getElementById('processingMessage').style.display = 'none';
-
-                // Load the processed buffer into WaveSurfer
-                wavesurfer.loadDecodedBuffer(newBuffer);
-
-                // Reset selection positions
-                startPosition = 0;
-                endPosition = 1;
-                updateRangeSelection();
-            }
-
-            function processChunk(inputChannelData, channel, numberOfChannels, startSample, endSample, originalBuffer) {
-                const length = inputChannelData.length;
-                const outputData = new Float32Array(length);
-
-                if (numberOfChannels === 2) {
-                    // For stereo audio, get the other channel
-                    const otherChannel = channel === 0 ? 1 : 0;
-                    const otherChannelData = originalBuffer.getChannelData(otherChannel).subarray(startSample, endSample);
-
-                    for (let i = 0; i < length; i++) {
-                        // Get the center channel (where vocals usually are)
-                        const centerChannel = (inputChannelData[i] + otherChannelData[i]) * 0.5;
-                        
-                        // Subtract center channel (vocals) from the original
-                        // and boost the remaining frequencies (instruments)
-                        outputData[i] = (inputChannelData[i] - centerChannel) * 2.0;
-
-                        // Add back some of the low frequencies
-                        if (i > 0) {
-                            outputData[i] += outputData[i - 1] * 0.3;
-                        }
-
-                        // Prevent clipping
-                        outputData[i] = Math.max(-1, Math.min(1, outputData[i]));
-                    }
-                } else {
-                    // For mono audio, return the original data
-                    for (let i = 0; i < length; i++) {
-                        outputData[i] = inputChannelData[i];
-                    }
-                }
-
-                return outputData;
             }
         </script>
     </body>
