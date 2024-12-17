@@ -326,6 +326,22 @@
                 margin: 0.5rem 0;
                 color: #a855f7;
             }
+
+            #videoContainer {
+                background: #2d3748;
+                border-radius: 0.5rem;
+                overflow: hidden;
+                margin: 20px 0;
+            }
+
+            #videoElement {
+                width: 100%;
+                border-radius: 0.5rem;
+            }
+
+            .upload-area p {
+                margin-bottom: 0.5rem;
+            }
         </style>
     </head>
     <body>
@@ -336,12 +352,18 @@
         <div class="container">
             <h1>Audio Trimmer</h1>
             
-            <div class="upload-area" onclick="document.getElementById('audioInput').click()">
-                <p>Click or drag audio file here</p>
-                <input type="file" id="audioInput" accept="audio/*">
+            <div class="upload-area" onclick="document.getElementById('mediaInput').click()">
+                <p>Click or drag audio/video file here</p>
+                <input type="file" id="mediaInput" accept="audio/*,video/*">
             </div>
 
             <div id="waveform"></div>
+
+            <div id="videoContainer" style="display: none; margin: 20px 0;">
+                <video id="videoElement" width="100%" controls>
+                    Your browser does not support the video element.
+                </video>
+            </div>
 
             <div class="range-slider">
                 <div class="range-track">
@@ -403,9 +425,24 @@
             const leftHandle = document.querySelector('.range-handle.left');
             const rightHandle = document.querySelector('.range-handle.right');
 
-            document.getElementById('audioInput').addEventListener('change', function(e) {
+            document.getElementById('mediaInput').addEventListener('change', function(e) {
                 const file = e.target.files[0];
-                wavesurfer.loadBlob(file);
+                
+                // Check if it's a video file
+                if (file.type.startsWith('video/')) {
+                    // Show video player
+                    document.getElementById('videoContainer').style.display = 'block';
+                    const videoElement = document.getElementById('videoElement');
+                    videoElement.src = URL.createObjectURL(file);
+                    
+                    // Extract audio from video for waveform
+                    extractAudioFromVideo(file);
+                } else {
+                    // Hide video player
+                    document.getElementById('videoContainer').style.display = 'none';
+                    // Load audio directly
+                    wavesurfer.loadBlob(file);
+                }
             });
 
             let startPosition = 0;
@@ -650,16 +687,23 @@
             }
 
             async function saveAudio() {
-                if (!audioBuffer) return;
+                const isVideo = document.getElementById('videoContainer').style.display !== 'none';
                 
-                const wav = audioBufferToWav(audioBuffer);
-                const blob = new Blob([wav], { type: 'audio/wav' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'edited_audio.wav';
-                a.click();
-                URL.revokeObjectURL(url);
+                if (isVideo) {
+                    // Save video with edited audio
+                    await saveVideoWithAudio();
+                } else {
+                    // Existing audio save logic
+                    if (!audioBuffer) return;
+                    const wav = audioBufferToWav(audioBuffer);
+                    const blob = new Blob([wav], { type: 'audio/wav' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'edited_media.wav';
+                    a.click();
+                    URL.revokeObjectURL(url);
+                }
             }
 
             function restartAudio() {
@@ -855,6 +899,68 @@
                     processSheetMusic(file);
                 }
             });
+
+            // Add this function to extract audio from video
+            async function extractAudioFromVideo(videoFile) {
+                const audioContext = new AudioContext();
+                const videoElement = document.createElement('video');
+                videoElement.src = URL.createObjectURL(videoFile);
+                
+                // Create media source
+                const mediaSource = audioContext.createMediaElementSource(videoElement);
+                const destination = audioContext.createMediaStreamDestination();
+                mediaSource.connect(destination);
+                
+                // Play video (muted) to extract audio
+                videoElement.muted = true;
+                await videoElement.play();
+                
+                // Create MediaRecorder to capture audio
+                const mediaRecorder = new MediaRecorder(destination.stream);
+                const chunks = [];
+                
+                mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
+                mediaRecorder.onstop = async () => {
+                    const audioBlob = new Blob(chunks, { type: 'audio/wav' });
+                    wavesurfer.loadBlob(audioBlob);
+                };
+                
+                mediaRecorder.start();
+                
+                // Record for the duration of the video
+                setTimeout(() => {
+                    mediaRecorder.stop();
+                    videoElement.pause();
+                }, videoElement.duration * 1000);
+            }
+
+            // Add function to save video with edited audio
+            async function saveVideoWithAudio() {
+                const videoElement = document.getElementById('videoElement');
+                const stream = videoElement.captureStream();
+                const mediaRecorder = new MediaRecorder(stream);
+                const chunks = [];
+                
+                mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
+                mediaRecorder.onstop = () => {
+                    const blob = new Blob(chunks, { type: 'video/webm' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'edited_video.webm';
+                    a.click();
+                    URL.revokeObjectURL(url);
+                };
+                
+                mediaRecorder.start();
+                videoElement.currentTime = 0;
+                await videoElement.play();
+                
+                setTimeout(() => {
+                    mediaRecorder.stop();
+                    videoElement.pause();
+                }, videoElement.duration * 1000);
+            }
         </script>
     </body>
     </html> 
