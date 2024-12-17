@@ -23,39 +23,12 @@
             align-items: center;
             min-height: 100vh;
             margin: 0;
-            background: var(--bg-gradient-light);
+            background: var(--bg-gradient-dark);
             font-family: 'Roboto', sans-serif;
             padding: 20px;
-            color: var(--text-color-light);
+            color: var(--text-color-dark);
             position: relative;
             overflow-x: hidden;
-            transition: background 0.3s ease;
-        }
-
-        body.dark-mode {
-            background: var(--bg-gradient-dark);
-            color: var(--text-color-dark);
-        }
-
-        .theme-toggle {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: rgba(255, 255, 255, 0.1);
-            border: none;
-            padding: 10px 20px;
-            border-radius: 20px;
-            color: inherit;
-            cursor: pointer;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            transition: all 0.3s ease;
-            font-size: 1em;
-        }
-
-        .theme-toggle:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
         }
 
         .weather-container {
@@ -67,7 +40,7 @@
             margin: 20px 0;
         }
         .weather-card {
-            background: var(--card-bg-light);
+            background: var(--card-bg-dark);
             backdrop-filter: blur(10px);
             border-radius: 15px;
             padding: 25px;
@@ -78,17 +51,9 @@
             transition: all 0.3s ease;
         }
 
-        body.dark-mode .weather-card {
-            background: var(--card-bg-dark);
-        }
-
         .weather-icon {
             font-size: 2.5em;
             margin: 10px 0;
-            color: var(--icon-color-light);
-        }
-
-        body.dark-mode .weather-icon {
             color: var(--icon-color-dark);
         }
 
@@ -117,39 +82,17 @@
     </style>
 </head>
 <body>
-    <button class="theme-toggle" onclick="toggleTheme()">
-        <i class="fas fa-moon"></i> Toggle Theme
-    </button>
     <h1>5-Day Weather Forecast for Zarqa</h1>
     <div class="weather-container" id="weatherContainer">
         Loading weather data...
     </div>
 
     <script>
-        function toggleTheme() {
-            const body = document.body;
-            const themeToggle = document.querySelector('.theme-toggle');
-            const icon = themeToggle.querySelector('i');
-            
-            body.classList.toggle('dark-mode');
-            
-            // Update icon based on theme
-            if (body.classList.contains('dark-mode')) {
-                icon.className = 'fas fa-sun';
-                localStorage.setItem('theme', 'dark');
-            } else {
-                icon.className = 'fas fa-moon';
-                localStorage.setItem('theme', 'light');
-            }
-        }
-
         // Check for saved theme preference
         document.addEventListener('DOMContentLoaded', () => {
-            const savedTheme = localStorage.getItem('theme');
-            if (savedTheme === 'dark') {
-                document.body.classList.add('dark-mode');
-                document.querySelector('.theme-toggle i').className = 'fas fa-sun';
-            }
+            document.body.classList.add('dark-mode');
+            document.querySelector('.theme-toggle i').className = 'fas fa-sun';
+            localStorage.setItem('theme', 'dark');
         });
 
         async function getWeatherData() {
