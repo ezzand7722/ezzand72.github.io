@@ -150,10 +150,15 @@
         </div>
 
         <div id="waveform"></div>
-        <div class="trim-handle left"></div>
-        <div class="trim-handle right"></div>
-        <div class="selection-area"></div>
-        
+
+        <div class="range-slider">
+            <div class="range-track">
+                <div class="range-selection"></div>
+                <div class="range-handle left"></div>
+                <div class="range-handle right"></div>
+            </div>
+        </div>
+
         <div class="time-display">
             <span id="startTime">00:00</span>
             <span id="endTime">00:00</span>
@@ -177,11 +182,10 @@
             barGap: 1
         });
 
-        let startPosition = 0;
-        let endPosition = 1;
-        const leftHandle = document.querySelector('.trim-handle.left');
-        const rightHandle = document.querySelector('.trim-handle.right');
-        const selectionArea = document.querySelector('.selection-area');
+        const rangeSlider = document.querySelector('.range-slider');
+        const rangeSelection = document.querySelector('.range-selection');
+        const leftHandle = document.querySelector('.range-handle.left');
+        const rightHandle = document.querySelector('.range-handle.right');
 
         document.getElementById('audioInput').addEventListener('change', function(e) {
             const file = e.target.files[0];
@@ -191,31 +195,23 @@
         wavesurfer.on('ready', function() {
             startPosition = 0;
             endPosition = 1;
-            updateSelection();
+            updateRangeSelection();
             document.getElementById('endTime').textContent = formatTime(wavesurfer.getDuration());
-            
-            const waveformRect = wavesurfer.container.getBoundingClientRect();
-            leftHandle.style.left = waveformRect.left + 'px';
-            rightHandle.style.left = (waveformRect.right - 4) + 'px';
         });
 
         function formatTime(seconds) {
             return new Date(seconds * 1000).toISOString().substr(14, 5);
         }
 
-        function updateSelection() {
-            const waveformRect = wavesurfer.container.getBoundingClientRect();
-            const containerRect = wavesurfer.container.parentElement.getBoundingClientRect();
-            const offsetLeft = waveformRect.left - containerRect.left;
+        function updateRangeSelection() {
+            const width = rangeSlider.offsetWidth;
+            const leftPos = startPosition * width;
+            const rightPos = endPosition * width;
             
-            const width = waveformRect.width;
-            const leftPos = offsetLeft + (startPosition * width);
-            const rightPos = offsetLeft + (endPosition * width);
-            
-            selectionArea.style.left = leftPos + 'px';
-            selectionArea.style.width = (rightPos - leftPos) + 'px';
-            leftHandle.style.left = leftPos + 'px';
-            rightHandle.style.left = (rightPos - 4) + 'px';
+            rangeSelection.style.left = `${leftPos}px`;
+            rangeSelection.style.width = `${rightPos - leftPos}px`;
+            leftHandle.style.left = `${leftPos}px`;
+            rightHandle.style.left = `${rightPos}px`;
 
             const duration = wavesurfer.getDuration();
             document.getElementById('startTime').textContent = formatTime(startPosition * duration);
@@ -228,8 +224,7 @@
                 const isLeft = handle === leftHandle;
                 const initialX = e.clientX;
                 const initialPos = isLeft ? startPosition : endPosition;
-                const waveformRect = wavesurfer.container.getBoundingClientRect();
-                const width = waveformRect.width;
+                const width = rangeSlider.offsetWidth;
 
                 function onMouseMove(e) {
                     const delta = (e.clientX - initialX) / width;
@@ -237,11 +232,16 @@
                     newPos = Math.max(0, Math.min(1, newPos));
 
                     if (isLeft) {
-                        if (newPos < endPosition) startPosition = newPos;
+                        if (newPos < endPosition) {
+                            startPosition = newPos;
+                            wavesurfer.seekTo(startPosition);
+                        }
                     } else {
-                        if (newPos > startPosition) endPosition = newPos;
+                        if (newPos > startPosition) {
+                            endPosition = newPos;
+                        }
                     }
-                    updateSelection();
+                    updateRangeSelection();
                 }
 
                 function onMouseUp() {
