@@ -50,8 +50,9 @@
 
             .controls {
                 display: flex;
-                justify-content: space-between;
-                align-items: center;
+                gap: 8px;
+                flex-wrap: wrap;
+                justify-content: center;
                 margin-top: 1rem;
             }
 
@@ -156,6 +157,10 @@
                 background: rgba(239, 68, 68, 0.2);
                 pointer-events: none;
             }
+
+            button.outline:hover {
+                background: #f3f4f6;
+            }
         </style>
     </head>
     <body>
@@ -184,7 +189,9 @@
 
             <div class="controls">
                 <button onclick="playSelection()">Play Selection</button>
+                <button onclick="stopAudio()" class="outline">Stop</button>
                 <button onclick="deleteSelection()" class="delete">Delete Selection</button>
+                <button onclick="undoLastChange()" class="outline">Undo</button>
                 <button onclick="saveAudio()">Save Audio</button>
             </div>
         </div>
@@ -213,6 +220,8 @@
 
             let deletedRegions = [];
             let audioBuffer = null;
+            let audioHistory = [];
+            const MAX_HISTORY = 10; // Maximum number of undo steps
 
             wavesurfer.on('ready', function() {
                 startPosition = 0;
@@ -371,6 +380,12 @@
             async function deleteSelection() {
                 if (!wavesurfer || !audioBuffer) return;
                 
+                // Save current state to history
+                audioHistory.push(audioBuffer.slice(0)); // Create a copy of current buffer
+                if (audioHistory.length > MAX_HISTORY) {
+                    audioHistory.shift(); // Remove oldest state if we exceed max history
+                }
+                
                 const duration = wavesurfer.getDuration();
                 const startTime = startPosition * duration;
                 const endTime = endPosition * duration;
@@ -433,6 +448,28 @@
                 a.download = 'edited_audio.wav';
                 a.click();
                 URL.revokeObjectURL(url);
+            }
+
+            function stopAudio() {
+                if (wavesurfer) {
+                    wavesurfer.stop();
+                    setIsPlaying(false);
+                }
+            }
+
+            function undoLastChange() {
+                if (audioHistory.length > 0) {
+                    // Get the last state
+                    audioBuffer = audioHistory.pop();
+                    
+                    // Load the previous state
+                    wavesurfer.loadDecodedBuffer(audioBuffer);
+                    
+                    // Reset positions
+                    startPosition = 0;
+                    endPosition = 1;
+                    updateRangeSelection();
+                }
             }
         </script>
     </body>
