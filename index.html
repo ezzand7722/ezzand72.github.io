@@ -696,9 +696,10 @@
             }
 
             async function processSheetMusic(file) {
+                const loadingMsg = document.createElement('div');
+                loadingMsg.className = 'loading-message';
+                
                 try {
-                    const loadingMsg = document.createElement('div');
-                    loadingMsg.className = 'loading-message';
                     loadingMsg.innerHTML = `
                         <p>Processing sheet music...</p>
                         <div class="processing-steps">
@@ -712,31 +713,46 @@
                     const formData = new FormData();
                     formData.append('sheet_music', file);
 
-                    // Send to your local server
+                    console.log('Sending request to server...');
+                    
                     const response = await fetch('http://localhost:3000/api/process-sheet-music', {
                         method: 'POST',
                         body: formData
                     });
 
                     if (!response.ok) {
-                        throw new Error('Failed to process sheet music');
+                        const errorData = await response.json();
+                        throw new Error(errorData.error || 'Failed to process sheet music');
                     }
 
                     const result = await response.json();
+                    console.log('Received response:', result);
+
+                    // Update step 1
+                    loadingMsg.querySelector('.step:nth-child(1)').innerHTML += ' ✓';
                     
                     // Display the recognized sheet music
                     await displayRecognizedNotes(result.notes);
+                    loadingMsg.querySelector('.step:nth-child(2)').innerHTML += ' ✓';
                     
                     // Create the audio player
                     const player = await createAudioFromNotes(result.notes);
+                    loadingMsg.querySelector('.step:nth-child(3)').innerHTML += ' ✓';
                     
                     // Add playback controls
                     addPlaybackControls(player);
 
-                    loadingMsg.remove();
+                    // Remove loading message after a short delay
+                    setTimeout(() => {
+                        loadingMsg.remove();
+                    }, 2000);
+
                 } catch (error) {
                     console.error('Error:', error);
-                    alert('Error processing sheet music: ' + error.message);
+                    loadingMsg.innerHTML = `
+                        <p style="color: #dc2626;">Error: ${error.message}</p>
+                        <small>Please try again with a different image.</small>
+                    `;
                 }
             }
 
