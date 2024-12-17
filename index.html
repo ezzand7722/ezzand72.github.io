@@ -674,7 +674,7 @@
             async function removeVocals() {
                 if (!wavesurfer) return;
                 
-                // Stop playback if playing
+                // Stop playback if it's playing
                 if (isPlaying) {
                     wavesurfer.pause();
                     isPlaying = false;
@@ -682,59 +682,44 @@
                     playButton.className = 'fas fa-play';
                 }
                 
-                const buffer = wavesurfer.backend.buffer;
-                
-                // Check if audio is stereo
-                if (buffer.numberOfChannels !== 2) {
-                    alert('Vocal removal requires stereo audio (2 channels)');
-                    return;
-                }
-                
-                // Create audio context
-                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                
-                // Create new buffer
-                const newBuffer = audioCtx.createBuffer(
-                    2,
-                    buffer.length,
-                    buffer.sampleRate
-                );
-                
-                // Get audio channels
-                const leftChannel = buffer.getChannelData(0);
-                const rightChannel = buffer.getChannelData(1);
-                const newLeft = newBuffer.getChannelData(0);
-                const newRight = newBuffer.getChannelData(1);
-                
-                // Process audio
-                for (let i = 0; i < buffer.length; i++) {
-                    // Get center and side signals
-                    const center = (leftChannel[i] + rightChannel[i]) / 2;
-                    const side = (leftChannel[i] - rightChannel[i]) / 2;
-                    
-                    // Reduce center channel and boost sides
-                    const centerReduction = 0.7; // Adjust this value to control vocal removal strength
-                    const sideBoost = 1.5;      // Adjust this value to boost instruments
-                    
-                    // Apply to both channels
-                    newLeft[i] = (leftChannel[i] - (center * centerReduction)) * sideBoost;
-                    newRight[i] = (rightChannel[i] - (center * centerReduction)) * sideBoost;
-                    
-                    // Prevent clipping
-                    newLeft[i] = Math.max(-1, Math.min(1, newLeft[i]));
-                    newRight[i] = Math.max(-1, Math.min(1, newRight[i]));
-                }
-                
-                // Save to history before applying changes
-                audioHistory.push(buffer);
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const source = audioContext.createBufferSource();
+                const originalBuffer = wavesurfer.backend.buffer;
+
+                // Save to history for undo functionality
+                audioHistory.push(originalBuffer);
                 if (audioHistory.length > MAX_HISTORY) {
                     audioHistory.shift();
                 }
-                
-                // Load processed audio
-                wavesurfer.loadDecodedBuffer(newBuffer);
-                
-                // Reset positions
+
+                // Create an OfflineAudioContext for processing
+                const offlineContext = new OfflineAudioContext(
+                    originalBuffer.numberOfChannels,
+                    originalBuffer.length,
+                    originalBuffer.sampleRate
+                );
+
+                const offlineSource = offlineContext.createBufferSource();
+                offlineSource.buffer = originalBuffer;
+
+                // Create a BiquadFilterNode for the notch filter
+                const notchFilter = offlineContext.createBiquadFilter();
+                notchFilter.type = 'bandstop';
+                notchFilter.frequency.value = 1000; // Center frequency to reduce vocals
+                notchFilter.Q.value = 0.7; // Quality factor to adjust bandwidth
+
+                offlineSource.connect(notchFilter);
+                notchFilter.connect(offlineContext.destination);
+
+                offlineSource.start(0);
+
+                // Render the processed audio buffer
+                const processedBuffer = await offlineContext.startRendering();
+
+                // Load the processed buffer into WaveSurfer
+                wavesurfer.loadDecodedBuffer(processedBuffer);
+
+                // Reset selection positions
                 startPosition = 0;
                 endPosition = 1;
                 updateRangeSelection();
