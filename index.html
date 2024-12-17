@@ -369,82 +369,63 @@
             }
 
             async function deleteSelection() {
+                if (!wavesurfer || !audioBuffer) return;
+                
                 const duration = wavesurfer.getDuration();
                 const startTime = startPosition * duration;
                 const endTime = endPosition * duration;
                 
-                // Add the region to deleted regions
-                deletedRegions.push({
-                    start: startTime,
-                    end: endTime
-                });
-                
-                // Sort regions by start time
-                deletedRegions.sort((a, b) => a.start - b.start);
-                
-                // Visualize deleted region
-                const waveformRect = wavesurfer.container.getBoundingClientRect();
-                const deletedRegion = document.createElement('div');
-                deletedRegion.className = 'deleted-region';
-                deletedRegion.style.left = `${startPosition * 100}%`;
-                deletedRegion.style.width = `${(endPosition - startPosition) * 100}%`;
-                wavesurfer.container.appendChild(deletedRegion);
-            }
-
-            async function saveAudio() {
-                if (!audioBuffer || deletedRegions.length === 0) {
-                    trimAudio(); // Use existing trim function if no regions are deleted
-                    return;
-                }
-
+                // Create new buffer without the selected region
                 const sampleRate = audioBuffer.sampleRate;
                 const numberOfChannels = audioBuffer.numberOfChannels;
                 
-                // Calculate total duration after removing deleted regions
-                let newDuration = audioBuffer.duration;
-                for (const region of deletedRegions) {
-                    newDuration -= (region.end - region.start);
-                }
-                
-                // Create new buffer for the audio without deleted regions
+                // Calculate new duration
+                const newDuration = duration - (endTime - startTime);
                 const newBuffer = new AudioContext().createBuffer(
                     numberOfChannels,
                     Math.floor(newDuration * sampleRate),
                     sampleRate
                 );
-
-                // Copy audio data, skipping deleted regions
+                
+                // Copy audio data, excluding the selected region
                 for (let channel = 0; channel < numberOfChannels; channel++) {
                     const channelData = audioBuffer.getChannelData(channel);
                     const newChannelData = newBuffer.getChannelData(channel);
-                    let writeIndex = 0;
-                    let readIndex = 0;
                     
-                    for (const region of deletedRegions) {
-                        const startOffset = Math.floor(region.start * sampleRate);
-                        const endOffset = Math.floor(region.end * sampleRate);
-                        
-                        // Copy audio up to the deleted region
-                        while (readIndex < startOffset) {
-                            newChannelData[writeIndex] = channelData[readIndex];
-                            writeIndex++;
-                            readIndex++;
-                        }
-                        
-                        // Skip the deleted region
-                        readIndex = endOffset;
+                    const startOffset = Math.floor(startTime * sampleRate);
+                    const endOffset = Math.floor(endTime * sampleRate);
+                    
+                    let writeIndex = 0;
+                    
+                    // Copy first part (before selection)
+                    for (let i = 0; i < startOffset; i++) {
+                        newChannelData[writeIndex] = channelData[i];
+                        writeIndex++;
                     }
                     
-                    // Copy remaining audio
-                    while (readIndex < channelData.length) {
-                        newChannelData[writeIndex] = channelData[readIndex];
+                    // Skip the selected region and copy the rest
+                    for (let i = endOffset; i < channelData.length; i++) {
+                        newChannelData[writeIndex] = channelData[i];
                         writeIndex++;
-                        readIndex++;
                     }
                 }
                 
-                // Convert to WAV and download
-                const wav = audioBufferToWav(newBuffer);
+                // Update the audio buffer
+                audioBuffer = newBuffer;
+                
+                // Load the new buffer into wavesurfer
+                wavesurfer.loadDecodedBuffer(newBuffer);
+                
+                // Reset positions
+                startPosition = 0;
+                endPosition = 1;
+                updateRangeSelection();
+            }
+
+            async function saveAudio() {
+                if (!audioBuffer) return;
+                
+                const wav = audioBufferToWav(audioBuffer);
                 const blob = new Blob([wav], { type: 'audio/wav' });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
