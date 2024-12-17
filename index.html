@@ -8,9 +8,7 @@
         <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
         <script src="https://unpkg.com/vexflow/releases/vexflow-min.js"></script>
-        <script src="https://unpkg.com/soundfont-player@0.12.0/dist/soundfont-player.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/video.js@7.20.3/dist/video.min.js"></script>
-        <link href="https://cdn.jsdelivr.net/npm/video.js@7.20.3/dist/video-js.min.css" rel="stylesheet">
+        <script src="https://unpkg.com/soundfont-player"></script>
         <style>
             body {
                 font-family: Arial, sans-serif;
@@ -328,56 +326,6 @@
                 margin: 0.5rem 0;
                 color: #a855f7;
             }
-
-            .video-container {
-                margin: 20px 0;
-                background: #1f2937;
-                border-radius: 8px;
-                overflow: hidden;
-            }
-
-            .video-js {
-                width: 100%;
-                max-width: 800px;
-                margin: 0 auto;
-            }
-
-            .video-controls {
-                display: flex;
-                gap: 8px;
-                margin-top: 10px;
-                justify-content: center;
-            }
-
-            .trim-markers {
-                position: relative;
-                height: 20px;
-                background: #374151;
-                margin: 10px 0;
-                border-radius: 4px;
-            }
-
-            .trim-marker {
-                position: absolute;
-                width: 4px;
-                height: 100%;
-                background: #a855f7;
-                cursor: ew-resize;
-            }
-
-            .trim-marker.start {
-                left: 0;
-            }
-
-            .trim-marker.end {
-                right: 0;
-            }
-
-            .trim-region {
-                position: absolute;
-                height: 100%;
-                background: rgba(168, 85, 247, 0.2);
-            }
         </style>
     </head>
     <body>
@@ -388,9 +336,9 @@
         <div class="container">
             <h1>Audio Trimmer</h1>
             
-            <div class="upload-area" onclick="document.getElementById('mediaInput').click()">
-                <p>Click or drag audio/video file here</p>
-                <input type="file" id="mediaInput" accept="audio/*,video/*">
+            <div class="upload-area" onclick="document.getElementById('audioInput').click()">
+                <p>Click or drag audio file here</p>
+                <input type="file" id="audioInput" accept="audio/*">
             </div>
 
             <div id="waveform"></div>
@@ -437,27 +385,6 @@
         </div>
 
         <input type="file" id="sheetInput" accept="image/*" style="display: none;">
-
-        <div id="videoContainer" class="video-container" style="display: none;">
-            <video id="videoPlayer" class="video-js vjs-default-skin">
-                <source src="" type="video/mp4">
-            </video>
-            <div class="trim-markers">
-                <div class="trim-marker start"></div>
-                <div class="trim-region"></div>
-                <div class="trim-marker end"></div>
-            </div>
-            <div class="video-controls">
-                <button onclick="trimVideo()">
-                    <i class="fas fa-cut"></i>
-                    Trim Video
-                </button>
-                <button onclick="exportVideo()">
-                    <i class="fas fa-download"></i>
-                    Export
-                </button>
-            </div>
-        </div>
 
         <script>
             let wavesurfer = WaveSurfer.create({
@@ -783,12 +710,11 @@
                     `;
                     document.querySelector('.container').appendChild(loadingMsg);
 
-                    console.log('Starting sheet music processing...');
-                    
                     const formData = new FormData();
                     formData.append('sheet_music', file);
 
                     console.log('Sending request to server...');
+                    
                     const response = await fetch('http://localhost:3000/api/process-sheet-music', {
                         method: 'POST',
                         body: formData
@@ -800,27 +726,29 @@
                     }
 
                     const result = await response.json();
-                    console.log('Received notes from server:', result.notes);
+                    console.log('Received response:', result);
 
+                    // Update step 1
                     loadingMsg.querySelector('.step:nth-child(1)').innerHTML += ' ✓';
                     
+                    // Display the recognized sheet music
                     await displayRecognizedNotes(result.notes);
-                    console.log('Notes displayed on score');
                     loadingMsg.querySelector('.step:nth-child(2)').innerHTML += ' ✓';
                     
-                    console.log('Creating audio player...');
+                    // Create the audio player
                     const player = await createAudioFromNotes(result.notes);
-                    console.log('Audio player created');
                     loadingMsg.querySelector('.step:nth-child(3)').innerHTML += ' ✓';
                     
+                    // Add playback controls
                     addPlaybackControls(player);
 
+                    // Remove loading message after a short delay
                     setTimeout(() => {
                         loadingMsg.remove();
                     }, 2000);
 
                 } catch (error) {
-                    console.error('Processing error:', error);
+                    console.error('Error:', error);
                     loadingMsg.innerHTML = `
                         <p style="color: #dc2626;">Error: ${error.message}</p>
                         <small>Please try again with a different image.</small>
@@ -847,23 +775,17 @@
                 const vfNotes = notes.map(note => {
                     return new VF.StaveNote({
                         clef: "treble",
-                        keys: [note.vexflow],  // Use vexflow format
-                        duration: note.vfDuration  // Use vexflow duration
+                        keys: note.pitch,
+                        duration: note.duration
                     });
                 });
                 
-                // Create a voice with 4/4 time
-                const voice = new VF.Voice({
-                    num_beats: 4,
-                    beat_value: 4
-                }).setMode(VF.Voice.Mode.SOFT);
-                
-                // Add the notes to the voice
+                // Create a voice and add notes
+                const voice = new VF.Voice({num_beats: 4, beat_value: 4});
                 voice.addTickables(vfNotes);
                 
                 // Format and draw
-                const formatter = new VF.Formatter();
-                formatter.joinVoices([voice]).format([voice], 750);
+                new VF.Formatter().joinVoices([voice]).format([voice], 750);
                 voice.draw(context, stave);
                 
                 scoreDisplay.appendChild(div);
@@ -871,53 +793,40 @@
             }
 
             async function createAudioFromNotes(notes) {
-                try {
-                    const ac = new AudioContext();
-                    if (typeof Soundfont === 'undefined') {
-                        throw new Error('Soundfont library not loaded');
-                    }
-                    
-                    console.log('Loading piano soundfont...');
-                    const instrument = await Soundfont.instrument(ac, 'acoustic_grand_piano');
-                    console.log('Piano soundfont loaded');
-                    
-                    let isPlaying = false;
-                    
-                    return {
-                        play: async () => {
-                            if (isPlaying) return;
-                            isPlaying = true;
-                            
-                            if (ac.state === 'suspended') {
-                                await ac.resume();
-                            }
-
-                            try {
-                                // Play notes sequentially with a fixed delay
-                                for (let i = 0; i < notes.length; i++) {
-                                    const note = notes[i];
-                                    console.log(`Playing note: ${note.pitch}`);
-                                    await instrument.play(note.pitch);
-                                    // Wait a bit before playing the next note
-                                    await new Promise(resolve => setTimeout(resolve, 500));
-                                }
-                            } catch (err) {
-                                console.error('Error during playback:', err);
-                            } finally {
-                                isPlaying = false;
-                            }
-                        },
-                        stop: () => {
-                            if (!isPlaying) return;
-                            isPlaying = false;
-                            instrument.stop();
-                            console.log('Playback stopped');
+                const ac = new AudioContext();
+                const player = new Soundfont.Player(ac);
+                
+                // Load a piano soundfont
+                const instrument = await player.load('acoustic_grand_piano');
+                
+                let isPlaying = false;
+                let currentTime = 0;
+                
+                return {
+                    play: () => {
+                        if (isPlaying) return;
+                        isPlaying = true;
+                        
+                        notes.forEach(note => {
+                            instrument.play(note.pitch, ac.currentTime + note.time, {
+                                duration: note.duration,
+                                gain: note.velocity / 127
+                            });
+                        });
+                    },
+                    stop: () => {
+                        if (!isPlaying) return;
+                        isPlaying = false;
+                        instrument.stop();
+                    },
+                    seek: (time) => {
+                        currentTime = time;
+                        if (isPlaying) {
+                            this.stop();
+                            this.play();
                         }
-                    };
-                } catch (error) {
-                    console.error('Error creating audio player:', error);
-                    throw error;
-                }
+                    }
+                };
             }
 
             function addPlaybackControls(player) {
@@ -934,24 +843,8 @@
                     </button>
                 `;
                 
-                const playBtn = controls.querySelector('.play-btn');
-                const stopBtn = controls.querySelector('.stop-btn');
-                
-                playBtn.onclick = async () => {
-                    try {
-                        playBtn.disabled = true;
-                        await player.play();
-                        playBtn.disabled = false;
-                    } catch (err) {
-                        console.error('Playback error:', err);
-                        playBtn.disabled = false;
-                    }
-                };
-                
-                stopBtn.onclick = () => {
-                    player.stop();
-                    playBtn.disabled = false;
-                };
+                controls.querySelector('.play-btn').onclick = () => player.play();
+                controls.querySelector('.stop-btn').onclick = () => player.stop();
                 
                 document.querySelector('.container').appendChild(controls);
             }
@@ -962,159 +855,6 @@
                     processSheetMusic(file);
                 }
             });
-
-            let videoPlayer;
-            let videoStartTime = 0;
-            let videoEndTime = 0;
-            let currentVideoPath = '';
-
-            document.getElementById('mediaInput').addEventListener('change', async function(e) {
-                const file = e.target.files[0];
-                if (!file) return;
-
-                const formData = new FormData();
-                formData.append('media', file);
-
-                try {
-                    const response = await fetch('http://localhost:3000/api/process-media', {
-                        method: 'POST',
-                        body: formData
-                    });
-
-                    if (!response.ok) {
-                        throw new Error('Failed to process media');
-                    }
-
-                    const data = await response.json();
-
-                    if (file.type.startsWith('video/')) {
-                        // Handle video
-                        document.getElementById('videoContainer').style.display = 'block';
-                        document.getElementById('waveform').style.display = 'none';
-
-                        if (videoPlayer) videoPlayer.dispose();
-                        
-                        videoPlayer = videojs('videoPlayer', {
-                            controls: true,
-                            fluid: true
-                        });
-
-                        videoPlayer.src({ 
-                            type: file.type, 
-                            src: data.url 
-                        });
-                        
-                        videoEndTime = data.duration;
-                        currentVideoPath = data.path;
-                        initializeVideoTrimming();
-
-                    } else if (file.type.startsWith('audio/')) {
-                        // Handle audio
-                        document.getElementById('videoContainer').style.display = 'none';
-                        document.getElementById('waveform').style.display = 'block';
-                        
-                        wavesurfer.load(data.url);
-                    }
-
-                } catch (error) {
-                    console.error('Error processing media:', error);
-                    alert('Error processing media file: ' + error.message);
-                }
-            });
-
-            function initializeVideoTrimming() {
-                const trimMarkers = document.querySelector('.trim-markers');
-                const startMarker = document.querySelector('.trim-marker.start');
-                const endMarker = document.querySelector('.trim-marker.end');
-                const trimRegion = document.querySelector('.trim-region');
-
-                function updateTrimRegion() {
-                    const width = trimMarkers.offsetWidth;
-                    const startPos = (videoStartTime / videoEndTime) * width;
-                    const endPos = (videoEndTime / videoEndTime) * width;
-                    
-                    trimRegion.style.left = startPos + 'px';
-                    trimRegion.style.width = (endPos - startPos) + 'px';
-                }
-
-                // Initialize drag functionality for markers
-                [startMarker, endMarker].forEach(marker => {
-                    marker.addEventListener('mousedown', initDrag);
-                });
-
-                function initDrag(e) {
-                    const isStart = e.target === startMarker;
-                    const initialX = e.clientX;
-                    const markerInitialPos = isStart ? videoStartTime : videoEndTime;
-
-                    function onDrag(e) {
-                        const delta = e.clientX - initialX;
-                        const width = trimMarkers.offsetWidth;
-                        const newTime = markerInitialPos + (delta / width) * videoEndTime;
-
-                        if (isStart) {
-                            videoStartTime = Math.max(0, Math.min(videoEndTime - 1, newTime));
-                            videoPlayer.currentTime(videoStartTime);
-                        } else {
-                            videoEndTime = Math.max(videoStartTime + 1, Math.min(videoPlayer.duration(), newTime));
-                        }
-
-                        updateTrimRegion();
-                    }
-
-                    function stopDrag() {
-                        document.removeEventListener('mousemove', onDrag);
-                        document.removeEventListener('mouseup', stopDrag);
-                    }
-
-                    document.addEventListener('mousemove', onDrag);
-                    document.addEventListener('mouseup', stopDrag);
-                }
-
-                updateTrimRegion();
-            }
-
-            async function trimVideo() {
-                try {
-                    const response = await fetch('/api/trim-video', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            videoPath: currentVideoPath,
-                            startTime: videoStartTime,
-                            endTime: videoEndTime,
-                            outputFileName: `trimmed_${Date.now()}.mp4`
-                        })
-                    });
-
-                    const data = await response.json();
-                    if (!response.ok) throw new Error(data.error);
-
-                    currentVideoPath = data.path;
-                    videoPlayer.src({ type: 'video/mp4', src: currentVideoPath });
-                } catch (error) {
-                    console.error('Error trimming video:', error);
-                    alert('Error trimming video: ' + error.message);
-                }
-            }
-
-            async function exportVideo() {
-                try {
-                    const response = await fetch(currentVideoPath);
-                    const blob = await response.blob();
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = 'edited_video.mp4';
-                    a.click();
-                    URL.revokeObjectURL(url);
-                } catch (error) {
-                    console.error('Error exporting video:', error);
-                    alert('Error exporting video: ' + error.message);
-                }
-            }
         </script>
     </body>
     </html> 
