@@ -713,12 +713,27 @@
                 const newLeftChannel = newBuffer.getChannelData(0);
                 const newRightChannel = newBuffer.getChannelData(1);
                 
-                // Process each sample
+                // Process each sample with improved algorithm
                 for (let i = 0; i < length; i++) {
-                    // Subtract right from left to cancel out center-panned audio (usually vocals)
-                    const centerCanceled = (leftChannel[i] - rightChannel[i]) * 0.5;
-                    newLeftChannel[i] = centerCanceled;
-                    newRightChannel[i] = centerCanceled;
+                    // Phase cancellation with improved weighting
+                    const mid = (leftChannel[i] + rightChannel[i]) * 0.5;
+                    const side = (leftChannel[i] - rightChannel[i]) * 0.5;
+                    
+                    // Reduce center channel (where vocals usually are)
+                    // and enhance the sides (where instruments usually are)
+                    newLeftChannel[i] = side * 1.5;  // Enhance stereo separation
+                    newRightChannel[i] = -side * 1.5; // Invert for proper stereo image
+                }
+                
+                // Apply some post-processing to enhance the remaining audio
+                for (let i = 0; i < length; i++) {
+                    // Add some of the original signal back to maintain fullness
+                    newLeftChannel[i] = newLeftChannel[i] * 0.8 + leftChannel[i] * 0.2;
+                    newRightChannel[i] = newRightChannel[i] * 0.8 + rightChannel[i] * 0.2;
+                    
+                    // Ensure we don't exceed [-1, 1] range
+                    newLeftChannel[i] = Math.max(-1, Math.min(1, newLeftChannel[i]));
+                    newRightChannel[i] = Math.max(-1, Math.min(1, newRightChannel[i]));
                 }
                 
                 // Load the new buffer into wavesurfer
