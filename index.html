@@ -222,14 +222,16 @@
             let audioBuffer = null;
             let audioHistory = [];
             const MAX_HISTORY = 10; // Maximum number of undo steps
+            let isPlaying = false;
 
             wavesurfer.on('ready', function() {
                 startPosition = 0;
                 endPosition = 1;
                 updateRangeSelection();
                 document.getElementById('endTime').textContent = formatTime(wavesurfer.getDuration());
-                audioBuffer = wavesurfer.backend.buffer;
-                deletedRegions = []; // Reset deleted regions when loading new audio
+                audioBuffer = wavesurfer.backend.buffer.slice(0); // Create a copy of the buffer
+                deletedRegions = [];
+                audioHistory = []; // Reset history when loading new audio
             });
 
             function formatTime(seconds) {
@@ -298,6 +300,7 @@
             function playSelection() {
                 const duration = wavesurfer.getDuration();
                 wavesurfer.play(startPosition * duration, endPosition * duration);
+                isPlaying = true;
             }
 
             async function trimAudio() {
@@ -381,9 +384,9 @@
                 if (!wavesurfer || !audioBuffer) return;
                 
                 // Save current state to history
-                audioHistory.push(audioBuffer.slice(0)); // Create a copy of current buffer
+                audioHistory.push(audioBuffer.slice(0));
                 if (audioHistory.length > MAX_HISTORY) {
-                    audioHistory.shift(); // Remove oldest state if we exceed max history
+                    audioHistory.shift();
                 }
                 
                 const duration = wavesurfer.getDuration();
@@ -453,7 +456,7 @@
             function stopAudio() {
                 if (wavesurfer) {
                     wavesurfer.stop();
-                    setIsPlaying(false);
+                    isPlaying = false;
                 }
             }
 
