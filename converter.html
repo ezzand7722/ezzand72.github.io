@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Converter - WebCraft Tools</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a1e2e, #2d3748);
+            color: #e5e7eb;
+            background-image: 
+                radial-gradient(circle at 25px 25px, rgba(168, 85, 247, 0.15) 2%, transparent 0%),
+                radial-gradient(circle at 75px 75px, rgba(168, 85, 247, 0.1) 2%, transparent 0%);
+            background-size: 100px 100px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+            background: rgba(26, 32, 44, 0.95);
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .back-button {
+            position: fixed;
+            top: 1rem;
+            left: 1rem;
+            padding: 0.5rem 1rem;
+            background: rgba(26, 32, 44, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 0.5rem;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .back-button:hover {
+            background: rgba(45, 55, 72, 0.95);
+            transform: translateX(-5px);
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 2rem;
+            background: linear-gradient(135deg, #fff, #a855f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .upload-area {
+            border: 2px dashed #2d3748;
+            border-radius: 1rem;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 2rem;
+        }
+
+        .upload-area:hover, .upload-area.drag-active {
+            border-color: #a855f7;
+            background: rgba(168, 85, 247, 0.1);
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            color: #a855f7;
+            margin-bottom: 1rem;
+        }
+
+        .file-info {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: rgba(45, 55, 72, 0.3);
+            border-radius: 0.5rem;
+            display: none;
+        }
+
+        .convert-button {
+            display: block;
+            width: 100%;
+            padding: 1rem;
+            background: #a855f7;
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 1rem;
+        }
+
+        .convert-button:hover {
+            background: #9333ea;
+        }
+
+        .convert-button:disabled {
+            background: #4b5563;
+            cursor: not-allowed;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 0.5rem;
+            background: #2d3748;
+            border-radius: 1rem;
+            margin-top: 1rem;
+            overflow: hidden;
+            display: none;
+        }
+
+        .progress {
+            width: 0%;
+            height: 100%;
+            background: #a855f7;
+            transition: width 0.3s ease;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .status-message {
+            margin-top: 1rem;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            display: none;
+        }
+
+        .status-message.success {
+            background: rgba(16, 185, 129, 0.1);
+            color: #10b981;
+        }
+
+        .status-message.error {
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+        }
+    </style>
+</head>
+<body>
+    <a href="interface.html" class="back-button">
+        <i class="fas fa-arrow-left"></i> Back to Tools
+    </a>
+
+    <div class="container">
+        <h1>File Converter</h1>
+        
+        <div class="upload-area" onclick="document.getElementById('fileInput').click()" id="dropZone">
+            <div class="upload-icon">
+                <i class="fas fa-file-upload"></i>
+            </div>
+            <p>Click or drag PowerPoint file here to convert to PDF</p>
+            <small style="color: #9ca3af;">Supported formats: .ppt, .pptx</small>
+            <input type="file" id="fileInput" accept=".ppt,.pptx" hidden>
+        </div>
+
+        <div class="file-info" id="fileInfo">
+            <p><i class="fas fa-file-powerpoint"></i> <span id="fileName">No file selected</span></p>
+            <p><i class="fas fa-weight"></i> Size: <span id="fileSize">0 KB</span></p>
+        </div>
+
+        <div class="progress-bar" id="progressBar">
+            <div class="progress" id="progress"></div>
+        </div>
+
+        <div class="status-message" id="statusMessage"></div>
+
+        <button class="convert-button" id="convertButton" disabled>
+            <i class="fas fa-exchange-alt"></i> Convert to PDF
+        </button>
+    </div>
+
+    <script>
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const fileInfo = document.getElementById('fileInfo');
+        const fileName = document.getElementById('fileName');
+        const fileSize = document.getElementById('fileSize');
+        const convertButton = document.getElementById('convertButton');
+        const progressBar = document.getElementById('progressBar');
+        const progress = document.getElementById('progress');
+        const statusMessage = document.getElementById('statusMessage');
+
+        // Prevent default drag behaviors
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, preventDefaults, false);
+            document.body.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        // Highlight drop zone when item is dragged over it
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, highlight, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, unhighlight, false);
+        });
+
+        function highlight(e) {
+            dropZone.classList.add('drag-active');
+        }
+
+        function unhighlight(e) {
+            dropZone.classList.remove('drag-active');
+        }
+
+        // Handle dropped files
+        dropZone.addEventListener('drop', handleDrop, false);
+
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            handleFiles(files);
+        }
+
+        fileInput.addEventListener('change', function(e) {
+            handleFiles(this.files);
+        });
+
+        function handleFiles(files) {
+            if (files.length > 0) {
+                const file = files[0];
+                if (file.name.match(/\.(ppt|pptx)$/)) {
+                    showFileInfo(file);
+                    convertButton.disabled = false;
+                } else {
+                    showError('Please select a PowerPoint file (.ppt or .pptx)');
+                    convertButton.disabled = true;
+                }
+            }
+        }
+
+        function showFileInfo(file) {
+            fileName.textContent = file.name;
+            fileSize.textContent = formatFileSize(file.size);
+            fileInfo.style.display = 'block';
+            statusMessage.style.display = 'none';
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function showError(message) {
+            statusMessage.className = 'status-message error';
+            statusMessage.textContent = message;
+            statusMessage.style.display = 'block';
+        }
+
+        function showSuccess(message) {
+            statusMessage.className = 'status-message success';
+            statusMessage.textContent = message;
+            statusMessage.style.display = 'block';
+        }
+
+        convertButton.addEventListener('click', async function() {
+            // Show progress bar
+            progressBar.style.display = 'block';
+            convertButton.disabled = true;
+
+            // Get the file
+            const file = fileInput.files[0];
+            if (!file) {
+                showError('Please select a file first');
+                return;
+            }
+
+            // Simulate conversion process
+            let progressValue = 0;
+            const interval = setInterval(() => {
+                progressValue += 1;
+                progress.style.width = progressValue + '%';
+                
+                if (progressValue >= 100) {
+                    clearInterval(interval);
+                    showSuccess('Conversion completed! Downloading PDF...');
+                    
+                    // Create and trigger download
+                    const fileName = file.name.replace(/\.(ppt|pptx)$/, '.pdf');
+                    // In a real implementation, this would be the converted PDF blob
+                    // For demo, we're creating a simple text file
+                    const blob = new Blob(['Simulated PDF content'], { type: 'application/pdf' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = fileName;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+
+                    setTimeout(() => {
+                        // Reset UI
+                        progressBar.style.display = 'none';
+                        progress.style.width = '0%';
+                        convertButton.disabled = false;
+                        fileInfo.style.display = 'none';
+                        fileInput.value = '';
+                    }, 3000);
+                }
+            }, 50);
+
+            // Note: In a real implementation, you would:
+            // 1. Send the file to a server using FormData and fetch:
+            /*
+            const formData = new FormData();
+            formData.append('file', file);
+            const response = await fetch('/api/convert', {
+                method: 'POST',
+                body: formData
+            });
+            const blob = await response.blob();
+            */
+            // 2. Convert it using a library like LibreOffice
+            // 3. Send back the converted PDF
+            // 4. Create download with the actual PDF blob
+        });
+    </script>
+</body>
+</html> 
