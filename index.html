@@ -8,14 +8,13 @@
         <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
         <script src="https://unpkg.com/vexflow/releases/vexflow-min.js"></script>
-        <script src="https://unpkg.com/soundfont-player"></script>
         <style>
             body {
                 font-family: Arial, sans-serif;
                 max-width: 48rem;
                 margin: 0 auto;
                 padding: 20px;
-                background: linear-gradient(135deg, #1a1e2e, #2c3041);
+                background: linear-gradient(135deg, #1a1e2e, #2d3748);
                 color: #e5e7eb;
                 background-image: 
                     radial-gradient(circle at 25px 25px, rgba(168, 85, 247, 0.15) 2%, transparent 0%),
@@ -55,9 +54,9 @@
             }
 
             .container {
-                background: rgba(31, 41, 55, 0.95);
+                background: rgba(26, 32, 44, 0.95);
                 backdrop-filter: blur(10px);
-                border: 1px solid rgba(168, 85, 247, 0.1);
+                border: 1px solid rgba(255, 255, 255, 0.1);
                 padding: 1.5rem;
                 border-radius: 0.5rem;
                 box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
@@ -69,24 +68,43 @@
             }
 
             h1 {
-                color: #a855f7;
+                color: white;
                 text-align: center;
                 margin-bottom: 1.5rem;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 2.5rem;
+                text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            }
+
+            h1 i {
+                transition: transform 0.3s ease;
+            }
+
+            h1 i:hover {
+                transform: rotate(-15deg);
             }
 
             .upload-area {
-                border: 2px dashed #374151;
+                border: 2px dashed #2d3748;
                 border-radius: 0.5rem;
                 padding: 3rem;
                 text-align: center;
                 cursor: pointer;
-                transition: all 0.2s;
-                background: #1f2937;
+                transition: all 0.3s ease;
+                background: rgba(45, 55, 72, 0.2);
             }
 
             .upload-area:hover {
+                border-color: white;
+                background: rgba(45, 55, 72, 0.3);
+            }
+
+            .upload-area.drag-active {
                 border-color: #a855f7;
                 background: rgba(168, 85, 247, 0.1);
+                transform: scale(1.02);
             }
 
             .upload-icon {
@@ -100,7 +118,7 @@
                 margin-top: 1rem;
                 border-radius: 0.5rem;
                 overflow: hidden;
-                background: #374151;
+                background: rgba(45, 55, 72, 0.2);
             }
 
             .controls {
@@ -110,7 +128,7 @@
                 justify-content: center;
                 margin-top: 1rem;
                 padding: 0.5rem;
-                background: #2d3748;
+                background: rgba(45, 55, 72, 0.2);
                 border-radius: 0.5rem;
             }
 
@@ -126,14 +144,14 @@
 
             button.outline {
                 background: transparent;
-                border: 1px solid #4b5563;
+                border: 1px solid #2d3748;
                 color: #e5e7eb;
             }
 
             button.outline:hover {
-                background: #374151;
-                border-color: #a855f7;
-                color: #a855f7;
+                background: rgba(45, 55, 72, 0.2);
+                border-color: white;
+                color: white;
             }
 
             .controls button.delete:hover {
@@ -157,7 +175,7 @@
             }
 
             button.primary {
-                background: #a855f7;
+                background: #2d3748;
                 color: white;
             }
 
@@ -328,19 +346,85 @@
             }
 
             #videoContainer {
-                background: #2d3748;
+                background: #1f2937;
                 border-radius: 0.5rem;
                 overflow: hidden;
                 margin: 20px 0;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+                position: relative;
+                padding-top: 56.25%; /* 16:9 Aspect Ratio */
             }
 
             #videoElement {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                border-radius: 0.5rem;
+                background: #1f2937;
+            }
+
+            .video-controls {
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                background: rgba(31, 41, 55, 0.9);
+                padding: 1rem;
+                display: flex;
+                gap: 1rem;
+                align-items: center;
+                backdrop-filter: blur(5px);
+            }
+
+            .preview-container {
+                display: none;
+                margin-top: 1rem;
+            }
+
+            .preview-container.visible {
+                display: block;
+            }
+
+            .preview-label {
+                color: #a855f7;
+                font-size: 0.9rem;
+                margin-bottom: 0.5rem;
+            }
+
+            #previewVideo {
                 width: 100%;
                 border-radius: 0.5rem;
+                background: #1f2937;
             }
 
             .upload-area p {
                 margin-bottom: 0.5rem;
+                color: #e5e7eb;
+            }
+
+            .logo-container {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 1rem;
+                margin-bottom: 2rem;
+            }
+
+            .main-logo {
+                width: 60px;
+                height: 60px;
+                object-fit: contain;
+                filter: drop-shadow(0 0 8px rgba(168, 85, 247, 0.3));
+            }
+
+            h1 {
+                color: white;
+                font-size: 2.5rem;
+                font-weight: 700;
+                text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+                margin: 0;
             }
         </style>
     </head>
@@ -350,7 +434,10 @@
         <div class="musical-note-3">♪</div>
 
         <div class="container">
-            <h1>Audio Trimmer</h1>
+            <div class="logo-container">
+                <img src="path-to-your-logo.png" alt="WC Logo" class="main-logo">
+                <h1>WebCraft</h1>
+            </div>
             
             <div class="upload-area" onclick="document.getElementById('mediaInput').click()">
                 <p>Click or drag audio/video file here</p>
@@ -361,6 +448,13 @@
 
             <div id="videoContainer" style="display: none; margin: 20px 0;">
                 <video id="videoElement" width="100%" controls>
+                    Your browser does not support the video element.
+                </video>
+            </div>
+
+            <div class="preview-container">
+                <div class="preview-label">Preview of edited video:</div>
+                <video id="previewVideo" controls>
                     Your browser does not support the video element.
                 </video>
             </div>
@@ -399,14 +493,12 @@
                     <i class="fas fa-download"></i>
                     Save
                 </button>
-                <button onclick="document.getElementById('sheetInput').click()" class="outline">
-                    <i class="fas fa-music"></i>
-                    Read Sheet Music
+                <button onclick="resetTrimmer()" class="outline">
+                    <i class="fas fa-sync"></i>
+                    New File
                 </button>
             </div>
         </div>
-
-        <input type="file" id="sheetInput" accept="image/*" style="display: none;">
 
         <script>
             let wavesurfer = WaveSurfer.create({
@@ -425,23 +517,24 @@
             const leftHandle = document.querySelector('.range-handle.left');
             const rightHandle = document.querySelector('.range-handle.right');
 
+            // Add this variable to track changes
+            let hasUnsavedChanges = false;
+
             document.getElementById('mediaInput').addEventListener('change', function(e) {
                 const file = e.target.files[0];
-                
-                // Check if it's a video file
-                if (file.type.startsWith('video/')) {
-                    // Show video player
-                    document.getElementById('videoContainer').style.display = 'block';
-                    const videoElement = document.getElementById('videoElement');
-                    videoElement.src = URL.createObjectURL(file);
+                if (file) {
+                    hasUnsavedChanges = false;  // Reset flag when new file is loaded
+                    document.querySelector('.upload-area').style.display = 'none';
                     
-                    // Extract audio from video for waveform
-                    extractAudioFromVideo(file);
-                } else {
-                    // Hide video player
-                    document.getElementById('videoContainer').style.display = 'none';
-                    // Load audio directly
-                    wavesurfer.loadBlob(file);
+                    if (file.type.startsWith('video/')) {
+                        document.getElementById('videoContainer').style.display = 'block';
+                        const videoElement = document.getElementById('videoElement');
+                        videoElement.src = URL.createObjectURL(file);
+                        extractAudioFromVideo(file);
+                    } else {
+                        document.getElementById('videoContainer').style.display = 'none';
+                        wavesurfer.loadBlob(file);
+                    }
                 }
             });
 
@@ -458,9 +551,8 @@
                 endPosition = 1;
                 updateRangeSelection();
                 document.getElementById('endTime').textContent = formatTime(wavesurfer.getDuration());
-                audioBuffer = wavesurfer.backend.buffer.slice(0); // Create a copy of the buffer
                 deletedRegions = [];
-                audioHistory = []; // Reset history when loading new audio
+                audioHistory = [];
             });
 
             function formatTime(seconds) {
@@ -618,9 +710,13 @@
                 return dataView.buffer;
             }
 
+            // Add this at the top of your script
+            let audioContext;
+
+            // Update the deleteSelection function to create AudioContext on demand
             async function deleteSelection() {
                 if (!wavesurfer) return;
-                
+
                 // Stop playback if playing
                 if (isPlaying) {
                     wavesurfer.pause();
@@ -628,62 +724,154 @@
                     const playButton = document.querySelector('button i.fa-play, button i.fa-pause');
                     playButton.className = 'fas fa-play';
                 }
-                
+
                 const duration = wavesurfer.getDuration();
                 const startTime = startPosition * duration;
                 const endTime = endPosition * duration;
-                
-                // Get the current buffer directly from wavesurfer
-                const currentBuffer = wavesurfer.backend.buffer;
-                
-                // Save current state to history
-                audioHistory.push(currentBuffer);
-                if (audioHistory.length > MAX_HISTORY) {
-                    audioHistory.shift();
-                }
-                
-                // Create new buffer without the selected region
-                const sampleRate = currentBuffer.sampleRate;
-                const numberOfChannels = currentBuffer.numberOfChannels;
-                
-                // Calculate new duration
-                const newDuration = duration - (endTime - startTime);
-                const newBuffer = new AudioContext().createBuffer(
-                    numberOfChannels,
-                    Math.floor(newDuration * sampleRate),
-                    sampleRate
-                );
-                
-                // Copy audio data, excluding the selected region
-                for (let channel = 0; channel < numberOfChannels; channel++) {
-                    const channelData = currentBuffer.getChannelData(channel);
-                    const newChannelData = newBuffer.getChannelData(channel);
+
+                try {
+                    // Create a new AudioContext
+                    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                     
-                    const startOffset = Math.floor(startTime * sampleRate);
-                    const endOffset = Math.floor(endTime * sampleRate);
-                    
-                    let writeIndex = 0;
-                    
-                    // Copy first part (before selection)
-                    for (let i = 0; i < startOffset; i++) {
-                        newChannelData[writeIndex] = channelData[i];
-                        writeIndex++;
+                    // Get the current buffer
+                    const currentBuffer = wavesurfer.backend.buffer;
+                    if (!currentBuffer) {
+                        console.error('No audio buffer found');
+                        return;
                     }
+
+                    // Save current state to history
+                    audioHistory.push(currentBuffer);
                     
-                    // Skip the selected region and copy the rest
-                    for (let i = endOffset; i < channelData.length; i++) {
-                        newChannelData[writeIndex] = channelData[i];
-                        writeIndex++;
+                    // Calculate new buffer size
+                    const sampleRate = currentBuffer.sampleRate;
+                    const numberOfChannels = currentBuffer.numberOfChannels;
+                    const newDuration = duration - (endTime - startTime);
+                    const newLength = Math.floor(newDuration * sampleRate);
+
+                    // Create new buffer
+                    const newBuffer = audioCtx.createBuffer(
+                        numberOfChannels,
+                        newLength,
+                        sampleRate
+                    );
+
+                    // Process each channel
+                    for (let channel = 0; channel < numberOfChannels; channel++) {
+                        const oldData = currentBuffer.getChannelData(channel);
+                        const newData = newBuffer.getChannelData(channel);
+                        
+                        let writeIndex = 0;
+                        
+                        // Copy before cut point
+                        const startOffset = Math.floor(startTime * sampleRate);
+                        for (let i = 0; i < startOffset; i++) {
+                            newData[writeIndex++] = oldData[i];
+                        }
+                        
+                        // Copy after cut point
+                        const endOffset = Math.floor(endTime * sampleRate);
+                        for (let i = endOffset; i < oldData.length; i++) {
+                            newData[writeIndex++] = oldData[i];
+                        }
                     }
+
+                    // Load the new buffer into wavesurfer
+                    wavesurfer.loadDecodedBuffer(newBuffer);
+
+                    // If we're editing a video, update that too
+                    const videoContainer = document.getElementById('videoContainer');
+                    if (videoContainer.style.display !== 'none') {
+                        const videoElement = document.getElementById('videoElement');
+                        
+                        try {
+                            // Create temporary video element
+                            const tempVideo = document.createElement('video');
+                            tempVideo.src = videoElement.src;
+                            await tempVideo.load();
+                            
+                            // Set up canvas with correct dimensions
+                            const canvas = document.createElement('canvas');
+                            canvas.width = tempVideo.videoWidth;
+                            canvas.height = tempVideo.videoHeight;
+                            const ctx = canvas.getContext('2d');
+                            
+                            // Set up recording
+                            const stream = canvas.captureStream();
+                            const mediaRecorder = new MediaRecorder(stream, {
+                                mimeType: 'video/webm;codecs=vp8,opus'
+                            });
+                            
+                            const chunks = [];
+                            
+                            // When recording is done, immediately show the new video
+                            mediaRecorder.ondataavailable = e => chunks.push(e.data);
+                            mediaRecorder.onstop = () => {
+                                // Stop and remove the old video first
+                                videoElement.pause();
+                                videoElement.removeAttribute('src');
+                                videoElement.load();
+                                
+                                // Create and set the new video
+                                const blob = new Blob(chunks, { type: 'video/webm' });
+                                const newUrl = URL.createObjectURL(blob);
+                                
+                                // Set new video source and play it
+                                videoElement.src = newUrl;
+                                videoElement.currentTime = 0;
+                                
+                                // Play the new video after a short delay to ensure it's loaded
+                                setTimeout(() => {
+                                    videoElement.play()
+                                        .catch(e => console.error('Error playing video:', e));
+                                }, 100);
+                            };
+                            
+                            mediaRecorder.start();
+
+                            // Process video frames sequentially
+                            const processVideo = async () => {
+                                let currentFrame = 0;
+                                
+                                // First part (before cut)
+                                for (let time = 0; time < startTime; time += 1/30) {
+                                    tempVideo.currentTime = time;
+                                    await new Promise(resolve => tempVideo.onseeked = resolve);
+                                    ctx.drawImage(tempVideo, 0, 0, canvas.width, canvas.height);
+                                    currentFrame++;
+                                }
+                                
+                                // Second part (after cut)
+                                for (let time = endTime; time < tempVideo.duration; time += 1/30) {
+                                    tempVideo.currentTime = time;
+                                    await new Promise(resolve => tempVideo.onseeked = resolve);
+                                    ctx.drawImage(tempVideo, 0, 0, canvas.width, canvas.height);
+                                    currentFrame++;
+                                }
+                                
+                                // Only stop if we actually processed some frames
+                                if (currentFrame > 0) {
+                                    mediaRecorder.stop();
+                                }
+                                
+                                tempVideo.remove();
+                            };
+
+                            await processVideo();
+
+                        } catch (error) {
+                            console.error('Error processing video:', error);
+                            alert('Error processing video: ' + error.message);
+                        }
+                    }
+
+                    // Mark that we have unsaved changes
+                    hasUnsavedChanges = true;
+
+                } catch (error) {
+                    console.error('Error during deletion:', error);
+                    alert('Error processing media: ' + error.message);
                 }
-                
-                // Load the new buffer into wavesurfer
-                wavesurfer.loadDecodedBuffer(newBuffer);
-                
-                // Reset positions
-                startPosition = 0;
-                endPosition = 1;
-                updateRangeSelection();
             }
 
             async function saveAudio() {
@@ -704,6 +892,9 @@
                     a.click();
                     URL.revokeObjectURL(url);
                 }
+                
+                // Reset the changes flag after successful save
+                hasUnsavedChanges = false;
             }
 
             function restartAudio() {
@@ -737,168 +928,10 @@
                     endPosition = 1;
                     updateRangeSelection();
                 }
+                
+                // Set hasUnsavedChanges to true after undoing
+                hasUnsavedChanges = true;
             }
-
-            async function processSheetMusic(file) {
-                const loadingMsg = document.createElement('div');
-                loadingMsg.className = 'loading-message';
-                
-                try {
-                    loadingMsg.innerHTML = `
-                        <p>Processing sheet music...</p>
-                        <div class="processing-steps">
-                            <div class="step">1. Uploading Image ⏳</div>
-                            <div class="step">2. Analyzing Score ⏳</div>
-                            <div class="step">3. Generating Audio ⏳</div>
-                        </div>
-                    `;
-                    document.querySelector('.container').appendChild(loadingMsg);
-
-                    const formData = new FormData();
-                    formData.append('sheet_music', file);
-
-                    console.log('Sending request to server...');
-                    
-                    const response = await fetch('http://localhost:3000/api/process-sheet-music', {
-                        method: 'POST',
-                        body: formData
-                    });
-
-                    if (!response.ok) {
-                        const errorData = await response.json();
-                        throw new Error(errorData.error || 'Failed to process sheet music');
-                    }
-
-                    const result = await response.json();
-                    console.log('Received response:', result);
-
-                    // Update step 1
-                    loadingMsg.querySelector('.step:nth-child(1)').innerHTML += ' ✓';
-                    
-                    // Display the recognized sheet music
-                    await displayRecognizedNotes(result.notes);
-                    loadingMsg.querySelector('.step:nth-child(2)').innerHTML += ' ✓';
-                    
-                    // Create the audio player
-                    const player = await createAudioFromNotes(result.notes);
-                    loadingMsg.querySelector('.step:nth-child(3)').innerHTML += ' ✓';
-                    
-                    // Add playback controls
-                    addPlaybackControls(player);
-
-                    // Remove loading message after a short delay
-                    setTimeout(() => {
-                        loadingMsg.remove();
-                    }, 2000);
-
-                } catch (error) {
-                    console.error('Error:', error);
-                    loadingMsg.innerHTML = `
-                        <p style="color: #dc2626;">Error: ${error.message}</p>
-                        <small>Please try again with a different image.</small>
-                    `;
-                }
-            }
-
-            function displayRecognizedNotes(notes) {
-                const scoreDisplay = document.createElement('div');
-                scoreDisplay.className = 'score-display';
-                
-                const VF = Vex.Flow;
-                const div = document.createElement('div');
-                const renderer = new VF.Renderer(div, VF.Renderer.Backends.SVG);
-                renderer.resize(800, 200);
-                const context = renderer.getContext();
-                
-                // Create a stave
-                const stave = new VF.Stave(10, 40, 750);
-                stave.addClef('treble').addTimeSignature('4/4');
-                stave.setContext(context).draw();
-                
-                // Convert notes to VexFlow format
-                const vfNotes = notes.map(note => {
-                    return new VF.StaveNote({
-                        clef: "treble",
-                        keys: note.pitch,
-                        duration: note.duration
-                    });
-                });
-                
-                // Create a voice and add notes
-                const voice = new VF.Voice({num_beats: 4, beat_value: 4});
-                voice.addTickables(vfNotes);
-                
-                // Format and draw
-                new VF.Formatter().joinVoices([voice]).format([voice], 750);
-                voice.draw(context, stave);
-                
-                scoreDisplay.appendChild(div);
-                document.querySelector('.container').appendChild(scoreDisplay);
-            }
-
-            async function createAudioFromNotes(notes) {
-                const ac = new AudioContext();
-                const player = new Soundfont.Player(ac);
-                
-                // Load a piano soundfont
-                const instrument = await player.load('acoustic_grand_piano');
-                
-                let isPlaying = false;
-                let currentTime = 0;
-                
-                return {
-                    play: () => {
-                        if (isPlaying) return;
-                        isPlaying = true;
-                        
-                        notes.forEach(note => {
-                            instrument.play(note.pitch, ac.currentTime + note.time, {
-                                duration: note.duration,
-                                gain: note.velocity / 127
-                            });
-                        });
-                    },
-                    stop: () => {
-                        if (!isPlaying) return;
-                        isPlaying = false;
-                        instrument.stop();
-                    },
-                    seek: (time) => {
-                        currentTime = time;
-                        if (isPlaying) {
-                            this.stop();
-                            this.play();
-                        }
-                    }
-                };
-            }
-
-            function addPlaybackControls(player) {
-                const controls = document.createElement('div');
-                controls.className = 'playback-controls';
-                controls.innerHTML = `
-                    <button class="play-btn">
-                        <i class="fas fa-play"></i>
-                        Play Score
-                    </button>
-                    <button class="stop-btn">
-                        <i class="fas fa-stop"></i>
-                        Stop
-                    </button>
-                `;
-                
-                controls.querySelector('.play-btn').onclick = () => player.play();
-                controls.querySelector('.stop-btn').onclick = () => player.stop();
-                
-                document.querySelector('.container').appendChild(controls);
-            }
-
-            document.getElementById('sheetInput').addEventListener('change', function(e) {
-                const file = e.target.files[0];
-                if (file) {
-                    processSheetMusic(file);
-                }
-            });
 
             // Add this function to extract audio from video
             async function extractAudioFromVideo(videoFile) {
@@ -941,15 +974,35 @@
                 const mediaRecorder = new MediaRecorder(stream);
                 const chunks = [];
                 
+                // Show loading state
+                const saveButton = document.querySelector('button[onclick="saveAudio()"]');
+                const originalText = saveButton.innerHTML;
+                saveButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+                saveButton.disabled = true;
+                
                 mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
                 mediaRecorder.onstop = () => {
                     const blob = new Blob(chunks, { type: 'video/webm' });
                     const url = URL.createObjectURL(blob);
+                    
+                    // Show preview
+                    const previewContainer = document.querySelector('.preview-container');
+                    const previewVideo = document.getElementById('previewVideo');
+                    previewVideo.src = url;
+                    previewContainer.classList.add('visible');
+                    
+                    // Create download link
                     const a = document.createElement('a');
                     a.href = url;
                     a.download = 'edited_video.webm';
                     a.click();
-                    URL.revokeObjectURL(url);
+                    
+                    // Reset button state
+                    saveButton.innerHTML = originalText;
+                    saveButton.disabled = false;
+                    
+                    // Reset changes flag
+                    hasUnsavedChanges = false;
                 };
                 
                 mediaRecorder.start();
@@ -961,6 +1014,156 @@
                     videoElement.pause();
                 }, videoElement.duration * 1000);
             }
+
+            // Add this after your wavesurfer initialization
+            const uploadArea = document.querySelector('.upload-area');
+
+            // Prevent default drag behaviors
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                uploadArea.addEventListener(eventName, preventDefaults, false);
+                document.body.addEventListener(eventName, preventDefaults, false);
+            });
+
+            function preventDefaults (e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            // Highlight drop zone when item is dragged over it
+            ['dragenter', 'dragover'].forEach(eventName => {
+                uploadArea.addEventListener(eventName, highlight, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                uploadArea.addEventListener(eventName, unhighlight, false);
+            });
+
+            function highlight(e) {
+                uploadArea.classList.add('drag-active');
+            }
+
+            function unhighlight(e) {
+                uploadArea.classList.remove('drag-active');
+            }
+
+            // Handle dropped files
+            uploadArea.addEventListener('drop', handleDrop, false);
+
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+
+                if (files.length > 0) {
+                    const file = files[0];
+                    if (file.type.startsWith('audio/') || file.type.startsWith('video/')) {
+                        hasUnsavedChanges = false;  // Reset flag when new file is loaded
+                        document.querySelector('.upload-area').style.display = 'none';
+                        
+                        if (file.type.startsWith('video/')) {
+                            document.getElementById('videoContainer').style.display = 'block';
+                            const videoElement = document.getElementById('videoElement');
+                            videoElement.src = URL.createObjectURL(file);
+                            extractAudioFromVideo(file);
+                        } else {
+                            document.getElementById('videoContainer').style.display = 'none';
+                            wavesurfer.loadBlob(file);
+                        }
+                    }
+                }
+            }
+
+            function resetTrimmer() {
+                // Check if there are unsaved changes
+                if (hasUnsavedChanges && wavesurfer && wavesurfer.backend.buffer) {
+                    const confirmReset = confirm('You have unsaved changes. Are you sure you want to start over?');
+                    if (!confirmReset) {
+                        return;
+                    }
+                }
+                
+                // Stop any playing audio first
+                if (isPlaying) {
+                    wavesurfer.pause();
+                    isPlaying = false;
+                    const playButton = document.querySelector('button i.fa-play, button i.fa-pause');
+                    playButton.className = 'fas fa-play';
+                }
+                
+                // Destroy the old wavesurfer instance
+                wavesurfer.destroy();
+                
+                // Clear the waveform display but preserve the container
+                const waveformContainer = document.getElementById('waveform');
+                waveformContainer.innerHTML = '';
+                
+                // Create a new wavesurfer instance
+                wavesurfer = WaveSurfer.create({
+                    container: '#waveform',
+                    waveColor: '#4b5563',
+                    progressColor: '#a855f7',
+                    cursorColor: '#a855f7',
+                    height: 128,
+                    responsive: true,
+                    barWidth: 2,
+                    barGap: 1
+                });
+                
+                // Reattach all event listeners
+                wavesurfer.on('ready', function() {
+                    startPosition = 0;
+                    endPosition = 1;
+                    updateRangeSelection();
+                    document.getElementById('endTime').textContent = formatTime(wavesurfer.getDuration());
+                    deletedRegions = [];
+                    audioHistory = [];
+                });
+                
+                // Reset video player if exists
+                const videoContainer = document.getElementById('videoContainer');
+                const videoElement = document.getElementById('videoElement');
+                videoContainer.style.display = 'none';
+                videoElement.src = '';
+                videoElement.load(); // Force video element to reset
+                
+                // Reset file inputs
+                document.getElementById('mediaInput').value = '';
+                
+                // Reset positions
+                startPosition = 0;
+                endPosition = 1;
+                updateRangeSelection();
+                
+                // Reset history and buffer
+                audioHistory = [];
+                audioBuffer = null;
+                
+                // Reset time display
+                document.getElementById('startTime').textContent = '00:00';
+                document.getElementById('endTime').textContent = '00:00';
+                
+                // Show and reset upload area
+                const uploadArea = document.querySelector('.upload-area');
+                uploadArea.style.display = 'block';
+                uploadArea.style.pointerEvents = 'auto';
+                
+                // Make sure range slider is visible
+                document.querySelector('.range-slider').style.display = 'block';
+                document.querySelector('.time-display').style.display = 'flex';
+                
+                // Reset the changes flag
+                hasUnsavedChanges = false;
+                
+                // Also reset preview
+                const previewContainer = document.querySelector('.preview-container');
+                const previewVideo = document.getElementById('previewVideo');
+                previewContainer.classList.remove('visible');
+                previewVideo.src = '';
+            }
+
+            wavesurfer.on('error', function(err) {
+                console.error('WaveSurfer error:', err);
+                alert('Error loading audio: ' + err);
+            });
         </script>
     </body>
     </html> 
