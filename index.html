@@ -426,6 +426,67 @@
                 text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
                 margin: 0;
             }
+
+            .logo-wrapper {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 1.5rem;
+                margin-bottom: 2rem;
+                padding: 1rem;
+                background: linear-gradient(135deg, rgba(45, 55, 72, 0.5), rgba(26, 32, 44, 0.5));
+                border-radius: 1rem;
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            }
+
+            .logo-icon {
+                position: relative;
+                font-size: 3.5rem;
+                width: 3.5rem;
+                height: 3.5rem;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .logo-icon .fa-play-circle {
+                color: #a855f7;
+                filter: drop-shadow(0 0 10px rgba(168, 85, 247, 0.5));
+                transition: transform 0.3s ease;
+            }
+
+            .logo-icon .overlay-icon {
+                position: absolute;
+                font-size: 1.5rem;
+                bottom: -0.5rem;
+                right: -0.5rem;
+                color: white;
+                background: #1f2937;
+                padding: 0.3rem;
+                border-radius: 50%;
+                border: 2px solid #a855f7;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+                transition: transform 0.3s ease;
+            }
+
+            .logo-icon:hover .fa-play-circle {
+                transform: scale(1.1);
+            }
+
+            .logo-icon:hover .overlay-icon {
+                transform: rotate(-15deg);
+            }
+
+            h1 {
+                color: white;
+                font-size: 2.5rem;
+                font-weight: 700;
+                margin: 0;
+                background: linear-gradient(135deg, #fff, #a855f7);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                text-shadow: 0 2px 10px rgba(168, 85, 247, 0.3);
+            }
         </style>
     </head>
     <body>
@@ -434,8 +495,11 @@
         <div class="musical-note-3">♪</div>
 
         <div class="container">
-            <div class="logo-container">
-                <img src="path-to-your-logo.png" alt="WC Logo" class="main-logo">
+            <div class="logo-wrapper">
+                <div class="logo-icon">
+                    <i class="fas fa-play-circle"></i>
+                    <i class="fas fa-cut overlay-icon"></i>
+                </div>
                 <h1>WebCraft</h1>
             </div>
             
