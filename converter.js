@@ -114,8 +114,8 @@ convertButton.addEventListener('click', async function() {
         const formData = new FormData();
         formData.append('file', file);
 
-        console.log('Sending request to:', `${SERVER_URL}/convert`);
-        const response = await fetch(`${SERVER_URL}/convert`, {
+        console.log('Sending request to:', `${https://server-pv39.onrender.com}/convert`);
+        const response = await fetch(`${https://server-pv39.onrender.com}/convert`, {
             method: 'POST',
             body: formData,
             mode: 'cors',
@@ -144,7 +144,7 @@ convertButton.addEventListener('click', async function() {
         }
 
         const serverBaseUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-            ? 'http://localhost:10000'
+            ? 'http://localhost:3001'
             : 'https://server-pv39.onrender.com';
 
         const downloadUrl = `${serverBaseUrl}${result.downloadUrl}`;
