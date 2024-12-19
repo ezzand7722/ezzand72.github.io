@@ -487,6 +487,30 @@
             -webkit-text-fill-color: transparent;
             text-shadow: 0 2px 10px rgba(168, 85, 247, 0.3);
         }
+
+        .logo-container {
+            text-align: center;
+            margin-bottom: 2rem;
+            transition: transform 0.3s ease;
+        }
+
+        .logo-container:hover {
+            transform: scale(1.1);
+        }
+
+        h1 {
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        h1:hover {
+            transform: scale(1.05);
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
     </style>
 </head>
 <body>
@@ -495,12 +519,17 @@
     <div class="musical-note-3">♪</div>
 
     <div class="container">
-        <div class="logo-wrapper">
-            <div class="logo-icon">
-                <i class="fas fa-play-circle"></i>
-                <i class="fas fa-cut overlay-icon"></i>
-            </div>
-            <h1>WebCraft</h1>
+        <a href="interface.html" style="text-decoration: none;">
+            <h1>
+                <i class="fas fa-tools"></i>
+                WebCraft Tools
+            </h1>
+        </a>
+
+        <div class="logo-container">
+            <a href="interface.html">
+                <i class="fas fa-tools" style="font-size: 3rem; color: #a855f7; margin-bottom: 1rem;"></i>
+            </a>
         </div>
         
         <div class="upload-area" onclick="document.getElementById('mediaInput').click()">
