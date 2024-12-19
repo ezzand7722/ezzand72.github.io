@@ -511,6 +511,96 @@
             text-decoration: none;
             color: inherit;
         }
+
+        .preview-container {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            display: none;
+            z-index: 1000;
+        }
+
+        .preview-container.visible {
+            display: block;
+        }
+
+        #previewVideo {
+            max-width: 80vw;
+            max-height: 80vh;
+        }
+
+        .controls button {
+            margin: 0 0.25rem;
+            padding: 0.5rem 1rem;
+            background: rgba(168, 85, 247, 0.1);
+            border: 1px solid rgba(168, 85, 247, 0.2);
+            color: #e5e7eb;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .controls button:hover {
+            background: rgba(168, 85, 247, 0.2);
+        }
+
+        .processing-message {
+            color: #a855f7;
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+        }
+
+        .success-message {
+            color: #a855f7;
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+        }
+
+        .error-message {
+            color: #dc2626;
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+        }
+
+        .processing-message {
+            color: #a855f7;
+            text-align: center;
+            padding: 1rem;
+            margin: 1rem 0;
+            background: rgba(168, 85, 247, 0.1);
+            border-radius: 0.5rem;
+        }
+
+        .error-message {
+            color: #ef4444;
+            text-align: center;
+            padding: 1rem;
+            margin: 1rem 0;
+            background: rgba(239, 68, 68, 0.1);
+            border-radius: 0.5rem;
+        }
+
+        .success-message {
+            color: #10b981;
+            text-align: center;
+            padding: 1rem;
+            margin: 1rem 0;
+            background: rgba(16, 185, 129, 0.1);
+            border-radius: 0.5rem;
+        }
+
+        .fa-spinner {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
@@ -589,6 +679,14 @@
             <button onclick="resetTrimmer()" class="outline">
                 <i class="fas fa-sync"></i>
                 New File
+            </button>
+            <button onclick="removeAudio()" id="removeAudioBtn">
+                <i class="fas fa-volume-mute"></i>
+                Remove Audio
+            </button>
+            <button onclick="mergeFiles()" id="mergeBtn">
+                <i class="fas fa-object-group"></i>
+                Merge Audio/Video
             </button>
         </div>
     </div>
@@ -967,27 +1065,40 @@
             }
         }
 
-        async function saveAudio() {
-            const isVideo = document.getElementById('videoContainer').style.display !== 'none';
-            
-            if (isVideo) {
-                // Save video with edited audio
-                await saveVideoWithAudio();
-            } else {
-                // Existing audio save logic
-                if (!audioBuffer) return;
-                const wav = audioBufferToWav(audioBuffer);
-                const blob = new Blob([wav], { type: 'audio/wav' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'edited_media.wav';
-                a.click();
-                URL.revokeObjectURL(url);
+        function saveAudio() {
+            if (!wavesurfer.backend.buffer && !videoElement.src) {
+                showError('No media to save');
+                return;
             }
-            
-            // Reset the changes flag after successful save
-            hasUnsavedChanges = false;
+
+            try {
+                if (videoElement.src) {
+                    // If it's a video, save current video
+                    const a = document.createElement('a');
+                    a.href = videoElement.src;
+                    a.download = 'edited_video.webm';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                } else {
+                    // If it's audio, export from wavesurfer
+                    wavesurfer.exportPCM().then(pcmData => {
+                        const blob = new Blob([pcmData], { type: 'audio/wav' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = 'edited_audio.wav';
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                    });
+                }
+                showSuccess('File saved successfully!');
+            } catch (error) {
+                console.error('Error saving file:', error);
+                showError('Failed to save file');
+            }
         }
 
         function restartAudio() {
@@ -1149,7 +1260,7 @@
             if (files.length > 0) {
                 const file = files[0];
                 if (file.type.startsWith('audio/') || file.type.startsWith('video/')) {
-                    hasUnsavedChanges = false;  // Reset flag when new file is loaded
+                    hasUnsavedChanges = false;
                     document.querySelector('.upload-area').style.display = 'none';
                     
                     if (file.type.startsWith('video/')) {
@@ -1157,9 +1268,15 @@
                         const videoElement = document.getElementById('videoElement');
                         videoElement.src = URL.createObjectURL(file);
                         extractAudioFromVideo(file);
+                        // Show remove audio button for videos
+                        document.getElementById('removeAudioBtn').style.display = 'inline-block';
+                        document.getElementById('previewBtn').style.display = 'inline-block';
                     } else {
                         document.getElementById('videoContainer').style.display = 'none';
                         wavesurfer.loadBlob(file);
+                        // Hide remove audio button for audio files
+                        document.getElementById('removeAudioBtn').style.display = 'none';
+                        document.getElementById('previewBtn').style.display = 'none';
                     }
                 }
             }
@@ -1251,12 +1368,239 @@
             const previewVideo = document.getElementById('previewVideo');
             previewContainer.classList.remove('visible');
             previewVideo.src = '';
+            
+            // Also hide the remove audio and preview buttons
+            document.getElementById('removeAudioBtn').style.display = 'none';
+            document.getElementById('previewBtn').style.display = 'none';
+            document.getElementById('downloadBtn').style.display = 'none';
         }
 
         wavesurfer.on('error', function(err) {
             console.error('WaveSurfer error:', err);
             alert('Error loading audio: ' + err);
         });
+
+        // Add these new functions after your existing code
+        async function removeAudio() {
+            const videoElement = document.getElementById('videoElement');
+            if (!videoElement.src) {
+                showError('No video loaded');
+                return;
+            }
+
+            try {
+                // Show processing message
+                const loadingMessage = document.createElement('div');
+                loadingMessage.className = 'processing-message';
+                loadingMessage.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing video...';
+                document.querySelector('.controls').appendChild(loadingMessage);
+
+                // Create a canvas to capture video frames
+                const canvas = document.createElement('canvas');
+                canvas.width = videoElement.videoWidth;
+                canvas.height = videoElement.videoHeight;
+                const ctx = canvas.getContext('2d');
+
+                // Setup media recorder
+                const stream = canvas.captureStream();
+                const mediaRecorder = new MediaRecorder(stream, {
+                    mimeType: 'video/webm;codecs=vp8'
+                });
+
+                const chunks = [];
+                mediaRecorder.ondataavailable = e => chunks.push(e.data);
+                mediaRecorder.onstop = () => {
+                    const blob = new Blob(chunks, { type: 'video/webm' });
+                    const url = URL.createObjectURL(blob);
+                    
+                    // Create download link
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'video_without_audio.webm';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    
+                    // Cleanup
+                    URL.revokeObjectURL(url);
+                    loadingMessage.remove();
+                    showSuccess('Video processed and downloaded successfully!');
+                };
+
+                // Start recording
+                mediaRecorder.start();
+
+                // Process video frames
+                videoElement.currentTime = 0;
+                let processFrame = async () => {
+                    if (videoElement.currentTime < videoElement.duration) {
+                        ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+                        videoElement.currentTime += 1/30; // 30fps
+                        requestAnimationFrame(processFrame);
+                    } else {
+                        mediaRecorder.stop();
+                    }
+                };
+
+                videoElement.onseeked = () => requestAnimationFrame(processFrame);
+                videoElement.currentTime = 0;
+
+            } catch (error) {
+                console.error('Error in removeAudio:', error);
+                showError(`Failed to process video: ${error.message}`);
+                const loadingMessage = document.querySelector('.processing-message');
+                if (loadingMessage) loadingMessage.remove();
+            }
+        }
+
+        // Add these helper functions if they don't exist
+        function showError(message) {
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error-message';
+            errorDiv.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${message}`;
+            document.querySelector('.controls').appendChild(errorDiv);
+            setTimeout(() => errorDiv.remove(), 5000);
+        }
+
+        function showSuccess(message) {
+            const successDiv = document.createElement('div');
+            successDiv.className = 'success-message';
+            successDiv.innerHTML = `<i class="fas fa-check-circle"></i> ${message}`;
+            document.querySelector('.controls').appendChild(successDiv);
+            setTimeout(() => successDiv.remove(), 5000);
+        }
+
+        let firstFileType = null; // Track the type of first file selected
+
+        function mergeFiles() {
+            if (!wavesurfer.backend.buffer && !videoElement.src) {
+                showError('Please select an audio or video file first');
+                return;
+            }
+
+            const secondFileInput = document.createElement('input');
+            secondFileInput.type = 'file';
+            secondFileInput.accept = firstFileType?.startsWith('audio/') ? 'video/*' : 'audio/*';
+            
+            secondFileInput.onchange = async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                if ((firstFileType?.startsWith('audio/') && file.type.startsWith('audio/')) ||
+                    (firstFileType?.startsWith('video/') && file.type.startsWith('video/'))) {
+                    showError('Please select a different type of file');
+                    return;
+                }
+
+                try {
+                    const loadingMessage = document.createElement('div');
+                    loadingMessage.className = 'processing-message';
+                    loadingMessage.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Merging files...';
+                    document.querySelector('.controls').appendChild(loadingMessage);
+
+                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    const videoElement = document.getElementById('videoElement');
+
+                    // Create video element for the file if needed
+                    const tempVideo = document.createElement('video');
+                    tempVideo.src = firstFileType?.startsWith('video/') ? 
+                        videoElement.src : URL.createObjectURL(file);
+                    await new Promise(resolve => tempVideo.onloadedmetadata = resolve);
+
+                    // Setup recording
+                    const canvas = document.createElement('canvas');
+                    canvas.width = tempVideo.videoWidth;
+                    canvas.height = tempVideo.videoHeight;
+                    const ctx = canvas.getContext('2d');
+                    const stream = canvas.captureStream(30); // 30fps
+
+                    // Add audio
+                    const audioBuffer = firstFileType?.startsWith('audio/') ?
+                        wavesurfer.backend.buffer :
+                        await extractAudioFromVideo(file);
+                    const audioSource = audioContext.createBufferSource();
+                    audioSource.buffer = audioBuffer;
+                    const streamDest = audioContext.createMediaStreamDestination();
+                    audioSource.connect(streamDest);
+                    stream.addTrack(streamDest.stream.getAudioTracks()[0]);
+
+                    // Record
+                    const recorder = new MediaRecorder(stream, {
+                        mimeType: 'video/webm;codecs=vp8,opus',
+                        videoBitsPerSecond: 2500000 // 2.5 Mbps
+                    });
+
+                    const chunks = [];
+                    recorder.ondataavailable = e => chunks.push(e.data);
+                    recorder.onstop = () => {
+                        const blob = new Blob(chunks, { type: 'video/webm' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = 'merged_video.webm';
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                        loadingMessage.remove();
+                        showSuccess('Merge complete!');
+                        
+                        // Cleanup
+                        if (tempVideo !== videoElement) {
+                            URL.revokeObjectURL(tempVideo.src);
+                        }
+                        tempVideo.remove();
+                    };
+
+                    recorder.start();
+                    audioSource.start();
+                    tempVideo.play();
+
+                    // Process frames more efficiently
+                    const processFrames = () => {
+                        if (!tempVideo.paused && !tempVideo.ended) {
+                            ctx.drawImage(tempVideo, 0, 0, canvas.width, canvas.height);
+                            requestAnimationFrame(processFrames);
+                        } else {
+                            recorder.stop();
+                            audioSource.stop();
+                        }
+                    };
+                    processFrames();
+
+                } catch (error) {
+                    console.error('Error:', error);
+                    showError('Failed to merge files: ' + error.message);
+                    const loadingMessage = document.querySelector('.processing-message');
+                    if (loadingMessage) loadingMessage.remove();
+                }
+            };
+
+            secondFileInput.click();
+        }
+
+        // Modify your existing file handling functions to set firstFileType
+        document.getElementById('mediaInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                firstFileType = file.type; // Store the first file type
+                // ... rest of your existing code ...
+            }
+        });
+
+        // Also modify handleDrop
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+
+            if (files.length > 0) {
+                const file = files[0];
+                if (file.type.startsWith('audio/') || file.type.startsWith('video/')) {
+                    firstFileType = file.type; // Store the first file type
+                    // ... rest of your existing code ...
+                }
+            }
+        }
     </script>
 </body>
 </html> 
