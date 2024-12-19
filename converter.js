@@ -10,7 +10,7 @@ const progress = document.getElementById('progress');
 const statusMessage = document.getElementById('statusMessage');
 
 // Server configuration
-const SERVER_URL = 'http://localhost:5000/convert';
+const SERVER_URL = 'http://localhost:3001/convert';
 
 // Handle file drop and click to upload
 fileInput.addEventListener('change', function(e) {
@@ -70,27 +70,10 @@ function showSuccess(message) {
     statusMessage.style.display = 'block';
 }
 
-// Check if server is running
-async function checkServer() {
-    try {
-        const response = await fetch(SERVER_URL, { method: 'HEAD' });
-        return response.ok;
-    } catch (error) {
-        return false;
-    }
-}
-
 // Handle file conversion
 convertButton.addEventListener('click', async function() {
     const file = fileInput.files[0];
     if (!file) return;
-
-    // Check server before starting conversion
-    const serverRunning = await checkServer();
-    if (!serverRunning) {
-        showError('Server is not running. Please start the server first.');
-        return;
-    }
 
     progressBar.style.display = 'block';
     convertButton.disabled = true;
@@ -106,38 +89,29 @@ convertButton.addEventListener('click', async function() {
         });
 
         if (!response.ok) {
-            let errorMessage = 'Conversion failed';
-            try {
-                const errorData = await response.json();
-                errorMessage = errorData.error || errorMessage;
-            } catch (e) {
-                // If response is not JSON
-                errorMessage = response.statusText || errorMessage;
-            }
-            throw new Error(errorMessage);
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        // The response will be the PDF file directly
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
+        const result = await response.json();
+        
+        if (!result.success) {
+            throw new Error(result.error || 'Conversion failed');
+        }
+
+        // Download the converted file
         const a = document.createElement('a');
-        a.href = url;
+        a.href = `http://localhost:3001${result.downloadUrl}`;
         a.download = file.name.replace(/\.(ppt|pptx)$/, '.pdf');
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
-        window.URL.revokeObjectURL(url);
 
         progress.style.width = '100%';
-        showSuccess('Conversion completed! PDF downloaded.');
+        showSuccess('Conversion completed! File downloaded.');
 
     } catch (error) {
         console.error('Conversion error:', error);
-        if (error.message === 'Failed to fetch') {
-            showError('Cannot connect to server. Please make sure the server is running.');
-        } else {
-            showError('Error converting file: ' + error.message);
-        }
+        showError(error.message || 'Error converting file');
     } finally {
         setTimeout(() => {
             progressBar.style.display = 'none';
