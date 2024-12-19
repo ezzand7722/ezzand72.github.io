@@ -10,7 +10,7 @@ const progress = document.getElementById('progress');
 const statusMessage = document.getElementById('statusMessage');
 
 // Server configuration
-const SERVER_URL = 'http://localhost:3001/convert';
+const SERVER_URL = 'http://localhost:10000/convert';
 
 // Handle file drop and click to upload
 fileInput.addEventListener('change', function(e) {
@@ -100,7 +100,7 @@ convertButton.addEventListener('click', async function() {
 
         // Download the converted file
         const a = document.createElement('a');
-        a.href = `http://localhost:3001${result.downloadUrl}`;
+        a.href = `http://localhost:10000${result.downloadUrl}`;
         a.download = file.name.replace(/\.(ppt|pptx)$/, '.pdf');
         document.body.appendChild(a);
         a.click();
