@@ -1389,67 +1389,38 @@
             }
 
             try {
-                // Show processing message
-                const loadingMessage = document.createElement('div');
-                loadingMessage.className = 'processing-message';
-                loadingMessage.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing video...';
-                document.querySelector('.controls').appendChild(loadingMessage);
+                showSuccess('Processing video...');
+                
+                // Get the video file from the video element
+                const videoBlob = await fetch(videoElement.src).then(r => r.blob());
+                const formData = new FormData();
+                formData.append('video', videoBlob, 'video.webm');
 
-                // Create a canvas to capture video frames
-                const canvas = document.createElement('canvas');
-                canvas.width = videoElement.videoWidth;
-                canvas.height = videoElement.videoHeight;
-                const ctx = canvas.getContext('2d');
-
-                // Setup media recorder
-                const stream = canvas.captureStream();
-                const mediaRecorder = new MediaRecorder(stream, {
-                    mimeType: 'video/webm;codecs=vp8'
+                // Send to your local server
+                const response = await fetch('http://localhost:3001/remove-audio', {
+                    method: 'POST',
+                    body: formData
                 });
 
-                const chunks = [];
-                mediaRecorder.ondataavailable = e => chunks.push(e.data);
-                mediaRecorder.onstop = () => {
-                    const blob = new Blob(chunks, { type: 'video/webm' });
-                    const url = URL.createObjectURL(blob);
-                    
-                    // Create download link
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = 'video_without_audio.webm';
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    
-                    // Cleanup
-                    URL.revokeObjectURL(url);
-                    loadingMessage.remove();
-                    showSuccess('Video processed and downloaded successfully!');
-                };
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Failed to process video');
+                }
 
-                // Start recording
-                mediaRecorder.start();
-
-                // Process video frames
-                videoElement.currentTime = 0;
-                let processFrame = async () => {
-                    if (videoElement.currentTime < videoElement.duration) {
-                        ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
-                        videoElement.currentTime += 1/30; // 30fps
-                        requestAnimationFrame(processFrame);
-                    } else {
-                        mediaRecorder.stop();
-                    }
-                };
-
-                videoElement.onseeked = () => requestAnimationFrame(processFrame);
-                videoElement.currentTime = 0;
-
+                const result = await response.json();
+                
+                // Download the processed file
+                const a = document.createElement('a');
+                a.href = 'http://localhost:3001' + result.downloadUrl;
+                a.download = 'video_without_audio.webm';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                
+                showSuccess('Video processed and downloaded successfully!');
             } catch (error) {
-                console.error('Error in removeAudio:', error);
-                showError(`Failed to process video: ${error.message}`);
-                const loadingMessage = document.querySelector('.processing-message');
-                if (loadingMessage) loadingMessage.remove();
+                console.error('Error:', error);
+                showError('Failed to process video: ' + error.message);
             }
         }
 
