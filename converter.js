@@ -10,17 +10,26 @@ const progress = document.getElementById('progress');
 const statusMessage = document.getElementById('statusMessage');
 
 // Server configuration
-const SERVER_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-    ? 'http://localhost:10000'
-    : 'https://server-pv39.onrender.com';
+const SERVER_URL = 'https://server-pv39.onrender.com';
 
 // Add health check before conversion
 async function checkServerHealth() {
     try {
-        const response = await fetch(`${SERVER_URL}/health`);
+        console.log('Checking server health...');
+        const response = await fetch(`${SERVER_URL}/health`, {
+            method: 'GET',
+            mode: 'cors',
+            headers: {
+                'Accept': 'application/json',
+            }
+        });
+        
+        console.log('Health check response:', response.status);
         if (!response.ok) {
             throw new Error('Server is not responding');
         }
+        const data = await response.json();
+        console.log('Server health:', data);
         return true;
     } catch (error) {
         console.error('Server health check failed:', error);
