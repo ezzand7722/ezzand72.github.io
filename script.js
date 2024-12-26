@@ -184,29 +184,38 @@ function addAudio() {
     input.onchange = function(e) {
         const file = e.target.files[0];
         if (!file) return;
-        
-        // Create audio element
+
+        const url = URL.createObjectURL(file);
+        // Create audio player in timeline
         const audioEl = document.createElement('audio');
-        audioEl.src = URL.createObjectURL(file);
+        audioEl.src = url;
+        audioEl.controls = true;
+        audioEl.style.width = '150px';
         
-        // Create draggable container
+        // Create container for the audio
         const container = document.createElement('div');
         container.className = 'audio-block';
-        container.innerHTML = `
-            <div class="audio-name">${file.name}</div>
-            <div class="time-indicator">0:00</div>
-        `;
-        
-        // Make draggable
         container.draggable = true;
-        let startX = 0;
+        container.style.width = '200px';  // Fixed width
+        container.style.height = '50px';   // Fixed height
+        
+        // Store the audio element
+        audioTrack = {
+            element: audioEl,
+            container: container,
+            startTime: 0
+        };
+        
+        // Add drag events
+        let isDragging = false;
         
         container.addEventListener('mousedown', function(e) {
-            startX = e.clientX;
+            isDragging = true;
+            container.style.opacity = '0.7';
         });
         
-        container.addEventListener('mousemove', function(e) {
-            if (e.buttons !== 1) return; // Only move when mouse button is pressed
+        document.addEventListener('mousemove', function(e) {
+            if (!isDragging) return;
             
             const timeline = document.getElementById('timelineContainer');
             const rect = timeline.getBoundingClientRect();
@@ -214,29 +223,33 @@ function addAudio() {
             
             if (position >= 0 && position <= 1) {
                 container.style.left = `${position * 100}%`;
-                audioStartPosition = position * mediaDuration;
-                container.querySelector('.time-indicator').textContent = formatTime(audioStartPosition);
+                audioTrack.startTime = position * mediaDuration;
+                updateChangelog(`Audio position: ${formatTime(audioTrack.startTime)}`);
             }
         });
         
-        // Remove existing audio block if any
-        const existingBlock = document.querySelector('.audio-block');
-        if (existingBlock) {
-            existingBlock.remove();
-        }
+        document.addEventListener('mouseup', function() {
+            isDragging = false;
+            container.style.opacity = '1';
+        });
         
-        // Add to timeline
+        // Add audio element and label to container
+        container.innerHTML = `
+            <div style="text-align: center;">
+                <div style="color: white; font-size: 12px; margin-bottom: 4px;">${file.name}</div>
+            </div>
+        `;
+        container.appendChild(audioEl);
+        
+        // Clear timeline and add new container
         const timeline = document.getElementById('timelineContainer');
+        timeline.innerHTML = '';
         timeline.appendChild(container);
-        
-        // Store audio track
-        audioTrack = {
-            element: audioEl,
-            container: container
-        };
         
         // Enable merge button
         document.getElementById('mergeButton').disabled = false;
+        
+        updateChangelog('Added new audio track');
     };
     
     input.click();
