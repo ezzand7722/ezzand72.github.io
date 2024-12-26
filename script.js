@@ -181,66 +181,117 @@ function addAudio() {
     input.type = 'file';
     input.accept = 'audio/*';
     
-    input.onchange = function(e) {
+    input.onchange = async function(e) {
         const file = e.target.files[0];
         if (!file) return;
-        
-        const audioUrl = URL.createObjectURL(file);
-        const audioEl = new Audio(audioUrl);
-        
-        // Create simple audio visualization
-        const container = document.createElement('div');
-        container.className = 'audio-track';
-        container.style.width = '200px'; // Initial width
-        container.style.backgroundColor = 'rgba(33, 150, 243, 0.3)';
-        container.style.position = 'absolute';
-        container.style.height = '50px';
-        container.style.cursor = 'move';
-        container.draggable = true;
 
-        // Add time display
-        const timeDisplay = document.createElement('div');
-        timeDisplay.className = 'time-display';
-        timeDisplay.textContent = '0:00';
-        container.appendChild(timeDisplay);
+        try {
+            const audioUrl = URL.createObjectURL(file);
+            const audioEl = new Audio(audioUrl);
 
-        // Add drag events
-        container.addEventListener('dragstart', function(e) {
-            e.dataTransfer.setData('text', '');
-        });
+            // Wait for audio to load
+            await new Promise((resolve) => {
+                audioEl.onloadedmetadata = resolve;
+            });
 
-        container.addEventListener('drag', function(e) {
+            // Create draggable audio bar
+            const audioBar = document.createElement('div');
+            audioBar.className = 'audio-bar';
+            audioBar.style.cssText = `
+                position: absolute;
+                top: 5px;
+                left: 0;
+                width: 200px;
+                height: 40px;
+                background: #2196F3;
+                opacity: 0.7;
+                cursor: move;
+                border-radius: 4px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            `;
+
+            // Add time display
+            const timeDisplay = document.createElement('div');
+            timeDisplay.style.cssText = `
+                color: white;
+                font-size: 12px;
+                font-weight: bold;
+            `;
+            timeDisplay.textContent = '0:00';
+            audioBar.appendChild(timeDisplay);
+
+            // Make draggable
+            audioBar.draggable = true;
+            audioBar.addEventListener('dragstart', (e) => {
+                e.dataTransfer.setData('text', '');
+            });
+
+            audioBar.addEventListener('drag', (e) => {
+                if (!e.clientX) return;
+                updateAudioBarPosition(e.clientX);
+            });
+
+            audioBar.addEventListener('dragend', (e) => {
+                updateAudioBarPosition(e.clientX);
+            });
+
+            // Store audio track
+            audioTrack = {
+                element: audioEl,
+                bar: audioBar,
+                startTime: 0
+            };
+
+            // Clear and add to timeline
             const timeline = document.getElementById('timelineContainer');
-            if (!e.clientX || !timeline) return;
+            timeline.innerHTML = '';
+            timeline.appendChild(audioBar);
 
-            const rect = timeline.getBoundingClientRect();
-            const position = (e.clientX - rect.left) / rect.width;
-            
-            if (position >= 0 && position <= 1) {
-                const time = position * mediaDuration;
-                this.style.left = `${position * 100}%`;
-                timeDisplay.textContent = formatTime(time);
-                audioStartPosition = time;
-            }
-        });
+            // Enable merge button
+            document.getElementById('mergeButton').disabled = false;
 
-        // Store audio track
-        audioTrack = {
-            element: audioEl,
-            container: container,
-            startTime: 0
-        };
-
-        // Clear previous audio track
-        const timeline = document.getElementById('timelineContainer');
-        timeline.innerHTML = '';
-        timeline.appendChild(container);
-
-        document.getElementById('mergeButton').disabled = false;
+            updateChangelog('Added audio track');
+        } catch (error) {
+            console.error('Error adding audio:', error);
+            alert('Error adding audio file');
+        }
     };
-    
+
     input.click();
 }
+
+function updateAudioBarPosition(clientX) {
+    if (!audioTrack || !audioTrack.bar) return;
+
+    const timeline = document.getElementById('timelineContainer');
+    const rect = timeline.getBoundingClientRect();
+    const position = (clientX - rect.left) / rect.width;
+
+    if (position >= 0 && position <= 1) {
+        const time = position * mediaDuration;
+        audioTrack.startTime = time;
+        audioTrack.bar.style.left = `${position * 100}%`;
+        const timeDisplay = audioTrack.bar.querySelector('div');
+        if (timeDisplay) {
+            timeDisplay.textContent = formatTime(time);
+        }
+    }
+}
+
+// Add this style to the head
+document.head.insertAdjacentHTML('beforeend', `
+    <style>
+        #timelineContainer {
+            position: relative;
+            height: 50px !important;
+            background: #333;
+            margin: 20px auto;
+            border: 1px solid #444;
+        }
+    </style>
+`);
 
 function initAudioSlider(audioDuration) {
     const sliderElement = document.getElementById('audioSlider');
