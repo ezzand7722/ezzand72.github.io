@@ -181,163 +181,55 @@ function addAudio() {
     input.type = 'file';
     input.accept = 'audio/*';
     
-    input.onchange = async function(e) {
+    input.onchange = function(e) {
         const file = e.target.files[0];
         if (!file) return;
-
-        try {
-            const audioUrl = URL.createObjectURL(file);
-            const audioEl = new Audio(audioUrl);
-
-            // Wait for audio to load
-            await new Promise((resolve) => {
-                audioEl.onloadedmetadata = resolve;
-            });
-
-            // Create draggable audio bar
-            const audioBar = document.createElement('div');
-            audioBar.className = 'audio-bar';
-            audioBar.style.cssText = `
-                position: absolute;
-                top: 5px;
-                left: 0;
-                width: 200px;
-                height: 40px;
-                background: #2196F3;
-                opacity: 0.7;
-                cursor: move;
-                border-radius: 4px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
+        
+        const audioUrl = URL.createObjectURL(file);
+        const audioEl = new Audio(audioUrl);
+        
+        audioEl.onloadedmetadata = () => {
+            // Create audio block
+            const audioBlock = document.createElement('div');
+            audioBlock.className = 'audio-block';
+            audioBlock.draggable = true;
+            audioBlock.innerHTML = `
+                <div class="audio-label">${file.name}</div>
+                <div class="time-label">0:00</div>
             `;
-
-            // Add time display
-            const timeDisplay = document.createElement('div');
-            timeDisplay.style.cssText = `
-                color: white;
-                font-size: 12px;
-                font-weight: bold;
-            `;
-            timeDisplay.textContent = '0:00';
-            audioBar.appendChild(timeDisplay);
-
-            // Make draggable
-            audioBar.draggable = true;
-            audioBar.addEventListener('dragstart', (e) => {
+            
+            // Add drag events
+            audioBlock.ondragstart = (e) => {
                 e.dataTransfer.setData('text', '');
-            });
-
-            audioBar.addEventListener('drag', (e) => {
+            };
+            
+            audioBlock.ondrag = (e) => {
                 if (!e.clientX) return;
-                updateAudioBarPosition(e.clientX);
-            });
-
-            audioBar.addEventListener('dragend', (e) => {
-                updateAudioBarPosition(e.clientX);
-            });
-
+                const rect = timeline.getBoundingClientRect();
+                const pos = (e.clientX - rect.left) / rect.width;
+                if (pos >= 0 && pos <= 1) {
+                    audioStartPosition = pos * mediaDuration;
+                    audioBlock.querySelector('.time-label').textContent = formatTime(audioStartPosition);
+                }
+            };
+            
+            // Clear timeline and add new block
+            const timeline = document.getElementById('timelineContainer');
+            timeline.innerHTML = '';
+            timeline.appendChild(audioBlock);
+            
             // Store audio track
             audioTrack = {
                 element: audioEl,
-                bar: audioBar,
+                block: audioBlock,
                 startTime: 0
             };
-
-            // Clear and add to timeline
-            const timeline = document.getElementById('timelineContainer');
-            timeline.innerHTML = '';
-            timeline.appendChild(audioBar);
-
-            // Enable merge button
+            
             document.getElementById('mergeButton').disabled = false;
-
-            updateChangelog('Added audio track');
-        } catch (error) {
-            console.error('Error adding audio:', error);
-            alert('Error adding audio file');
-        }
+        };
     };
-
+    
     input.click();
-}
-
-function updateAudioBarPosition(clientX) {
-    if (!audioTrack || !audioTrack.bar) return;
-
-    const timeline = document.getElementById('timelineContainer');
-    const rect = timeline.getBoundingClientRect();
-    const position = (clientX - rect.left) / rect.width;
-
-    if (position >= 0 && position <= 1) {
-        const time = position * mediaDuration;
-        audioTrack.startTime = time;
-        audioTrack.bar.style.left = `${position * 100}%`;
-        const timeDisplay = audioTrack.bar.querySelector('div');
-        if (timeDisplay) {
-            timeDisplay.textContent = formatTime(time);
-        }
-    }
-}
-
-// Add this style to the head
-document.head.insertAdjacentHTML('beforeend', `
-    <style>
-        #timelineContainer {
-            position: relative;
-            height: 50px !important;
-            background: #333;
-            margin: 20px auto;
-            border: 1px solid #444;
-        }
-    </style>
-`);
-
-function initAudioSlider(audioDuration) {
-    const sliderElement = document.getElementById('audioSlider');
-    
-    if (audioSlider) {
-        audioSlider.destroy();
-    }
-    
-    audioSlider = noUiSlider.create(sliderElement, {
-        start: [0, Math.min(audioDuration, mediaDuration)],
-        connect: true,
-        range: {
-            'min': 0,
-            'max': mediaDuration
-        },
-        tooltips: [
-            { to: formatTime, from: Number },
-            { to: formatTime, from: Number }
-        ]
-    });
-}
-
-function togglePreview() {
-    if (!audioTrack || !mediaElement) return;
-    
-    if (!previewMode) {
-        // Start preview
-        const [startTime, endTime] = audioSlider.get();
-        mediaElement.currentTime = startTime;
-        audioTrack.element.currentTime = 0;
-        
-        mediaElement.play();
-        audioTrack.element.play();
-        
-        document.getElementById('previewButton').textContent = 'Stop Preview';
-        document.getElementById('previewButton').classList.add('preview-active');
-    } else {
-        // Stop preview
-        mediaElement.pause();
-        audioTrack.element.pause();
-        
-        document.getElementById('previewButton').textContent = 'Preview Mix';
-        document.getElementById('previewButton').classList.remove('preview-active');
-    }
-    
-    previewMode = !previewMode;
 }
 
 async function mergeAudioVideo() {
@@ -345,17 +237,11 @@ async function mergeAudioVideo() {
         alert('Please add both video and audio first');
         return;
     }
-
+    
     try {
-        const [startTime, endTime] = audioSlider.get().map(Number);
-        
-        const ctx = new AudioContext();
-        const videoStream = mediaElement.captureStream();
-        const audioStream = audioTrack.element.captureStream();
-        
         const recorder = new MediaRecorder(new MediaStream([
-            ...videoStream.getTracks(),
-            ...audioStream.getTracks()
+            ...mediaElement.captureStream().getTracks(),
+            ...audioTrack.element.captureStream().getTracks()
         ]));
         
         const chunks = [];
@@ -370,25 +256,23 @@ async function mergeAudioVideo() {
             a.click();
         };
         
-        mediaElement.currentTime = startTime;
-        audioTrack.element.currentTime = 0;
-        
+        mediaElement.currentTime = 0;
         mediaElement.play();
-        audioTrack.element.play();
-        recorder.start();
         
-        mediaElement.ontimeupdate = () => {
-            if (mediaElement.currentTime >= endTime) {
-                recorder.stop();
-                mediaElement.pause();
-                audioTrack.element.pause();
-                mediaElement.ontimeupdate = null;
-            }
+        setTimeout(() => {
+            audioTrack.element.currentTime = 0;
+            audioTrack.element.play();
+            recorder.start();
+        }, audioStartPosition * 1000);
+        
+        mediaElement.onended = () => {
+            recorder.stop();
+            mediaElement.pause();
+            audioTrack.element.pause();
         };
-        
     } catch (error) {
         console.error('Merge error:', error);
-        alert('Error merging files. Check console for details.');
+        alert('Error merging files');
     }
 }
 
