@@ -181,75 +181,107 @@ function addAudio() {
     input.type = 'file';
     input.accept = 'audio/*';
     
-    input.onchange = function(e) {
+    input.onchange = async function(e) {
         const file = e.target.files[0];
-        if (!file) return;
+        if (!file) {
+            updateChangelog('Error: No audio file selected');
+            return;
+        }
 
-        // Create simple audio block
-        const audioEl = document.createElement('audio');
-        audioEl.src = URL.createObjectURL(file);
-        audioEl.controls = true;
-        audioEl.style.width = '150px';
+        try {
+            // Create audio element
+            const audioEl = document.createElement('audio');
+            audioEl.src = URL.createObjectURL(file);
+            audioEl.controls = true;
+            audioEl.style.width = '150px';
 
-        const block = document.createElement('div');
-        block.style.cssText = `
-            position: absolute;
-            top: 5px;
-            left: 0;
-            padding: 10px;
-            background: #2196F3;
-            border-radius: 4px;
-            cursor: move;
-            width: 170px;
-            height: 60px;
-        `;
+            // Wait for audio to load
+            await new Promise((resolve, reject) => {
+                audioEl.onloadedmetadata = resolve;
+                audioEl.onerror = () => reject('Failed to load audio');
+            });
 
-        block.appendChild(audioEl);
+            const block = document.createElement('div');
+            block.className = 'audio-block';
+            block.style.cssText = `
+                position: absolute;
+                top: 5px;
+                left: 0;
+                padding: 10px;
+                background: #2196F3;
+                border-radius: 4px;
+                cursor: move;
+                width: 170px;
+                height: 60px;
+            `;
 
-        // Simple drag functionality
-        let isDragging = false;
-        let startX = 0;
+            // Add filename display
+            const fileName = document.createElement('div');
+            fileName.textContent = file.name;
+            fileName.style.cssText = `
+                color: white;
+                font-size: 10px;
+                text-align: center;
+                margin-bottom: 5px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            `;
+            block.appendChild(fileName);
+            block.appendChild(audioEl);
 
-        block.onmousedown = function(e) {
-            isDragging = true;
-            startX = e.clientX - block.offsetLeft;
-            block.style.opacity = '0.7';
-        };
+            // Simple drag functionality
+            let isDragging = false;
+            let startX = 0;
 
-        document.onmousemove = function(e) {
-            if (!isDragging) return;
+            block.onmousedown = function(e) {
+                isDragging = true;
+                startX = e.clientX - block.offsetLeft;
+                block.style.opacity = '0.7';
+            };
 
+            document.onmousemove = function(e) {
+                if (!isDragging) return;
+
+                const timeline = document.getElementById('timelineContainer');
+                const rect = timeline.getBoundingClientRect();
+                const newLeft = e.clientX - startX - rect.left;
+                const position = newLeft / rect.width;
+
+                if (position >= 0 && position <= 1) {
+                    block.style.left = `${position * 100}%`;
+                    audioStartPosition = position * mediaDuration;
+                    updateChangelog(`Audio position: ${formatTime(audioStartPosition)}`);
+                }
+            };
+
+            document.onmouseup = function() {
+                isDragging = false;
+                block.style.opacity = '1';
+            };
+
+            // Clear timeline and add new block
             const timeline = document.getElementById('timelineContainer');
-            const rect = timeline.getBoundingClientRect();
-            const newLeft = e.clientX - startX - rect.left;
-            const position = newLeft / rect.width;
+            timeline.innerHTML = '';
+            timeline.appendChild(block);
 
-            if (position >= 0 && position <= 1) {
-                block.style.left = `${position * 100}%`;
-                audioStartPosition = position * mediaDuration;
-                updateChangelog(`Audio position: ${formatTime(audioStartPosition)}`);
-            }
-        };
+            // Store audio track
+            audioTrack = {
+                element: audioEl,
+                container: block,
+                startTime: 0
+            };
 
-        document.onmouseup = function() {
-            isDragging = false;
-            block.style.opacity = '1';
-        };
+            document.getElementById('mergeButton').disabled = false;
+            updateChangelog(`Added audio: ${file.name}`);
 
-        // Clear timeline and add new block
-        const timeline = document.getElementById('timelineContainer');
-        timeline.innerHTML = '';
-        timeline.appendChild(block);
-
-        // Store audio track
-        audioTrack = {
-            element: audioEl,
-            startTime: 0
-        };
-
-        document.getElementById('mergeButton').disabled = false;
+        } catch (error) {
+            console.error('Error adding audio:', error);
+            updateChangelog('Error: Failed to add audio file');
+            alert('Failed to add audio file. Please try again.');
+        }
     };
-
+    
     input.click();
 }
 
