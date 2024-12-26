@@ -337,9 +337,48 @@
             border-top: 2px solid red;
             padding-top: 10px;
         }
+
+        .debug-indicator {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #00ff00; /* Changed to green */
+            color: #000000; /* Changed to black for better visibility on green */
+            text-align: center;
+            padding: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            z-index: 9999;
+            text-transform: uppercase;
+            box-shadow: 0 -2px 10px rgba(0, 255, 0, 0.5);
+        }
+
+        .audio-editor-container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        #audioSlider {
+            height: 20px;
+            background: #333;
+            border: 1px solid #444;
+        }
+        
+        #audioSlider .noUi-connect {
+            background: #2196F3;
+        }
+        
+        .preview-active {
+            box-shadow: 0 0 10px #ff0000;
+        }
     </style>
 </head>
 <body class="dark-theme">
+    <div style="background: lime; color: black; padding: 20px; text-align: center; font-size: 24px; font-weight: bold; margin: 0; position: sticky; top: 0; z-index: 9999;">
+        TEST BANNER - If you see this, changes are working!
+    </div>
+
     <div class="container mt-5">
         <h1 class="text-center">Audio/Video Editor</h1>
         <div class="form-group">
@@ -357,6 +396,11 @@
                 <div id="progressBar" class="progress-bar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
             </div>
             <span id="currentTime">0:00</span> / <span id="duration">0:00</span>
+        </div>
+        <div class="audio-editor-container mt-3">
+            <label class="text-white">Audio Position & Length:</label>
+            <div id="audioSlider"></div>
+            <button id="previewButton" class="btn btn-warning mt-2" disabled>Preview Mix</button>
         </div>
         <div class="audio-position-wrapper">
             <label class="text-white mb-1">Audio Position:</label>
@@ -385,5 +429,8 @@
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <div class="debug-indicator">
+        ✓ CHANGES APPLIED SUCCESSFULLY - New Audio Controls Added
+    </div>
 </body>
 </html>
