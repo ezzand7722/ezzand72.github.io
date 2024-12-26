@@ -88,11 +88,11 @@
         #timelineContainer {
             width: 100%;
             max-width: 600px;
-            height: 100px;
+            height: 60px;
             background: #2d2d2d;
             margin: 20px auto;
             position: relative;
-            overflow: hidden;
+            border: 1px solid #444;
         }
         
         .audio-track {
@@ -102,7 +102,8 @@
             left: 0;
             right: 0;
             cursor: move;
-            border: 1px solid #4CAF50;
+            border: 2px solid #2196F3;
+            border-radius: 4px;
         }
         
         .waveform {
@@ -278,6 +279,15 @@
             font-size: 12px;
             color: white;
             margin-top: 5px;
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1a1a1a;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 12px;
         }
 
         .position-slider {
@@ -396,15 +406,6 @@
                 <div id="progressBar" class="progress-bar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
             </div>
             <span id="currentTime">0:00</span> / <span id="duration">0:00</span>
-        </div>
-        <div class="audio-editor-container mt-3">
-            <label class="text-white">Audio Position & Length:</label>
-            <div id="audioSlider"></div>
-            <button id="previewButton" class="btn btn-warning mt-2" disabled>Preview Mix</button>
-        </div>
-        <div class="audio-position-wrapper">
-            <label class="text-white mb-1">Audio Position:</label>
-            <div id="audioPositionSlider" class="position-slider"></div>
         </div>
         <div id="timelineContainer"></div>
         <div id="audioContainer" class="audio-timeline"></div>
