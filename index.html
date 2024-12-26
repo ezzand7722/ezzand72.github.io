@@ -3,1575 +3,387 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Audio Trimmer</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/wavesurfer.js/6.6.3/wavesurfer.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <script src="https://unpkg.com/vexflow/releases/vexflow-min.js"></script>
+    <title>Audio/Video Editor</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/14.6.3/nouislider.min.css" rel="stylesheet">
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 48rem;
-            margin: 0 auto;
-            padding: 20px;
-            background: linear-gradient(135deg, #1a1e2e, #2d3748);
-            color: #e5e7eb;
-            background-image: 
-                radial-gradient(circle at 25px 25px, rgba(168, 85, 247, 0.15) 2%, transparent 0%),
-                radial-gradient(circle at 75px 75px, rgba(168, 85, 247, 0.1) 2%, transparent 0%);
-            background-size: 100px 100px;
-            position: relative;
-            overflow-x: hidden;
+        body.light-theme {
+            background-color: #ffffff;
+            color: #000000;
         }
-
-        body::before {
-            content: '♪';
-            position: fixed;
-            top: 15%;
-            left: 15%;
-            font-size: 60px;
-            color: rgba(168, 85, 247, 0.1);
-            animation: float 8s ease-in-out infinite;
+        body.dark-theme {
+            background-color: #121212;
+            color: #ffffff;
         }
-
-        body::after {
-            content: '♫';
-            position: fixed;
-            bottom: 15%;
-            right: 15%;
-            font-size: 80px;
-            color: rgba(168, 85, 247, 0.1);
-            animation: float 6s ease-in-out infinite reverse;
+        body.dark-theme .card,
+        body.dark-theme .form-control,
+        body.dark-theme .btn-light {
+            background-color: #1e1e1e;
+            color: #ffffff;
+            border-color: #333;
         }
-
-        @keyframes float {
-            0%, 100% {
-                transform: translateY(0) rotate(0deg);
-            }
-            50% {
-                transform: translateY(-20px) rotate(10deg);
-            }
+        body.dark-theme .form-control:focus {
+            background-color: #2d2d2d;
+            color: #ffffff;
         }
-
-        .container {
-            background: rgba(26, 32, 44, 0.95);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 1.5rem;
-            border-radius: 0.5rem;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        #videoPlayer, #audioPlayer {
+            width: 100%;
+            max-width: 600px;
+            margin-top: 20px;
+            background-color: #000;
         }
-
-        .container:hover {
-            box-shadow: 0 8px 32px rgba(168, 85, 247, 0.15);
-            transition: box-shadow 0.3s ease;
+        #rangeSlider {
+            width: 100%;
+            max-width: 600px;
+            margin: 20px 0;
+            height: 10px;
         }
-
-        h1 {
-            color: white;
-            text-align: center;
-            margin-bottom: 1.5rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2.5rem;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        body.dark-theme .noUi-connect {
+            background: #4CAF50;
         }
-
-        h1 i {
-            transition: transform 0.3s ease;
+        body.dark-theme .noUi-handle {
+            background: #2196F3;
+            border: 1px solid #2196F3;
         }
-
-        h1 i:hover {
-            transform: rotate(-15deg);
-        }
-
-        .upload-area {
-            border: 2px dashed #2d3748;
-            border-radius: 0.5rem;
-            padding: 3rem;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            background: rgba(45, 55, 72, 0.2);
-        }
-
-        .upload-area:hover {
-            border-color: white;
-            background: rgba(45, 55, 72, 0.3);
-        }
-
-        .upload-area.drag-active {
-            border-color: #a855f7;
-            background: rgba(168, 85, 247, 0.1);
-            transform: scale(1.02);
-        }
-
-        .upload-icon {
-            height: 3rem;
-            width: 3rem;
-            margin: 0 auto;
-            color: #9ca3af;
-        }
-
-        #waveform {
-            margin-top: 1rem;
-            border-radius: 0.5rem;
-            overflow: hidden;
-            background: rgba(45, 55, 72, 0.2);
-        }
-
         .controls {
             display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
             justify-content: center;
-            margin-top: 1rem;
-            padding: 0.5rem;
-            background: rgba(45, 55, 72, 0.2);
-            border-radius: 0.5rem;
-        }
-
-        .controls button {
-            min-width: 100px;
-            justify-content: center;
-            padding: 0.75rem 1rem;
-            font-size: 0.875rem;
-            transition: all 0.2s ease;
-            background: #4b5563;
-            color: #e5e7eb;
-        }
-
-        button.outline {
-            background: transparent;
-            border: 1px solid #2d3748;
-            color: #e5e7eb;
-        }
-
-        button.outline:hover {
-            background: rgba(45, 55, 72, 0.2);
-            border-color: white;
-            color: white;
-        }
-
-        .controls button.delete:hover {
-            background: #dc2626;
-        }
-
-        button {
-            display: inline-flex;
             align-items: center;
-            gap: 8px;
-            padding: 0.5rem 1rem;
-            border: none;
-            border-radius: 0.375rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
         }
-
-        button i {
-            font-size: 1rem;
-        }
-
-        button.primary {
-            background: #2d3748;
-            color: white;
-        }
-
-        button.outline {
-            background: transparent;
-            border: 1px solid #e5e7eb;
-            color: #374151;
-        }
-
-        button:hover {
-            opacity: 0.9;
-        }
-
-        .range-slider {
-            margin-top: 1.5rem;
-            position: relative;
-            height: 1.75rem;
-            touch-action: none;
-            -webkit-user-select: none;
-            user-select: none;
-        }
-
-        .range-track {
-            height: 0.25rem;
-            width: 100%;
-            background: #4b5563;
-            border-radius: 9999px;
-            position: relative;
-            top: 50%;
-            transform: translateY(-50%);
-        }
-
-        .range-selection {
-            position: absolute;
-            height: 100%;
-            background: #a855f7;
-        }
-
-        .range-handle {
-            width: 1.25rem;
-            height: 1.25rem;
-            background: #2d3748;
-            border-radius: 50%;
-            position: absolute;
-            top: 50%;
-            transform: translate(-50%, -50%);
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            cursor: ew-resize;
-            touch-action: none;
-            -webkit-user-select: none;
-            user-select: none;
-            border: 2px solid #a855f7;
-        }
-
-        .range-handle::after {
-            content: '';
-            width: 0.5rem;
-            height: 0.5rem;
-            background: #a855f7;
-            border-radius: 50%;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-        }
-
-        .time-display {
+        .progress-container {
             display: flex;
-            justify-content: space-between;
-            margin-top: 0.5rem;
-            font-size: 0.875rem;
-            color: #a855f7;
+            align-items: center;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        body.dark-theme .progress {
+            background-color: #333;
+        }
+        .noUi-handle {
+            width: 20px !important;
+            height: 20px !important;
+            border-radius: 50% !important;
+            cursor: pointer !important;
+            background: #2196F3 !important;
+            border: 2px solid #fff !important;
+            box-shadow: none !important;
         }
 
-        #audioInput {
+        .noUi-handle:before,
+        .noUi-handle:after {
             display: none;
         }
 
-        button.delete {
-            background: #991b1b;
-            color: #e5e7eb;
+        .noUi-connect {
+            background: #4CAF50 !important;
         }
 
-        .deleted-region {
-            position: absolute;
-            height: 100%;
-            background: rgba(239, 68, 68, 0.2);
-            pointer-events: none;
+        body.dark-theme .noUi-handle {
+            border-color: #333 !important;
         }
 
-        button.outline:hover {
-            background: #f3f4f6;
-        }
-
-        .musical-note-1 {
-            content: '♩';
-            position: fixed;
-            top: 30%;
-            right: 20%;
-            font-size: 50px;
-            color: rgba(168, 85, 247, 0.08);
-            animation: floatRotate 7s ease-in-out infinite;
-        }
-
-        .musical-note-2 {
-            content: '♬';
-            position: fixed;
-            bottom: 40%;
-            left: 25%;
-            font-size: 70px;
-            color: rgba(168, 85, 247, 0.12);
-            animation: floatRotate 9s ease-in-out infinite reverse;
-        }
-
-        .musical-note-3 {
-            content: '♪';
-            position: fixed;
-            top: 60%;
-            right: 30%;
-            font-size: 45px;
-            color: rgba(168, 85, 247, 0.1);
-            animation: float 10s ease-in-out infinite;
-        }
-
-        @keyframes floatRotate {
-            0%, 100% {
-                transform: translateY(0) rotate(0deg);
-            }
-            50% {
-                transform: translateY(-30px) rotate(15deg);
-            }
-        }
-
-        @keyframes pulse {
-            0%, 100% {
-                opacity: 0.1;
-            }
-            50% {
-                opacity: 0.3;
-            }
-        }
-
-        .loading-message {
-            text-align: center;
-            margin-top: 1rem;
-            padding: 1rem;
-            background: rgba(168, 85, 247, 0.1);
-            border-radius: 0.5rem;
-        }
-
-        .loading-message small {
-            display: block;
-            margin-top: 0.5rem;
-            color: #9ca3af;
-        }
-
-        .processing-steps {
-            margin-top: 1rem;
-            text-align: left;
-            padding: 1rem;
-            background: rgba(0, 0, 0, 0.1);
-            border-radius: 0.5rem;
-        }
-
-        .step {
-            margin: 0.5rem 0;
-            color: #a855f7;
-        }
-
-        #videoContainer {
-            background: #1f2937;
-            border-radius: 0.5rem;
-            overflow: hidden;
-            margin: 20px 0;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-            position: relative;
-            padding-top: 56.25%; /* 16:9 Aspect Ratio */
-        }
-
-        #videoElement {
-            position: absolute;
-            top: 0;
-            left: 0;
+        #timelineContainer {
             width: 100%;
-            height: 100%;
-            border-radius: 0.5rem;
-            background: #1f2937;
+            max-width: 600px;
+            height: 100px;
+            background: #2d2d2d;
+            margin: 20px auto;
+            position: relative;
+            overflow: hidden;
         }
-
-        .video-controls {
+        
+        .audio-track {
             position: absolute;
-            bottom: 0;
+            height: 50px;
+            background: rgba(76, 175, 80, 0.3);
             left: 0;
             right: 0;
-            background: rgba(31, 41, 55, 0.9);
-            padding: 1rem;
-            display: flex;
-            gap: 1rem;
-            align-items: center;
-            backdrop-filter: blur(5px);
+            cursor: move;
+            border: 1px solid #4CAF50;
         }
-
-        .preview-container {
-            display: none;
-            margin-top: 1rem;
-        }
-
-        .preview-container.visible {
-            display: block;
-        }
-
-        .preview-label {
-            color: #a855f7;
-            font-size: 0.9rem;
-            margin-bottom: 0.5rem;
-        }
-
-        #previewVideo {
+        
+        .waveform {
             width: 100%;
-            border-radius: 0.5rem;
-            background: #1f2937;
+            height: 100%;
         }
-
-        .upload-area p {
-            margin-bottom: 0.5rem;
-            color: #e5e7eb;
-        }
-
-        .logo-container {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 1rem;
-            margin-bottom: 2rem;
-        }
-
-        .main-logo {
-            width: 60px;
-            height: 60px;
-            object-fit: contain;
-            filter: drop-shadow(0 0 8px rgba(168, 85, 247, 0.3));
-        }
-
-        h1 {
-            color: white;
-            font-size: 2.5rem;
-            font-weight: 700;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
-            margin: 0;
-        }
-
-        .logo-wrapper {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-            padding: 1rem;
-            background: linear-gradient(135deg, rgba(45, 55, 72, 0.5), rgba(26, 32, 44, 0.5));
-            border-radius: 1rem;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-        }
-
-        .logo-icon {
-            position: relative;
-            font-size: 3.5rem;
-            width: 3.5rem;
-            height: 3.5rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .logo-icon .fa-play-circle {
-            color: #a855f7;
-            filter: drop-shadow(0 0 10px rgba(168, 85, 247, 0.5));
-            transition: transform 0.3s ease;
-        }
-
-        .logo-icon .overlay-icon {
+        
+        .resize-handle {
             position: absolute;
-            font-size: 1.5rem;
-            bottom: -0.5rem;
-            right: -0.5rem;
-            color: white;
-            background: #1f2937;
-            padding: 0.3rem;
-            border-radius: 50%;
-            border: 2px solid #a855f7;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-            transition: transform 0.3s ease;
+            width: 10px;
+            height: 100%;
+            background: #4CAF50;
+            cursor: ew-resize;
+        }
+        
+        .resize-handle.left {
+            left: 0;
+        }
+        
+        .resize-handle.right {
+            right: 0;
+        }
+        
+        .dragging {
+            opacity: 0.7;
         }
 
-        .logo-icon:hover .fa-play-circle {
-            transform: scale(1.1);
+        #audioContainer {
+            width: 100%;
+            max-width: 600px;
+            height: 60px;
+            background: #1a1a1a;
+            margin: 10px auto;
+            position: relative;
+            border: 1px solid #333;
         }
-
-        .logo-icon:hover .overlay-icon {
-            transform: rotate(-15deg);
+        
+        .added-audio-container {
+            position: absolute;
+            top: 5px;
+            left: 0;
+            background: rgba(33, 150, 243, 0.2);
+            border: 1px solid #2196F3;
+            padding: 5px;
+            border-radius: 4px;
+            cursor: move;
+            max-width: 200px;
         }
-
-        h1 {
-            color: white;
-            font-size: 2.5rem;
-            font-weight: 700;
-            margin: 0;
-            background: linear-gradient(135deg, #fff, #a855f7);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            text-shadow: 0 2px 10px rgba(168, 85, 247, 0.3);
+        
+        .added-audio {
+            width: 150px;
+            height: 30px;
         }
-
-        .logo-container {
+        
+        .position-label {
+            font-size: 12px;
             text-align: center;
-            margin-bottom: 2rem;
-            transition: transform 0.3s ease;
+            color: #fff;
         }
-
-        .logo-container:hover {
-            transform: scale(1.1);
+        
+        .dragging {
+            opacity: 0.7;
         }
-
-        h1 {
-            cursor: pointer;
-            transition: transform 0.3s ease;
+        
+        #changelog {
+            max-height: 200px;
+            overflow-y: auto;
+            background: #1a1a1a;
+            border-radius: 4px;
         }
-
-        h1:hover {
-            transform: scale(1.05);
+        
+        #changelog div {
+            padding: 5px;
+            border-bottom: 1px solid #333;
+            font-size: 14px;
         }
-
-        a {
-            text-decoration: none;
-            color: inherit;
+        
+        #audioTimeline {
+            width: 100%;
+            max-width: 600px;
+            height: 80px;
+            background: #1a1a1a;
+            margin: 10px auto;
+            position: relative;
+            border: 1px solid #333;
+            overflow: hidden;
         }
-
-        .preview-container {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.9);
-            padding: 1rem;
-            border-radius: 0.5rem;
-            display: none;
+        
+        .audio-segment {
+            position: absolute;
+            height: 60px;
+            top: 10px;
+            left: 0;
+            width: 200px;
+            background: rgba(33, 150, 243, 0.2);
+            border: 1px solid #2196F3;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            cursor: move;
+        }
+        
+        .resize-handle {
+            width: 10px;
+            height: 100%;
+            background: #2196F3;
+            cursor: ew-resize;
+            position: absolute;
+            top: 0;
+        }
+        
+        .resize-handle.left { left: 0; }
+        .resize-handle.right { right: 0; }
+        
+        .segment-content {
+            padding: 0 15px;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .audio-segment audio {
+            width: 120px;
+            height: 30px;
+        }
+        
+        .time-indicator {
+            font-size: 12px;
+            color: white;
+            margin-top: 2px;
+        }
+        
+        .audio-segment.dragging {
+            opacity: 0.7;
             z-index: 1000;
         }
 
-        .preview-container.visible {
-            display: block;
+        #audioTimeline {
+            width: 100%;
+            max-width: 600px;
+            height: 100px;
+            background: #1a1a1a;
+            margin: 20px auto;
+            position: relative;
+            border: 1px solid #333;
         }
-
-        #previewVideo {
-            max-width: 80vw;
-            max-height: 80vh;
+        
+        .audio-track-container {
+            position: absolute;
+            top: 10px;
+            left: 0;
+            padding: 10px;
+            background: rgba(33, 150, 243, 0.2);
+            border: 1px solid #2196F3;
+            border-radius: 4px;
+            cursor: move;
         }
-
-        .controls button {
-            margin: 0 0.25rem;
-            padding: 0.5rem 1rem;
-            background: rgba(168, 85, 247, 0.1);
-            border: 1px solid rgba(168, 85, 247, 0.2);
-            color: #e5e7eb;
-            border-radius: 0.5rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
+        
+        .audio-track-container.dragging {
+            opacity: 0.7;
         }
-
-        .controls button:hover {
-            background: rgba(168, 85, 247, 0.2);
+        
+        .audio-track-container audio {
+            width: 150px;
+            height: 32px;
         }
-
-        .processing-message {
-            color: #a855f7;
-            font-size: 0.875rem;
-            margin-top: 0.5rem;
-        }
-
-        .success-message {
-            color: #a855f7;
-            font-size: 0.875rem;
-            margin-top: 0.5rem;
-        }
-
-        .error-message {
-            color: #dc2626;
-            font-size: 0.875rem;
-            margin-top: 0.5rem;
-        }
-
-        .processing-message {
-            color: #a855f7;
+        
+        .time-display {
             text-align: center;
-            padding: 1rem;
-            margin: 1rem 0;
-            background: rgba(168, 85, 247, 0.1);
-            border-radius: 0.5rem;
+            font-size: 12px;
+            color: white;
+            margin-top: 5px;
         }
 
-        .error-message {
-            color: #ef4444;
-            text-align: center;
-            padding: 1rem;
-            margin: 1rem 0;
-            background: rgba(239, 68, 68, 0.1);
-            border-radius: 0.5rem;
+        .position-slider {
+            width: 100%;
+            max-width: 600px;
+            height: 30px;
+            background: #2d2d2d;
+            margin: 0 auto;
+            position: relative;
+            border: 1px solid #333;
         }
 
-        .success-message {
-            color: #10b981;
-            text-align: center;
-            padding: 1rem;
-            margin: 1rem 0;
-            background: rgba(16, 185, 129, 0.1);
-            border-radius: 0.5rem;
+        .audio-position-bar {
+            position: absolute;
+            top: 0;
+            width: 4px;
+            height: 100%;
+            background: #2196F3;
+            cursor: move;
+            z-index: 100;
         }
 
-        .fa-spinner {
-            animation: spin 1s linear infinite;
+        .audio-position-bar::before {
+            content: '';
+            position: absolute;
+            top: -5px;
+            left: -8px;
+            width: 20px;
+            height: 20px;
+            background: #2196F3;
+            border-radius: 50%;
         }
 
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        .position-time {
+            position: absolute;
+            top: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1a1a1a;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 12px;
+            color: white;
+            white-space: nowrap;
+        }
+
+        .audio-position-wrapper {
+            width: 100%;
+            max-width: 600px;
+            margin: 10px auto;
+        }
+
+        .version-indicator {
+            font-weight: bold;
+            font-size: 1.2em;
+            text-transform: uppercase;
+            border-top: 2px solid red;
+            padding-top: 10px;
         }
     </style>
 </head>
-<body>
-    <div class="musical-note-1">♩</div>
-    <div class="musical-note-2">♬</div>
-    <div class="musical-note-3">♪</div>
-
-    <div class="container">
-        <a href="interface.html" style="text-decoration: none;">
-            <h1>
-                <i class="fas fa-tools"></i>
-                WebCraft Tools
-            </h1>
-        </a>
-
-        <div class="logo-container">
-            <a href="interface.html">
-                <i class="fas fa-tools" style="font-size: 3rem; color: #a855f7; margin-bottom: 1rem;"></i>
-            </a>
+<body class="dark-theme">
+    <div class="container mt-5">
+        <h1 class="text-center">Audio/Video Editor</h1>
+        <div class="form-group">
+            <label for="fileInput">Upload Audio/Video File</label>
+            <input type="file" class="form-control-file" id="fileInput" accept="audio/*,video/*">
         </div>
-        
-        <div class="upload-area" onclick="document.getElementById('mediaInput').click()">
-            <p>Click or drag audio/video file here</p>
-            <input type="file" id="mediaInput" accept="audio/*,video/*">
+        <video id="videoPlayer" controls class="d-none"></video>
+        <audio id="audioPlayer" controls class="d-none"></audio>
+        <div class="form-group mt-3">
+            <label for="rangeSlider">Select Time Range</label>
+            <div id="rangeSlider"></div>
         </div>
-
-        <div id="waveform"></div>
-
-        <div id="videoContainer" style="display: none; margin: 20px 0;">
-            <video id="videoElement" width="100%" controls>
-                Your browser does not support the video element.
-            </video>
-        </div>
-
-        <div class="preview-container">
-            <div class="preview-label">Preview of edited video:</div>
-            <video id="previewVideo" controls>
-                Your browser does not support the video element.
-            </video>
-        </div>
-
-        <div class="range-slider">
-            <div class="range-track">
-                <div class="range-selection"></div>
-                <div class="range-handle left"></div>
-                <div class="range-handle right"></div>
+        <div class="progress-container">
+            <div class="progress flex-grow-1">
+                <div id="progressBar" class="progress-bar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
             </div>
+            <span id="currentTime">0:00</span> / <span id="duration">0:00</span>
         </div>
-
-        <div class="time-display">
-            <span id="startTime">00:00</span>
-            <span id="endTime">00:00</span>
+        <div class="audio-position-wrapper">
+            <label class="text-white mb-1">Audio Position:</label>
+            <div id="audioPositionSlider" class="position-slider"></div>
         </div>
-
+        <div id="timelineContainer"></div>
+        <div id="audioContainer" class="audio-timeline"></div>
+        <div id="audioTimeline"></div>
         <div class="controls">
-            <button onclick="playSelection()">
-                <i class="fas fa-play"></i>
-                Play
-            </button>
-            <button onclick="restartAudio()" class="outline">
-                <i class="fas fa-redo"></i>
-                Restart
-            </button>
-            <button onclick="deleteSelection()" class="delete">
-                <i class="fas fa-scissors"></i>
-                Cut
-            </button>
-            <button onclick="undoLastChange()" class="outline">
-                <i class="fas fa-undo"></i>
-                Undo
-            </button>
-            <button onclick="saveAudio()">
-                <i class="fas fa-download"></i>
-                Save
-            </button>
-            <button onclick="resetTrimmer()" class="outline">
-                <i class="fas fa-sync"></i>
-                New File
-            </button>
-            <button onclick="removeAudio()" id="removeAudioBtn">
-                <i class="fas fa-volume-mute"></i>
-                Remove Audio
-            </button>
-            <button onclick="mergeFiles()" id="mergeBtn">
-                <i class="fas fa-object-group"></i>
-                Merge Audio/Video
-            </button>
+            <button id="playButton" class="btn btn-success">Play</button>
+            <button id="pauseButton" class="btn btn-warning">Pause</button>
+            <button id="cutButton" class="btn btn-primary">Cut</button>
+            <button id="addAudioButton" class="btn btn-secondary">Add Audio</button>
+            <button id="themeToggleButton" class="btn btn-dark">Toggle Theme</button>
+            <button id="mergeButton" class="btn btn-info" disabled>Merge Audio</button>
+        </div>
+        <div id="changelog" class="mt-4 p-3 border-top">
+            <h5>Change Log</h5>
+        </div>
+        <div class="text-danger text-center mt-3 version-indicator">
+            Version 2.0 - Audio Position Slider Added
         </div>
     </div>
-
-    <script>
-        let wavesurfer = WaveSurfer.create({
-            container: '#waveform',
-            waveColor: '#4b5563',
-            progressColor: '#a855f7',
-            cursorColor: '#a855f7',
-            height: 128,
-            responsive: true,
-            barWidth: 2,
-            barGap: 1
-        });
-
-        const rangeSlider = document.querySelector('.range-slider');
-        const rangeSelection = document.querySelector('.range-selection');
-        const leftHandle = document.querySelector('.range-handle.left');
-        const rightHandle = document.querySelector('.range-handle.right');
-
-        // Add this variable to track changes
-        let hasUnsavedChanges = false;
-
-        document.getElementById('mediaInput').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                hasUnsavedChanges = false;  // Reset flag when new file is loaded
-                document.querySelector('.upload-area').style.display = 'none';
-                
-                if (file.type.startsWith('video/')) {
-                    document.getElementById('videoContainer').style.display = 'block';
-                    const videoElement = document.getElementById('videoElement');
-                    videoElement.src = URL.createObjectURL(file);
-                    extractAudioFromVideo(file);
-                } else {
-                    document.getElementById('videoContainer').style.display = 'none';
-                    wavesurfer.loadBlob(file);
-                }
-            }
-        });
-
-        let startPosition = 0;
-        let endPosition = 1;
-        let deletedRegions = [];
-        let audioBuffer = null;
-        let audioHistory = [];
-        const MAX_HISTORY = 10;
-        let isPlaying = false;
-
-        wavesurfer.on('ready', function() {
-            startPosition = 0;
-            endPosition = 1;
-            updateRangeSelection();
-            document.getElementById('endTime').textContent = formatTime(wavesurfer.getDuration());
-            deletedRegions = [];
-            audioHistory = [];
-        });
-
-        function formatTime(seconds) {
-            return new Date(seconds * 1000).toISOString().substr(14, 5);
-        }
-
-        function updateRangeSelection() {
-            const width = rangeSlider.offsetWidth;
-            const leftPos = startPosition * width;
-            const rightPos = endPosition * width;
-            
-            rangeSelection.style.left = `${leftPos}px`;
-            rangeSelection.style.width = `${rightPos - leftPos}px`;
-            leftHandle.style.left = `${leftPos}px`;
-            rightHandle.style.left = `${rightPos}px`;
-
-            const duration = wavesurfer.getDuration();
-            document.getElementById('startTime').textContent = formatTime(startPosition * duration);
-            document.getElementById('endTime').textContent = formatTime(endPosition * duration);
-        }
-
-        [leftHandle, rightHandle].forEach(handle => {
-            handle.addEventListener('mousedown', initDrag);
-            handle.addEventListener('touchstart', initDrag, { passive: false });
-
-            function initDrag(e) {
-                e.preventDefault();
-                const isLeft = handle === leftHandle;
-                const initialX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
-                const initialPos = isLeft ? startPosition : endPosition;
-                const width = rangeSlider.offsetWidth;
-
-                function onMove(e) {
-                    const currentX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
-                    const delta = (currentX - initialX) / width;
-                    let newPos = initialPos + delta;
-                    newPos = Math.max(0, Math.min(1, newPos));
-
-                    if (isLeft) {
-                        if (newPos < endPosition) {
-                            startPosition = newPos;
-                            wavesurfer.seekTo(startPosition);
-                        }
-                    } else {
-                        if (newPos > startPosition) {
-                            endPosition = newPos;
-                        }
-                    }
-                    updateRangeSelection();
-                }
-
-                function onEnd() {
-                    document.removeEventListener('mousemove', onMove);
-                    document.removeEventListener('mouseup', onEnd);
-                    document.removeEventListener('touchmove', onMove);
-                    document.removeEventListener('touchend', onEnd);
-                }
-
-                document.addEventListener('mousemove', onMove);
-                document.addEventListener('mouseup', onEnd);
-                document.addEventListener('touchmove', onMove, { passive: false });
-                document.addEventListener('touchend', onEnd);
-            }
-        });
-
-        function playSelection() {
-            const duration = wavesurfer.getDuration();
-            if (!isPlaying) {
-                // If not playing, start from current position
-                wavesurfer.play();
-            } else {
-                wavesurfer.pause();
-            }
-            isPlaying = !isPlaying;
-            
-            // Update play button icon
-            const playButton = document.querySelector('button i.fa-play, button i.fa-pause');
-            playButton.className = isPlaying ? 'fas fa-pause' : 'fas fa-play';
-        }
-
-        async function trimAudio() {
-            const duration = wavesurfer.getDuration();
-            const startTime = startPosition * duration;
-            const endTime = endPosition * duration;
-            
-            // Get the audio data
-            const audioData = wavesurfer.backend.buffer;
-            const sampleRate = audioData.sampleRate;
-            const startOffset = Math.floor(startTime * sampleRate);
-            const endOffset = Math.floor(endTime * sampleRate);
-            const frameCount = endOffset - startOffset;
-            
-            // Create new buffer for trimmed audio
-            const trimmedBuffer = new AudioContext().createBuffer(
-                audioData.numberOfChannels,
-                frameCount,
-                sampleRate
-            );
-            
-            // Copy the trimmed portion
-            for (let channel = 0; channel < audioData.numberOfChannels; channel++) {
-                const channelData = audioData.getChannelData(channel);
-                const trimmedData = trimmedBuffer.getChannelData(channel);
-                for (let i = 0; i < frameCount; i++) {
-                    trimmedData[i] = channelData[i + startOffset];
-                }
-            }
-            
-            // Convert to WAV and download
-            const wav = audioBufferToWav(trimmedBuffer);
-            const blob = new Blob([wav], { type: 'audio/wav' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'trimmed_audio.wav';
-            a.click();
-            URL.revokeObjectURL(url);
-        }
-
-        // Helper function to convert AudioBuffer to WAV format
-        function audioBufferToWav(buffer) {
-            const interleaved = new Float32Array(buffer.length);
-            const channelData = buffer.getChannelData(0);
-            for (let i = 0; i < buffer.length; i++) {
-                interleaved[i] = channelData[i];
-            }
-            
-            const dataView = new DataView(new ArrayBuffer(44 + interleaved.length * 2));
-            const writeString = (view, offset, string) => {
-                for (let i = 0; i < string.length; i++) {
-                    view.setUint8(offset + i, string.charCodeAt(i));
-                }
-            };
-
-            writeString(dataView, 0, 'RIFF');
-            dataView.setUint32(4, 36 + interleaved.length * 2, true);
-            writeString(dataView, 8, 'WAVE');
-            writeString(dataView, 12, 'fmt ');
-            dataView.setUint32(16, 16, true);
-            dataView.setUint16(20, 1, true);
-            dataView.setUint16(22, 1, true);
-            dataView.setUint32(24, buffer.sampleRate, true);
-            dataView.setUint32(28, buffer.sampleRate * 2, true);
-            dataView.setUint16(32, 2, true);
-            dataView.setUint16(34, 16, true);
-            writeString(dataView, 36, 'data');
-            dataView.setUint32(40, interleaved.length * 2, true);
-
-            const volume = 0.5;
-            for (let i = 0; i < interleaved.length; i++) {
-                const sample = Math.max(-1, Math.min(1, interleaved[i]));
-                dataView.setInt16(44 + i * 2, sample * 0x7FFF * volume, true);
-            }
-
-            return dataView.buffer;
-        }
-
-        // Add this at the top of your script
-        let audioContext;
-
-        // Update the deleteSelection function to create AudioContext on demand
-        async function deleteSelection() {
-            if (!wavesurfer) return;
-
-            // Stop playback if playing
-            if (isPlaying) {
-                wavesurfer.pause();
-                isPlaying = false;
-                const playButton = document.querySelector('button i.fa-play, button i.fa-pause');
-                playButton.className = 'fas fa-play';
-            }
-
-            const duration = wavesurfer.getDuration();
-            const startTime = startPosition * duration;
-            const endTime = endPosition * duration;
-
-            try {
-                // Create a new AudioContext
-                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                
-                // Get the current buffer
-                const currentBuffer = wavesurfer.backend.buffer;
-                if (!currentBuffer) {
-                    console.error('No audio buffer found');
-                    return;
-                }
-
-                // Save current state to history
-                audioHistory.push(currentBuffer);
-                
-                // Calculate new buffer size
-                const sampleRate = currentBuffer.sampleRate;
-                const numberOfChannels = currentBuffer.numberOfChannels;
-                const newDuration = duration - (endTime - startTime);
-                const newLength = Math.floor(newDuration * sampleRate);
-
-                // Create new buffer
-                const newBuffer = audioCtx.createBuffer(
-                    numberOfChannels,
-                    newLength,
-                    sampleRate
-                );
-
-                // Process each channel
-                for (let channel = 0; channel < numberOfChannels; channel++) {
-                    const oldData = currentBuffer.getChannelData(channel);
-                    const newData = newBuffer.getChannelData(channel);
-                    
-                    let writeIndex = 0;
-                    
-                    // Copy before cut point
-                    const startOffset = Math.floor(startTime * sampleRate);
-                    for (let i = 0; i < startOffset; i++) {
-                        newData[writeIndex++] = oldData[i];
-                    }
-                    
-                    // Copy after cut point
-                    const endOffset = Math.floor(endTime * sampleRate);
-                    for (let i = endOffset; i < oldData.length; i++) {
-                        newData[writeIndex++] = oldData[i];
-                    }
-                }
-
-                // Load the new buffer into wavesurfer
-                wavesurfer.loadDecodedBuffer(newBuffer);
-
-                // If we're editing a video, update that too
-                const videoContainer = document.getElementById('videoContainer');
-                if (videoContainer.style.display !== 'none') {
-                    const videoElement = document.getElementById('videoElement');
-                    
-                    try {
-                        // Create temporary video element
-                        const tempVideo = document.createElement('video');
-                        tempVideo.src = videoElement.src;
-                        await tempVideo.load();
-                        
-                        // Set up canvas with correct dimensions
-                        const canvas = document.createElement('canvas');
-                        canvas.width = tempVideo.videoWidth;
-                        canvas.height = tempVideo.videoHeight;
-                        const ctx = canvas.getContext('2d');
-                        
-                        // Set up recording
-                        const stream = canvas.captureStream();
-                        const mediaRecorder = new MediaRecorder(stream, {
-                            mimeType: 'video/webm;codecs=vp8,opus'
-                        });
-                        
-                        const chunks = [];
-                        
-                        // When recording is done, immediately show the new video
-                        mediaRecorder.ondataavailable = e => chunks.push(e.data);
-                        mediaRecorder.onstop = () => {
-                            // Stop and remove the old video first
-                            videoElement.pause();
-                            videoElement.removeAttribute('src');
-                            videoElement.load();
-                            
-                            // Create and set the new video
-                            const blob = new Blob(chunks, { type: 'video/webm' });
-                            const newUrl = URL.createObjectURL(blob);
-                            
-                            // Set new video source and play it
-                            videoElement.src = newUrl;
-                            videoElement.currentTime = 0;
-                            
-                            // Play the new video after a short delay to ensure it's loaded
-                            setTimeout(() => {
-                                videoElement.play()
-                                    .catch(e => console.error('Error playing video:', e));
-                            }, 100);
-                        };
-                        
-                        mediaRecorder.start();
-
-                        // Process video frames sequentially
-                        const processVideo = async () => {
-                            let currentFrame = 0;
-                            
-                            // First part (before cut)
-                            for (let time = 0; time < startTime; time += 1/30) {
-                                tempVideo.currentTime = time;
-                                await new Promise(resolve => tempVideo.onseeked = resolve);
-                                ctx.drawImage(tempVideo, 0, 0, canvas.width, canvas.height);
-                                currentFrame++;
-                            }
-                            
-                            // Second part (after cut)
-                            for (let time = endTime; time < tempVideo.duration; time += 1/30) {
-                                tempVideo.currentTime = time;
-                                await new Promise(resolve => tempVideo.onseeked = resolve);
-                                ctx.drawImage(tempVideo, 0, 0, canvas.width, canvas.height);
-                                currentFrame++;
-                            }
-                            
-                            // Only stop if we actually processed some frames
-                            if (currentFrame > 0) {
-                                mediaRecorder.stop();
-                            }
-                            
-                            tempVideo.remove();
-                        };
-
-                        await processVideo();
-
-                    } catch (error) {
-                        console.error('Error processing video:', error);
-                        alert('Error processing video: ' + error.message);
-                    }
-                }
-
-                // Mark that we have unsaved changes
-                hasUnsavedChanges = true;
-
-            } catch (error) {
-                console.error('Error during deletion:', error);
-                alert('Error processing media: ' + error.message);
-            }
-        }
-
-        function saveAudio() {
-            if (!wavesurfer.backend.buffer && !videoElement.src) {
-                showError('No media to save');
-                return;
-            }
-
-            try {
-                if (videoElement.src) {
-                    // If it's a video, save current video
-                    const a = document.createElement('a');
-                    a.href = videoElement.src;
-                    a.download = 'edited_video.webm';
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                } else {
-                    // If it's audio, export from wavesurfer
-                    wavesurfer.exportPCM().then(pcmData => {
-                        const blob = new Blob([pcmData], { type: 'audio/wav' });
-                        const url = URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = 'edited_audio.wav';
-                        document.body.appendChild(a);
-                        a.click();
-                        document.body.removeChild(a);
-                        URL.revokeObjectURL(url);
-                    });
-                }
-                showSuccess('File saved successfully!');
-            } catch (error) {
-                console.error('Error saving file:', error);
-                showError('Failed to save file');
-            }
-        }
-
-        function restartAudio() {
-            if (wavesurfer) {
-                wavesurfer.stop();
-                isPlaying = false;
-                // Update play button icon
-                const playButton = document.querySelector('button i.fa-play, button i.fa-pause');
-                playButton.className = 'fas fa-play';
-            }
-        }
-
-        function undoLastChange() {
-            if (audioHistory.length > 0) {
-                // Stop playback if playing
-                if (isPlaying) {
-                    wavesurfer.pause();
-                    isPlaying = false;
-                    const playButton = document.querySelector('button i.fa-play, button i.fa-pause');
-                    playButton.className = 'fas fa-play';
-                }
-                
-                // Get the last state
-                audioBuffer = audioHistory.pop();
-                
-                // Load the previous state
-                wavesurfer.loadDecodedBuffer(audioBuffer);
-                
-                // Reset positions
-                startPosition = 0;
-                endPosition = 1;
-                updateRangeSelection();
-            }
-            
-            // Set hasUnsavedChanges to true after undoing
-            hasUnsavedChanges = true;
-        }
-
-        // Add this function to extract audio from video
-        async function extractAudioFromVideo(videoFile) {
-            const audioContext = new AudioContext();
-            const videoElement = document.createElement('video');
-            videoElement.src = URL.createObjectURL(videoFile);
-            
-            // Create media source
-            const mediaSource = audioContext.createMediaElementSource(videoElement);
-            const destination = audioContext.createMediaStreamDestination();
-            mediaSource.connect(destination);
-            
-            // Play video (muted) to extract audio
-            videoElement.muted = true;
-            await videoElement.play();
-            
-            // Create MediaRecorder to capture audio
-            const mediaRecorder = new MediaRecorder(destination.stream);
-            const chunks = [];
-            
-            mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
-            mediaRecorder.onstop = async () => {
-                const audioBlob = new Blob(chunks, { type: 'audio/wav' });
-                wavesurfer.loadBlob(audioBlob);
-            };
-            
-            mediaRecorder.start();
-            
-            // Record for the duration of the video
-            setTimeout(() => {
-                mediaRecorder.stop();
-                videoElement.pause();
-            }, videoElement.duration * 1000);
-        }
-
-        // Add function to save video with edited audio
-        async function saveVideoWithAudio() {
-            const videoElement = document.getElementById('videoElement');
-            const stream = videoElement.captureStream();
-            const mediaRecorder = new MediaRecorder(stream);
-            const chunks = [];
-            
-            // Show loading state
-            const saveButton = document.querySelector('button[onclick="saveAudio()"]');
-            const originalText = saveButton.innerHTML;
-            saveButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
-            saveButton.disabled = true;
-            
-            mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
-            mediaRecorder.onstop = () => {
-                const blob = new Blob(chunks, { type: 'video/webm' });
-                const url = URL.createObjectURL(blob);
-                
-                // Show preview
-                const previewContainer = document.querySelector('.preview-container');
-                const previewVideo = document.getElementById('previewVideo');
-                previewVideo.src = url;
-                previewContainer.classList.add('visible');
-                
-                // Create download link
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'edited_video.webm';
-                a.click();
-                
-                // Reset button state
-                saveButton.innerHTML = originalText;
-                saveButton.disabled = false;
-                
-                // Reset changes flag
-                hasUnsavedChanges = false;
-            };
-            
-            mediaRecorder.start();
-            videoElement.currentTime = 0;
-            await videoElement.play();
-            
-            setTimeout(() => {
-                mediaRecorder.stop();
-                videoElement.pause();
-            }, videoElement.duration * 1000);
-        }
-
-        // Add this after your wavesurfer initialization
-        const uploadArea = document.querySelector('.upload-area');
-
-        // Prevent default drag behaviors
-        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-            uploadArea.addEventListener(eventName, preventDefaults, false);
-            document.body.addEventListener(eventName, preventDefaults, false);
-        });
-
-        function preventDefaults (e) {
-            e.preventDefault();
-            e.stopPropagation();
-        }
-
-        // Highlight drop zone when item is dragged over it
-        ['dragenter', 'dragover'].forEach(eventName => {
-            uploadArea.addEventListener(eventName, highlight, false);
-        });
-
-        ['dragleave', 'drop'].forEach(eventName => {
-            uploadArea.addEventListener(eventName, unhighlight, false);
-        });
-
-        function highlight(e) {
-            uploadArea.classList.add('drag-active');
-        }
-
-        function unhighlight(e) {
-            uploadArea.classList.remove('drag-active');
-        }
-
-        // Handle dropped files
-        uploadArea.addEventListener('drop', handleDrop, false);
-
-        function handleDrop(e) {
-            const dt = e.dataTransfer;
-            const files = dt.files;
-
-            if (files.length > 0) {
-                const file = files[0];
-                if (file.type.startsWith('audio/') || file.type.startsWith('video/')) {
-                    hasUnsavedChanges = false;
-                    document.querySelector('.upload-area').style.display = 'none';
-                    
-                    if (file.type.startsWith('video/')) {
-                        document.getElementById('videoContainer').style.display = 'block';
-                        const videoElement = document.getElementById('videoElement');
-                        videoElement.src = URL.createObjectURL(file);
-                        extractAudioFromVideo(file);
-                        // Show remove audio button for videos
-                        document.getElementById('removeAudioBtn').style.display = 'inline-block';
-                        document.getElementById('previewBtn').style.display = 'inline-block';
-                    } else {
-                        document.getElementById('videoContainer').style.display = 'none';
-                        wavesurfer.loadBlob(file);
-                        // Hide remove audio button for audio files
-                        document.getElementById('removeAudioBtn').style.display = 'none';
-                        document.getElementById('previewBtn').style.display = 'none';
-                    }
-                }
-            }
-        }
-
-        function resetTrimmer() {
-            // Check if there are unsaved changes
-            if (hasUnsavedChanges && wavesurfer && wavesurfer.backend.buffer) {
-                const confirmReset = confirm('You have unsaved changes. Are you sure you want to start over?');
-                if (!confirmReset) {
-                    return;
-                }
-            }
-            
-            // Stop any playing audio first
-            if (isPlaying) {
-                wavesurfer.pause();
-                isPlaying = false;
-                const playButton = document.querySelector('button i.fa-play, button i.fa-pause');
-                playButton.className = 'fas fa-play';
-            }
-            
-            // Destroy the old wavesurfer instance
-            wavesurfer.destroy();
-            
-            // Clear the waveform display but preserve the container
-            const waveformContainer = document.getElementById('waveform');
-            waveformContainer.innerHTML = '';
-            
-            // Create a new wavesurfer instance
-            wavesurfer = WaveSurfer.create({
-                container: '#waveform',
-                waveColor: '#4b5563',
-                progressColor: '#a855f7',
-                cursorColor: '#a855f7',
-                height: 128,
-                responsive: true,
-                barWidth: 2,
-                barGap: 1
-            });
-            
-            // Reattach all event listeners
-            wavesurfer.on('ready', function() {
-                startPosition = 0;
-                endPosition = 1;
-                updateRangeSelection();
-                document.getElementById('endTime').textContent = formatTime(wavesurfer.getDuration());
-                deletedRegions = [];
-                audioHistory = [];
-            });
-            
-            // Reset video player if exists
-            const videoContainer = document.getElementById('videoContainer');
-            const videoElement = document.getElementById('videoElement');
-            videoContainer.style.display = 'none';
-            videoElement.src = '';
-            videoElement.load(); // Force video element to reset
-            
-            // Reset file inputs
-            document.getElementById('mediaInput').value = '';
-            
-            // Reset positions
-            startPosition = 0;
-            endPosition = 1;
-            updateRangeSelection();
-            
-            // Reset history and buffer
-            audioHistory = [];
-            audioBuffer = null;
-            
-            // Reset time display
-            document.getElementById('startTime').textContent = '00:00';
-            document.getElementById('endTime').textContent = '00:00';
-            
-            // Show and reset upload area
-            const uploadArea = document.querySelector('.upload-area');
-            uploadArea.style.display = 'block';
-            uploadArea.style.pointerEvents = 'auto';
-            
-            // Make sure range slider is visible
-            document.querySelector('.range-slider').style.display = 'block';
-            document.querySelector('.time-display').style.display = 'flex';
-            
-            // Reset the changes flag
-            hasUnsavedChanges = false;
-            
-            // Also reset preview
-            const previewContainer = document.querySelector('.preview-container');
-            const previewVideo = document.getElementById('previewVideo');
-            previewContainer.classList.remove('visible');
-            previewVideo.src = '';
-            
-            // Also hide the remove audio and preview buttons
-            document.getElementById('removeAudioBtn').style.display = 'none';
-            document.getElementById('previewBtn').style.display = 'none';
-            document.getElementById('downloadBtn').style.display = 'none';
-        }
-
-        wavesurfer.on('error', function(err) {
-            console.error('WaveSurfer error:', err);
-            alert('Error loading audio: ' + err);
-        });
-
-        // Add these new functions after your existing code
-        async function removeAudio() {
-            const videoElement = document.getElementById('videoElement');
-            if (!videoElement.src) {
-                showError('No video loaded');
-                return;
-            }
-
-            try {
-                showSuccess('Processing video...');
-                
-                // Get the video file from the video element
-                const videoBlob = await fetch(videoElement.src).then(r => r.blob());
-                const formData = new FormData();
-                formData.append('video', videoBlob, 'video.webm');
-
-                // Send to your local server
-                const response = await fetch('http://localhost:3001/remove-audio', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                if (!response.ok) {
-                    const error = await response.json();
-                    throw new Error(error.error || 'Failed to process video');
-                }
-
-                const result = await response.json();
-                
-                // Download the processed file
-                const a = document.createElement('a');
-                a.href = 'http://localhost:3001' + result.downloadUrl;
-                a.download = 'video_without_audio.webm';
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                
-                showSuccess('Video processed and downloaded successfully!');
-            } catch (error) {
-                console.error('Error:', error);
-                showError('Failed to process video: ' + error.message);
-            }
-        }
-
-        // Add these helper functions if they don't exist
-        function showError(message) {
-            const errorDiv = document.createElement('div');
-            errorDiv.className = 'error-message';
-            errorDiv.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${message}`;
-            document.querySelector('.controls').appendChild(errorDiv);
-            setTimeout(() => errorDiv.remove(), 5000);
-        }
-
-        function showSuccess(message) {
-            const successDiv = document.createElement('div');
-            successDiv.className = 'success-message';
-            successDiv.innerHTML = `<i class="fas fa-check-circle"></i> ${message}`;
-            document.querySelector('.controls').appendChild(successDiv);
-            setTimeout(() => successDiv.remove(), 5000);
-        }
-
-        let firstFileType = null; // Track the type of first file selected
-
-        function mergeFiles() {
-            if (!wavesurfer.backend.buffer && !videoElement.src) {
-                showError('Please select an audio or video file first');
-                return;
-            }
-
-            const secondFileInput = document.createElement('input');
-            secondFileInput.type = 'file';
-            secondFileInput.accept = firstFileType?.startsWith('audio/') ? 'video/*' : 'audio/*';
-            
-            secondFileInput.onchange = async (e) => {
-                const file = e.target.files[0];
-                if (!file) return;
-
-                if ((firstFileType?.startsWith('audio/') && file.type.startsWith('audio/')) ||
-                    (firstFileType?.startsWith('video/') && file.type.startsWith('video/'))) {
-                    showError('Please select a different type of file');
-                    return;
-                }
-
-                try {
-                    const loadingMessage = document.createElement('div');
-                    loadingMessage.className = 'processing-message';
-                    loadingMessage.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Merging files...';
-                    document.querySelector('.controls').appendChild(loadingMessage);
-
-                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                    const videoElement = document.getElementById('videoElement');
-
-                    // Create video element for the file if needed
-                    const tempVideo = document.createElement('video');
-                    tempVideo.src = firstFileType?.startsWith('video/') ? 
-                        videoElement.src : URL.createObjectURL(file);
-                    await new Promise(resolve => tempVideo.onloadedmetadata = resolve);
-
-                    // Setup recording
-                    const canvas = document.createElement('canvas');
-                    canvas.width = tempVideo.videoWidth;
-                    canvas.height = tempVideo.videoHeight;
-                    const ctx = canvas.getContext('2d');
-                    const stream = canvas.captureStream(30); // 30fps
-
-                    // Add audio
-                    const audioBuffer = firstFileType?.startsWith('audio/') ?
-                        wavesurfer.backend.buffer :
-                        await extractAudioFromVideo(file);
-                    const audioSource = audioContext.createBufferSource();
-                    audioSource.buffer = audioBuffer;
-                    const streamDest = audioContext.createMediaStreamDestination();
-                    audioSource.connect(streamDest);
-                    stream.addTrack(streamDest.stream.getAudioTracks()[0]);
-
-                    // Record
-                    const recorder = new MediaRecorder(stream, {
-                        mimeType: 'video/webm;codecs=vp8,opus',
-                        videoBitsPerSecond: 2500000 // 2.5 Mbps
-                    });
-
-                    const chunks = [];
-                    recorder.ondataavailable = e => chunks.push(e.data);
-                    recorder.onstop = () => {
-                        const blob = new Blob(chunks, { type: 'video/webm' });
-                        const url = URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = 'merged_video.webm';
-                        document.body.appendChild(a);
-                        a.click();
-                        document.body.removeChild(a);
-                        URL.revokeObjectURL(url);
-                        loadingMessage.remove();
-                        showSuccess('Merge complete!');
-                        
-                        // Cleanup
-                        if (tempVideo !== videoElement) {
-                            URL.revokeObjectURL(tempVideo.src);
-                        }
-                        tempVideo.remove();
-                    };
-
-                    recorder.start();
-                    audioSource.start();
-                    tempVideo.play();
-
-                    // Process frames more efficiently
-                    const processFrames = () => {
-                        if (!tempVideo.paused && !tempVideo.ended) {
-                            ctx.drawImage(tempVideo, 0, 0, canvas.width, canvas.height);
-                            requestAnimationFrame(processFrames);
-                        } else {
-                            recorder.stop();
-                            audioSource.stop();
-                        }
-                    };
-                    processFrames();
-
-                } catch (error) {
-                    console.error('Error:', error);
-                    showError('Failed to merge files: ' + error.message);
-                    const loadingMessage = document.querySelector('.processing-message');
-                    if (loadingMessage) loadingMessage.remove();
-                }
-            };
-
-            secondFileInput.click();
-        }
-
-        // Modify your existing file handling functions to set firstFileType
-        document.getElementById('mediaInput').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                firstFileType = file.type; // Store the first file type
-                // ... rest of your existing code ...
-            }
-        });
-
-        // Also modify handleDrop
-        function handleDrop(e) {
-            const dt = e.dataTransfer;
-            const files = dt.files;
-
-            if (files.length > 0) {
-                const file = files[0];
-                if (file.type.startsWith('audio/') || file.type.startsWith('video/')) {
-                    firstFileType = file.type; // Store the first file type
-                    // ... rest of your existing code ...
-                }
-            }
-        }
-    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/14.6.3/nouislider.min.js"></script>
+    <script src="script.js"></script>
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </body>
-</html> 
+</html>
