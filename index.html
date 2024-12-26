@@ -88,11 +88,12 @@
         #timelineContainer {
             width: 100%;
             max-width: 600px;
-            height: 60px;
-            background: #2d2d2d;
+            height: 70px !important;
+            background: #333333;
             margin: 20px auto;
             position: relative;
-            border: 1px solid #444;
+            border: 2px solid #444;
+            overflow: hidden;
         }
         
         .audio-track {
@@ -440,6 +441,30 @@
             background: #333;
             border: 1px solid #444;
             margin: 20px auto;
+        }
+
+        .audio-block {
+            position: absolute;
+            top: 5px;
+            left: 0;
+            background: rgba(33, 150, 243, 0.8);
+            border-radius: 4px;
+            padding: 5px;
+            z-index: 100;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .audio-block audio {
+            display: block;
+            width: 150px;
+            margin: 0 auto;
+        }
+
+        #timelineContainer {
+            height: 70px !important;
+            background: #2d2d2d;
+            position: relative;
+            overflow: hidden;
         }
     </style>
 </head>
