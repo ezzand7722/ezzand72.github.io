@@ -5,6 +5,7 @@ document.getElementById('playButton').addEventListener('click', playMedia);
 document.getElementById('pauseButton').addEventListener('click', pauseMedia);
 document.getElementById('themeToggleButton').addEventListener('click', toggleTheme);
 document.getElementById('mergeButton').addEventListener('click', mergeAudioVideo);
+document.getElementById('previewButton').addEventListener('click', togglePreview);
 
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Version 2.0 loaded - Audio Position enabled');
@@ -17,6 +18,8 @@ let rangeSlider;
 let audioContext;
 let audioTrack = null;
 let audioStartPosition = 0;
+let audioSlider;
+let previewMode = false;
 
 function handleFileUpload(event) {
     const file = event.target.files[0];
@@ -185,59 +188,105 @@ function addAudio() {
         const audioUrl = URL.createObjectURL(file);
         const audioEl = new Audio(audioUrl);
         
-        // Create position indicator with visible handle
-        const positionBar = document.createElement('div');
-        positionBar.className = 'audio-position-bar';
-        positionBar.innerHTML = '<div class="position-time">0:00</div>';
-        positionBar.draggable = true;
-        
-        // Make sure the slider exists and is empty
-        const slider = document.getElementById('audioPositionSlider');
-        slider.innerHTML = '';
-        slider.appendChild(positionBar);
-        
-        // Add drag functionality
-        positionBar.addEventListener('dragstart', (e) => {
+        // Create simple audio visualization
+        const container = document.createElement('div');
+        container.className = 'audio-track';
+        container.style.width = '200px'; // Initial width
+        container.style.backgroundColor = 'rgba(33, 150, 243, 0.3)';
+        container.style.position = 'absolute';
+        container.style.height = '50px';
+        container.style.cursor = 'move';
+        container.draggable = true;
+
+        // Add time display
+        const timeDisplay = document.createElement('div');
+        timeDisplay.className = 'time-display';
+        timeDisplay.textContent = '0:00';
+        container.appendChild(timeDisplay);
+
+        // Add drag events
+        container.addEventListener('dragstart', function(e) {
             e.dataTransfer.setData('text', '');
-            positionBar.classList.add('dragging');
         });
-        
-        positionBar.addEventListener('drag', (e) => {
-            if (!e.clientX) return;
-            updateAudioPosition(e.clientX);
+
+        container.addEventListener('drag', function(e) {
+            const timeline = document.getElementById('timelineContainer');
+            if (!e.clientX || !timeline) return;
+
+            const rect = timeline.getBoundingClientRect();
+            const position = (e.clientX - rect.left) / rect.width;
+            
+            if (position >= 0 && position <= 1) {
+                const time = position * mediaDuration;
+                this.style.left = `${position * 100}%`;
+                timeDisplay.textContent = formatTime(time);
+                audioStartPosition = time;
+            }
         });
-        
-        positionBar.addEventListener('dragend', (e) => {
-            positionBar.classList.remove('dragging');
-            updateAudioPosition(e.clientX);
-        });
-        
-        // Store audio element
+
+        // Store audio track
         audioTrack = {
             element: audioEl,
-            positionBar: positionBar,
+            container: container,
             startTime: 0
         };
-        
+
+        // Clear previous audio track
+        const timeline = document.getElementById('timelineContainer');
+        timeline.innerHTML = '';
+        timeline.appendChild(container);
+
         document.getElementById('mergeButton').disabled = false;
-        updateChangelog('Added new audio track with position control');
     };
     
     input.click();
 }
 
-function updateAudioPosition(clientX) {
-    const slider = document.getElementById('audioPositionSlider');
-    const rect = slider.getBoundingClientRect();
-    const position = (clientX - rect.left) / rect.width;
+function initAudioSlider(audioDuration) {
+    const sliderElement = document.getElementById('audioSlider');
     
-    if (position >= 0 && position <= 1) {
-        const time = position * mediaDuration;
-        audioTrack.startTime = time;
-        audioTrack.positionBar.style.left = `${position * 100}%`;
-        audioTrack.positionBar.querySelector('.position-time').textContent = formatTime(time);
-        updateChangelog(`Audio position set to ${formatTime(time)}`);
+    if (audioSlider) {
+        audioSlider.destroy();
     }
+    
+    audioSlider = noUiSlider.create(sliderElement, {
+        start: [0, Math.min(audioDuration, mediaDuration)],
+        connect: true,
+        range: {
+            'min': 0,
+            'max': mediaDuration
+        },
+        tooltips: [
+            { to: formatTime, from: Number },
+            { to: formatTime, from: Number }
+        ]
+    });
+}
+
+function togglePreview() {
+    if (!audioTrack || !mediaElement) return;
+    
+    if (!previewMode) {
+        // Start preview
+        const [startTime, endTime] = audioSlider.get();
+        mediaElement.currentTime = startTime;
+        audioTrack.element.currentTime = 0;
+        
+        mediaElement.play();
+        audioTrack.element.play();
+        
+        document.getElementById('previewButton').textContent = 'Stop Preview';
+        document.getElementById('previewButton').classList.add('preview-active');
+    } else {
+        // Stop preview
+        mediaElement.pause();
+        audioTrack.element.pause();
+        
+        document.getElementById('previewButton').textContent = 'Preview Mix';
+        document.getElementById('previewButton').classList.remove('preview-active');
+    }
+    
+    previewMode = !previewMode;
 }
 
 async function mergeAudioVideo() {
@@ -247,16 +296,12 @@ async function mergeAudioVideo() {
     }
 
     try {
-        // Create audio context
+        const [startTime, endTime] = audioSlider.get().map(Number);
+        
         const ctx = new AudioContext();
-        
-        // Get video stream with original audio
         const videoStream = mediaElement.captureStream();
-        
-        // Get added audio stream
         const audioStream = audioTrack.element.captureStream();
         
-        // Create media recorder with both streams
         const recorder = new MediaRecorder(new MediaStream([
             ...videoStream.getTracks(),
             ...audioStream.getTracks()
@@ -274,22 +319,20 @@ async function mergeAudioVideo() {
             a.click();
         };
         
-        // Start recording
-        mediaElement.currentTime = 0;
+        mediaElement.currentTime = startTime;
+        audioTrack.element.currentTime = 0;
+        
         mediaElement.play();
+        audioTrack.element.play();
+        recorder.start();
         
-        // Delay audio start based on position
-        setTimeout(() => {
-            audioTrack.element.currentTime = 0;
-            audioTrack.element.play();
-            recorder.start();
-        }, audioTrack.startTime * 1000);
-        
-        // Stop when video ends
-        mediaElement.onended = () => {
-            recorder.stop();
-            mediaElement.pause();
-            audioTrack.element.pause();
+        mediaElement.ontimeupdate = () => {
+            if (mediaElement.currentTime >= endTime) {
+                recorder.stop();
+                mediaElement.pause();
+                audioTrack.element.pause();
+                mediaElement.ontimeupdate = null;
+            }
         };
         
     } catch (error) {
