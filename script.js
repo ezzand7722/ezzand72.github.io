@@ -185,63 +185,77 @@ function addAudio() {
         const file = e.target.files[0];
         if (!file) return;
         
-        const audioUrl = URL.createObjectURL(file);
-        const audioEl = new Audio(audioUrl);
+        // Create audio element
+        const audioEl = document.createElement('audio');
+        audioEl.src = URL.createObjectURL(file);
         
-        audioEl.onloadedmetadata = () => {
-            // Create audio block
-            const audioBlock = document.createElement('div');
-            audioBlock.className = 'audio-block';
-            audioBlock.draggable = true;
-            audioBlock.innerHTML = `
-                <div class="audio-label">${file.name}</div>
-                <div class="time-label">0:00</div>
-            `;
+        // Create draggable container
+        const container = document.createElement('div');
+        container.className = 'audio-block';
+        container.innerHTML = `
+            <div class="audio-name">${file.name}</div>
+            <div class="time-indicator">0:00</div>
+        `;
+        
+        // Make draggable
+        container.draggable = true;
+        let startX = 0;
+        
+        container.addEventListener('mousedown', function(e) {
+            startX = e.clientX;
+        });
+        
+        container.addEventListener('mousemove', function(e) {
+            if (e.buttons !== 1) return; // Only move when mouse button is pressed
             
-            // Add drag events
-            audioBlock.ondragstart = (e) => {
-                e.dataTransfer.setData('text', '');
-            };
-            
-            audioBlock.ondrag = (e) => {
-                if (!e.clientX) return;
-                const rect = timeline.getBoundingClientRect();
-                const pos = (e.clientX - rect.left) / rect.width;
-                if (pos >= 0 && pos <= 1) {
-                    audioStartPosition = pos * mediaDuration;
-                    audioBlock.querySelector('.time-label').textContent = formatTime(audioStartPosition);
-                }
-            };
-            
-            // Clear timeline and add new block
             const timeline = document.getElementById('timelineContainer');
-            timeline.innerHTML = '';
-            timeline.appendChild(audioBlock);
+            const rect = timeline.getBoundingClientRect();
+            const position = (e.clientX - rect.left) / rect.width;
             
-            // Store audio track
-            audioTrack = {
-                element: audioEl,
-                block: audioBlock,
-                startTime: 0
-            };
-            
-            document.getElementById('mergeButton').disabled = false;
+            if (position >= 0 && position <= 1) {
+                container.style.left = `${position * 100}%`;
+                audioStartPosition = position * mediaDuration;
+                container.querySelector('.time-indicator').textContent = formatTime(audioStartPosition);
+            }
+        });
+        
+        // Remove existing audio block if any
+        const existingBlock = document.querySelector('.audio-block');
+        if (existingBlock) {
+            existingBlock.remove();
+        }
+        
+        // Add to timeline
+        const timeline = document.getElementById('timelineContainer');
+        timeline.appendChild(container);
+        
+        // Store audio track
+        audioTrack = {
+            element: audioEl,
+            container: container
         };
+        
+        // Enable merge button
+        document.getElementById('mergeButton').disabled = false;
     };
     
     input.click();
 }
 
-async function mergeAudioVideo() {
+function mergeAudioVideo() {
     if (!mediaElement || !audioTrack) {
         alert('Please add both video and audio first');
         return;
     }
     
     try {
+        // Create merged stream
+        const stream = mediaElement.captureStream();
+        const audioStream = audioTrack.element.captureStream();
+        
         const recorder = new MediaRecorder(new MediaStream([
-            ...mediaElement.captureStream().getTracks(),
-            ...audioTrack.element.captureStream().getTracks()
+            ...stream.getTracks(),
+            ...audioStream.getTracks()
         ]));
         
         const chunks = [];
@@ -256,11 +270,11 @@ async function mergeAudioVideo() {
             a.click();
         };
         
+        // Start recording
         mediaElement.currentTime = 0;
         mediaElement.play();
         
         setTimeout(() => {
-            audioTrack.element.currentTime = 0;
             audioTrack.element.play();
             recorder.start();
         }, audioStartPosition * 1000);
@@ -270,9 +284,10 @@ async function mergeAudioVideo() {
             mediaElement.pause();
             audioTrack.element.pause();
         };
+        
     } catch (error) {
         console.error('Merge error:', error);
-        alert('Error merging files');
+        alert('Error merging files: ' + error.message);
     }
 }
 
