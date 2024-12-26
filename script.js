@@ -185,73 +185,71 @@ function addAudio() {
         const file = e.target.files[0];
         if (!file) return;
 
-        const url = URL.createObjectURL(file);
-        // Create audio player in timeline
+        // Create simple audio block
         const audioEl = document.createElement('audio');
-        audioEl.src = url;
+        audioEl.src = URL.createObjectURL(file);
         audioEl.controls = true;
         audioEl.style.width = '150px';
-        
-        // Create container for the audio
-        const container = document.createElement('div');
-        container.className = 'audio-block';
-        container.draggable = true;
-        container.style.width = '200px';  // Fixed width
-        container.style.height = '50px';   // Fixed height
-        
-        // Store the audio element
-        audioTrack = {
-            element: audioEl,
-            container: container,
-            startTime: 0
-        };
-        
-        // Add drag events
+
+        const block = document.createElement('div');
+        block.style.cssText = `
+            position: absolute;
+            top: 5px;
+            left: 0;
+            padding: 10px;
+            background: #2196F3;
+            border-radius: 4px;
+            cursor: move;
+            width: 170px;
+            height: 60px;
+        `;
+
+        block.appendChild(audioEl);
+
+        // Simple drag functionality
         let isDragging = false;
-        
-        container.addEventListener('mousedown', function(e) {
+        let startX = 0;
+
+        block.onmousedown = function(e) {
             isDragging = true;
-            container.style.opacity = '0.7';
-        });
-        
-        document.addEventListener('mousemove', function(e) {
+            startX = e.clientX - block.offsetLeft;
+            block.style.opacity = '0.7';
+        };
+
+        document.onmousemove = function(e) {
             if (!isDragging) return;
-            
+
             const timeline = document.getElementById('timelineContainer');
             const rect = timeline.getBoundingClientRect();
-            const position = (e.clientX - rect.left) / rect.width;
-            
+            const newLeft = e.clientX - startX - rect.left;
+            const position = newLeft / rect.width;
+
             if (position >= 0 && position <= 1) {
-                container.style.left = `${position * 100}%`;
-                audioTrack.startTime = position * mediaDuration;
-                updateChangelog(`Audio position: ${formatTime(audioTrack.startTime)}`);
+                block.style.left = `${position * 100}%`;
+                audioStartPosition = position * mediaDuration;
+                updateChangelog(`Audio position: ${formatTime(audioStartPosition)}`);
             }
-        });
-        
-        document.addEventListener('mouseup', function() {
+        };
+
+        document.onmouseup = function() {
             isDragging = false;
-            container.style.opacity = '1';
-        });
-        
-        // Add audio element and label to container
-        container.innerHTML = `
-            <div style="text-align: center;">
-                <div style="color: white; font-size: 12px; margin-bottom: 4px;">${file.name}</div>
-            </div>
-        `;
-        container.appendChild(audioEl);
-        
-        // Clear timeline and add new container
+            block.style.opacity = '1';
+        };
+
+        // Clear timeline and add new block
         const timeline = document.getElementById('timelineContainer');
         timeline.innerHTML = '';
-        timeline.appendChild(container);
-        
-        // Enable merge button
+        timeline.appendChild(block);
+
+        // Store audio track
+        audioTrack = {
+            element: audioEl,
+            startTime: 0
+        };
+
         document.getElementById('mergeButton').disabled = false;
-        
-        updateChangelog('Added new audio track');
     };
-    
+
     input.click();
 }
 
@@ -260,20 +258,17 @@ function mergeAudioVideo() {
         alert('Please add both video and audio first');
         return;
     }
-    
+
     try {
-        // Create merged stream
-        const stream = mediaElement.captureStream();
-        const audioStream = audioTrack.element.captureStream();
-        
-        const recorder = new MediaRecorder(new MediaStream([
-            ...stream.getTracks(),
-            ...audioStream.getTracks()
-        ]));
-        
+        const stream = new MediaStream([
+            ...mediaElement.captureStream().getTracks(),
+            ...audioTrack.element.captureStream().getTracks()
+        ]);
+
+        const recorder = new MediaRecorder(stream);
         const chunks = [];
+
         recorder.ondataavailable = e => chunks.push(e.data);
-        
         recorder.onstop = () => {
             const blob = new Blob(chunks, { type: 'video/webm' });
             const url = URL.createObjectURL(blob);
@@ -282,25 +277,26 @@ function mergeAudioVideo() {
             a.download = 'merged_video.webm';
             a.click();
         };
-        
-        // Start recording
+
+        // Start recording process
         mediaElement.currentTime = 0;
-        mediaElement.play();
+        audioTrack.element.currentTime = 0;
         
+        mediaElement.play();
         setTimeout(() => {
             audioTrack.element.play();
             recorder.start();
         }, audioStartPosition * 1000);
-        
+
         mediaElement.onended = () => {
             recorder.stop();
             mediaElement.pause();
             audioTrack.element.pause();
         };
-        
+
     } catch (error) {
         console.error('Merge error:', error);
-        alert('Error merging files: ' + error.message);
+        alert('Error merging: ' + error.message);
     }
 }
 
