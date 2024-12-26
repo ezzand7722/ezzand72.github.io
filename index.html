@@ -401,6 +401,46 @@
             margin-top: 4px;
             font-weight: bold;
         }
+
+        /* Add these styles to your existing styles */
+        .audio-block {
+            position: absolute;
+            top: 5px;
+            left: 0;
+            width: 200px;
+            height: 40px;
+            background: #2196F3;
+            opacity: 0.8;
+            border-radius: 4px;
+            padding: 5px;
+            cursor: move;
+            user-select: none;
+            z-index: 100;
+        }
+
+        .audio-name {
+            color: white;
+            font-size: 12px;
+            text-align: center;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .time-indicator {
+            color: white;
+            font-size: 12px;
+            text-align: center;
+            margin-top: 4px;
+        }
+
+        #timelineContainer {
+            position: relative;
+            height: 50px !important;
+            background: #333;
+            border: 1px solid #444;
+            margin: 20px auto;
+        }
     </style>
 </head>
 <body class="dark-theme">
