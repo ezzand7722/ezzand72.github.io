@@ -63,8 +63,7 @@
             border: 2px solid rgba(255, 255, 255, 0.3);
             border-radius: 50%;
             bottom: 50px;
-            left: 50px;
-            display: none;
+            right: 50px; /* Positioning to the bottom right */
             z-index: 1000;
         }
         .joystick-stick {
@@ -102,7 +101,7 @@
     <!-- Goal -->
     <div class="goal"></div>
 
-    <!-- Add this after the existing elements -->
+    <!-- Always Visible Joystick -->
     <div class="joystick-base" id="joystickBase">
         <div class="joystick-stick" id="joystickStick"></div>
     </div>
@@ -119,7 +118,7 @@
         const stickiness = 0.5; // How much the ball sticks to surfaces (closer to 0 = stickier)
         const bounceReduction = 0.6; // Reduced bounce factor (was 0.8)
 
-        // Add these variables at the top of your script
+        // Joystick variables
         const joystickBase = document.getElementById('joystickBase');
         const joystickStick = document.getElementById('joystickStick');
         let isJoystickActive = false;
@@ -158,17 +157,15 @@
             powerDisplay.textContent = `Power: ${Math.round(power)}`;
         }
 
-        // Add this joystick control code
+        // Joystick control code
         function initJoystick() {
             // Touch start
             joystickBase.addEventListener('touchstart', (e) => {
                 isJoystickActive = true;
-                joystickBase.style.display = 'block';
                 const touch = e.touches[0];
                 joystickCenter.x = touch.clientX;
                 joystickCenter.y = touch.clientY;
-                joystickBase.style.left = (joystickCenter.x - 50) + 'px';
-                joystickBase.style.top = (joystickCenter.y - 50) + 'px';
+                joystickStick.style.transition = 'none'; // Disable transition for smooth movement
             });
 
             // Touch move
@@ -200,8 +197,8 @@
             document.addEventListener('touchend', () => {
                 if (!isJoystickActive) return;
                 isJoystickActive = false;
-                joystickBase.style.display = 'none';
                 joystickStick.style.transform = 'translate(0px, 0px)';
+                joystickStick.style.transition = 'transform 0.2s'; // Re-enable transition for smooth return
                 
                 // Launch the ball when releasing the joystick
                 if (power > 0) {
@@ -298,13 +295,39 @@
 
         // Initialize the ball's position
         updateBallPosition();
-
+        
         // Initialize joystick
         initJoystick();
 
-        // Remove the keyboard event listeners
-        window.removeEventListener('keydown');
-        window.removeEventListener('keyup');
+        // Function to handle joystick movement
+        function handleJoystickMove(event) {
+            if (isLaunching) return; // Do not move the ball if it's launching
+
+            const joystickBase = document.querySelector('.joystick-base');
+            const joystickStick = document.querySelector('.joystick-stick');
+
+            // Calculate the distance from the center of the joystick base
+            const deltaX = event.touches[0].clientX - joystickBase.getBoundingClientRect().left - joystickBase.offsetWidth / 2;
+            const deltaY = event.touches[0].clientY - joystickBase.getBoundingClientRect().top - joystickBase.offsetHeight / 2;
+
+            // Calculate the angle of the joystick
+            let angle = Math.atan2(deltaY, deltaX);
+            angle = angle * (180 / Math.PI); // Convert radians to degrees
+
+            // Calculate the distance from the center to the stick
+            let distance = Math.min(Math.hypot(deltaX, deltaY), joystickBase.offsetWidth / 2);
+
+            // Move the stick
+            joystickStick.style.left = `${Math.cos(angle * (Math.PI / 180)) * distance + joystickBase.offsetWidth / 2 - joystickStick.offsetWidth / 2}px`;
+            joystickStick.style.top = `${Math.sin(angle * (Math.PI / 180)) * distance + joystickBase.offsetHeight / 2 - joystickStick.offsetHeight / 2}px`;
+
+            // Update the ball's velocity based on joystick position
+            velocity.x = Math.cos(angle * (Math.PI / 180)) * distance / 10; // Adjust the division factor for sensitivity
+            velocity.y = Math.sin(angle * (Math.PI / 180)) * distance / 10; // Adjust the division factor for sensitivity
+        }
+
+        // Add event listeners for joystick movement
+        document.querySelector('.joystick-base').addEventListener('touchmove', handleJoystickMove);
     </script>
 </body>
 </html>
