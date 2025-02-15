@@ -75,19 +75,15 @@ const amongUsContent = [
         message: "🎮 SPECIAL GAMING MOMENT!\nThe Impostor left a gaming console!\nOnly 2 tasks remain!\nTime for a quick game break?",
         gif: "https://media.giphy.com/media/ejJmQ6FPJrQKVy5QVz/giphy.gif",
         surprise: {
-            type: 'game',
+            type: 'video',
             content: `
-                <div class="game-surprise">
-                    <img src="https://media.giphy.com/media/Mab1lyzb70X0YiNmUn/giphy.gif" alt="Gaming Crewmate" class="surprise-gif">
-                    <div class="game-message">
-                        🎮 Click here to play the Among Us Jump Game! 🎮
-                    </div>
-                    <a href="game.html" class="game-link">Play Game!</a>
+                <div class="video-surprise">
+                    <a href="https://www.youtube.com/watch?v=nZBJnSvGAf0" target="_blank" class="video-link">
+                        🎮 Watch Silly Among Us Dance! 🎮
+                    </a>
                 </div>
             `
-        },
-        link: "https://www.youtube.com/watch?v=nZBJnSvGAf0",
-        linkText: "Silly Among Us Dance"
+        }
     },
     {
         day: 7,
@@ -321,7 +317,7 @@ function showEncouragement() {
     });
 }
 
-// Add event listener for Enter key on username input
+// Add event listener for Enter key
 document.addEventListener('DOMContentLoaded', function() {
     const usernameInput = document.getElementById('username');
     usernameInput.addEventListener('keypress', function(event) {
@@ -330,14 +326,6 @@ document.addEventListener('DOMContentLoaded', function() {
             checkLogin();
         }
     });
-
-    // Add preview button to login section
-    const previewButton = document.createElement('button');
-    previewButton.onclick = showPreviewMode;
-    previewButton.className = 'preview-button';
-    previewButton.textContent = 'Preview Days';
-    previewButton.style.marginLeft = '10px';
-    document.querySelector('.login-form').appendChild(previewButton);
 });
 
 // Update quote every day
@@ -461,148 +449,27 @@ function updateDailyContent() {
     updateCelebrationGifs(daysCompleted);
 }
 
-// Preview mode functions
-let isPreviewMode = false;
-let originalDay = 1;
-
-function showPreviewMode() {
-    document.getElementById('login-section').classList.add('hidden');
-    document.getElementById('preview-section').classList.remove('hidden');
-    document.getElementById('celebration-section').classList.remove('hidden');
-    
-    // Add preview mode indicator
-    const indicator = document.createElement('div');
-    indicator.className = 'preview-mode';
-    indicator.textContent = '👀 Preview Mode';
-    document.body.appendChild(indicator);
-}
-
-function previewDay(day) {
-    isPreviewMode = true;
-    if (!originalDay) {
-        originalDay = calculateDaysCompleted();
-    }
-    const originalCalculate = calculateDaysCompleted;
-    calculateDaysCompleted = () => day;
-    updateProgress();
-    updateDailyContent();
-    updateCelebrationGifs(day);
-    calculateDaysCompleted = originalCalculate;
-}
-
-function exitPreview() {
-    isPreviewMode = false;
-    document.getElementById('preview-section').classList.add('hidden');
-    document.getElementById('celebration-section').classList.add('hidden');
-    document.getElementById('login-section').classList.remove('hidden');
-    
-    const indicator = document.querySelector('.preview-mode');
-    if (indicator) {
-        indicator.remove();
-    }
-}
-
-// Add some fun interaction for day 6
-document.addEventListener('keydown', (e) => {
-    if (e.key === 'ArrowUp') {
-        const crewmate = document.querySelector('.pixel-crewmate');
-        if (crewmate) {
-            crewmate.style.animation = 'none';
-            crewmate.offsetHeight; // Trigger reflow
-            crewmate.style.animation = 'jump 0.5s ease';
-            
-            // Add a little confetti when jumping
-            confetti({
-                particleCount: 20,
-                spread: 30,
-                origin: { y: 0.7 },
-                colors: ['#F472B6', '#3B82F6']
-            });
-        }
-    }
-});
-
 // Add this CSS for the game surprise
 const styles = `
-    .game-surprise {
-        margin-top: 2rem;
-        text-align: center;
-        background: rgba(0, 0, 0, 0.8);
-        padding: 20px;
-        border-radius: 10px;
-    }
+.video-link {
+    display: inline-block;
+    padding: 10px 20px;
+    background: linear-gradient(45deg, #F472B6, #3B82F6);
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    margin-top: 1rem;
+    font-weight: bold;
+    transition: transform 0.3s, box-shadow 0.3s;
+}
 
-    .pixel-crewmate {
-        margin: 1rem auto;
-        cursor: pointer;
-        width: 100px;
-        height: 100px;
-        position: relative;
-    }
+.video-link:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(244, 114, 182, 0.3);
+}
 
-    .pixel-crewmate img {
-        width: 100%;
-        height: 100%;
-        object-fit: contain;
-    }
-
-    .game-message {
-        color: #F472B6;
-        margin-top: 1rem;
-        font-family: 'Courier New', monospace;
-        animation: blink 1s infinite;
-        font-weight: bold;
-    }
-
-    @keyframes jump {
-        0% { transform: translateY(0); }
-        50% { transform: translateY(-50px); }
-        100% { transform: translateY(0); }
-    }
-
-    @keyframes blink {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.5; }
-    }
-
-    .game-link {
-        display: inline-block;
-        padding: 10px 20px;
-        background: linear-gradient(45deg, #F472B6, #3B82F6);
-        color: white;
-        text-decoration: none;
-        border-radius: 5px;
-        margin-top: 1rem;
-        font-weight: bold;
-        transition: transform 0.3s, box-shadow 0.3s;
-    }
-
-    .game-link:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(244, 114, 182, 0.3);
-    }
-
-    .surprise-gif {
-        width: 150px;
-        height: 150px;
-        margin: 1rem auto;
-        display: block;
-    }
+.video-surprise {
+    margin-top: 1rem;
+    text-align: center;
+}
 `;
-
-// Add the styles to the document
-const styleSheet = document.createElement("style");
-styleSheet.textContent = styles;
-document.head.appendChild(styleSheet);
-
-// Add this function to update celebration GIFs
-function updateCelebrationGifs(day) {
-    const celebrationDiv = document.querySelector('.celebration-images');
-    const dayGifs = dailyCelebrationGifs[day - 1];
-    celebrationDiv.innerHTML = `
-        <img src="${dayGifs.gif1}" alt="Celebration" />
-        <img src="${dayGifs.gif2}" alt="Success" />
-        <img src="${dayGifs.gif3}" alt="Motivation" />
-        <img src="${dayGifs.gif4}" alt="Stars" />
-    `;
-} 
