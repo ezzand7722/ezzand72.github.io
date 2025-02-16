@@ -1,6 +1,8 @@
 // Challenge start date and time (first day just completed)
 const today = new Date();
-const challengeStartDate = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 20, 0, 0); // 22:00 GMT+2 = 20:00 UTC
+const challengeStartDate = new Date();
+challengeStartDate.setDate(today.getDate() - 2); // Set start date to 2 days ago
+challengeStartDate.setUTCHours(20, 0, 0, 0); // 22:00 GMT+2 = 20:00 UTC
 const totalDays = 8;
 
 // Motivational quotes array
@@ -9,7 +11,11 @@ const motivationalQuotes = [
     { text: "The only way to do great work is to love what you do.", author: "Steve Jobs" },
     { text: "Believe you can and you're halfway there.", author: "Theodore Roosevelt" },
     { text: "Don't watch the clock; do what it does. Keep going.", author: "Sam Levenson" },
-    { text: "The future depends on what you do today.", author: "Mahatma Gandhi" }];
+    { text: "The future depends on what you do today.", author: "Mahatma Gandhi" },
+    { text: "Success is not final, failure is not fatal.", author: "Winston Churchill" },
+    { text: "Your time is limited, don't waste it living someone else's life.", author: "Steve Jobs" },
+    { text: "The best way to predict the future is to create it.", author: "Peter Drucker" }
+];
 
 // Encouragement messages
 const encouragementMessages = [
@@ -25,7 +31,7 @@ const easterEggs = {
     2: { message: "💫 Double trouble! Try clicking your badges!", effect: "spin" },
     3: { message: "🎯 Triple threat! Type 'dance' while on the page!", effect: "bounce" },
     4: { message: "✨ Halfway there! Double-click the quote for magic!", effect: "glitter" },
-    5: { message: "�� High five! Press 'F' to pay respects to junk food!", effect: "fireworks" },
+    5: { message: "🖐️ High five! Press 'F' to pay respects to junk food!", effect: "fireworks" },
     6: { message: "⚡ Super six! Click the timer three times!", effect: "shake" },
     7: { message: "🎨 Lucky seven! Type 'colors' for a surprise!", effect: "colorshift" },
     8: { message: "👑 Ultimate champion! Click everywhere for celebration!", effect: "party" }
@@ -59,7 +65,7 @@ const amongUsContent = [
     {
         day: 4,
         message: "🔧 Task Completion Status:\nImpostor eliminated!\n4 more tasks for victory!\nYou're doing great!",
-        gif: "https://media.giphy.com/media/W0crByKlXhLlC/giphy.gif"
+        gif: "https://media.giphy.com/media/yAnC4g6sUpX0MDkGOg/giphy.gif?cid=790b76114wls35wh13ne70bfvxg86zywa9q91aee587i8pr1&ep=v1_gifs_search&rid=giphy.gif&ct=g"
     },
     {
         day: 5,
@@ -148,70 +154,71 @@ const bookQuotes = [
     }
 ];
 
-// Add this new array for daily celebration GIFs
+// Update the dailyCelebrationGifs array with unique GIFs for each day
 const dailyCelebrationGifs = [
-    // Day 1
+    // Day 1 - First Steps Theme
     {
         gif1: "https://media.giphy.com/media/l0HlGVD6AsbobSTe0/giphy.gif",
-        gif2: "https://media.giphy.com/media/26u4cqiYI30juCOGY/giphy.gif",
-        gif3: "https://media.giphy.com/media/3oz8xAFtqoOUUrsh7W/giphy.gif",
+        gif2: "https://media.giphy.com/media/QW5nKIoebG8y4/giphy.gif", // Happy star
+        gif3: "https://media.giphy.com/media/26u4cqiYI30juCOGY/giphy.gif", // Celebration
         gif4: "https://media.giphy.com/media/g9582DNuQppxC/giphy.gif"
     },
-    // Day 2
+    // Day 2 - Achievement Theme
     {
-        gif1: "https://media.giphy.com/media/l0HlGVD6AsbobSTe0/giphy.gif",
-        gif2: "https://media.giphy.com/media/QvvVchqUIZ31QBQGwg/giphy.gif",
-        gif3: "https://media.giphy.com/media/lMameLIF8voLu8HxWV/giphy.gif",
-        gif4: "https://media.giphy.com/media/dZX3AduGrY3uJ7qCsx/giphy.gif"
+        gif1: "https://media.giphy.com/media/XreQmk7ETCak0/giphy.gif",
+        gif2: "https://media.giphy.com/media/3oz9ZE2Oo9zRC/giphy.gif",
+        gif3: "https://media.giphy.com/media/3o6Zt8qDiPE2d3kayI/giphy.gif",
+        gif4: "https://media.giphy.com/media/xT8qBepJQzUjXpeWU8/giphy.gif"
     },
-    // Day 3
+    // Day 3 - Dance Theme
     {
         gif1: "https://media.giphy.com/media/l0HlGVD6AsbobSTe0/giphy.gif",
-        gif2: "https://media.giphy.com/media/IwAZ6dvvvaTtdI8SD5/giphy.gif",
-        gif3: "https://media.giphy.com/media/3oKIPf3C7HqqYBVcCY/giphy.gif",
+        gif2: "https://media.giphy.com/media/DGWAx8d3IkICs/giphy.gif", // Dancing
+        gif3: "https://media.giphy.com/media/blSTtZehjAZ8I/giphy.gif", // More dancing
         gif4: "https://media.giphy.com/media/l4q8cJzGdR9J8w3hS/giphy.gif"
     },
-    // Day 4
+    // Day 4 - Magic Theme
     {
-        gif1: "https://media.giphy.com/media/l0HlGVD6AsbobSTe0/giphy.gif",
-        gif2: "https://media.giphy.com/media/LSvB8JdEf4yascdXf1/giphy.gif",
-        gif3: "https://media.giphy.com/media/3oz8xPyx3qgq5jAmMo/giphy.gif",
-        gif4: "https://media.giphy.com/media/26BRv0ThflsHCqDrG/giphy.gif"
+        gif1: "https://media.giphy.com/media/3NtY188QaxDdC/giphy.gif?cid=790b7611xjxq63ec33vakmp70v80s41vxlyfpq590p0krk3r&ep=v1_gifs_search&rid=giphy.gif&ct=g",
+        gif2: "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExc2F6eGlrZnNoZTk4a2lwZWdld2hiOHhrMWdzbmFkd3UwazA3Z2tlMiZlcD12MV9naWZzX3NlYXJjaCZjdD1n/mGK1g88HZRa2FlKGbz/giphy.gif", // Magic
+        gif3: "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExc2F6eGlrZnNoZTk4a2lwZWdld2hiOHhrMWdzbmFkd3UwazA3Z2tlMiZlcD12MV9naWZzX3NlYXJjaCZjdD1n/3o7abKhOpu0NwenH3O/giphy.gif", // Sparkles
+        gif4: "https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExNWdtb2JzbmVzZnJza3c5anY1MWQ0YnN2bjBlamhiY3Iwd3R6dmZwbiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/o75ajIFH0QnQC3nCeD/giphy.gif"
     },
-    // Day 5
+    // Day 5 - High Five Theme
     {
         gif1: "https://media.giphy.com/media/l0HlGVD6AsbobSTe0/giphy.gif",
-        gif2: "https://media.giphy.com/media/l2JhL0Gpfbvs4Y07K/giphy.gif",
-        gif3: "https://media.giphy.com/media/Q8IYWnnogTYM5T6Yo0/giphy.gif",
+        gif2: "https://media.giphy.com/media/3oEjHV0z8S7WM4MwnK/giphy.gif", // High five
+        gif3: "https://media.giphy.com/media/wrzf9P70YWLJK/giphy.gif", // Celebration
         gif4: "https://media.giphy.com/media/l4q8cJzGdR9J8w3hS/giphy.gif"
     },
-    // Day 6
+    // Day 6 - Gaming Theme (updated 4th GIF)
     {
         gif1: "https://media.giphy.com/media/l0HlGVD6AsbobSTe0/giphy.gif",
-        gif2: "https://media.giphy.com/media/3o7TKDEhaXOzP13ETS/giphy.gif",
-        gif3: "https://media.giphy.com/media/l4HodBpDmoMA5p9bG/giphy.gif",
-        gif4: "https://media.giphy.com/media/26u4b45b8KlgAB7iM/giphy.gif"
+        gif2: "https://media.giphy.com/media/B7o99rIuystY4/giphy.gif",
+        gif3: "https://media.giphy.com/media/1n4FT4KRQkDvK0IO4X/giphy.gif",
+        gif4: "https://media.giphy.com/media/3oEjI6hkw6nbYNQkz6/giphy.gif" // New gaming celebration GIF
     },
-    // Day 7
+    // Day 7 - Rainbow Theme (updated 3rd GIF)
     {
         gif1: "https://media.giphy.com/media/l0HlGVD6AsbobSTe0/giphy.gif",
-        gif2: "https://media.giphy.com/media/5GoVLqeAOo6PK/giphy.gif",
-        gif3: "https://media.giphy.com/media/QWvra259h4LCvdJnxP/giphy.gif",
+        gif2: "https://media.giphy.com/media/26tPplGWjN0xLybiU/giphy.gif",
+        gif3: "https://media.giphy.com/media/26BRvQJ3ke9rHRPyg/giphy.gif", // New colorful celebration GIF
         gif4: "https://media.giphy.com/media/U4DswrBiaz0p67ZweH/giphy.gif"
     },
-    // Day 8 (Final Day)
+    // Day 8 - Grand Finale
     {
         gif1: "https://media.giphy.com/media/l0HlGVD6AsbobSTe0/giphy.gif",
-        gif2: "https://media.giphy.com/media/TdfyKrN7HGTIY/giphy.gif",
-        gif3: "https://media.giphy.com/media/6brH8dM3zeMyA/giphy.gif",
-        gif4: "https://media.giphy.com/media/2gtoSIzdrSMFO/giphy.gif"
+        gif2: "https://media.giphy.com/media/l2JhGYxcjMcKqiaHu/giphy.gif", // Trophy
+        gif3: "https://media.giphy.com/media/2gtoSIzdrSMFO/giphy.gif", // Ultimate win
+        gif4: "https://media.giphy.com/media/26u4lOMA8JKSnL9Uk/giphy.gif"
     }
 ];
 
 // Main login function
 function checkLogin() {
-    const username = document.getElementById('username').value;
-    if (username.toLowerCase() === 'onizuka') {
+    const username = document.getElementById('username').value.toLowerCase();
+    
+    if (username === 'onizuka') {
         document.getElementById('login-section').classList.add('hidden');
         document.getElementById('celebration-section').classList.remove('hidden');
         updateProgress();
@@ -226,19 +233,46 @@ function checkLogin() {
                 origin: { y: 0.6 }
             });
         }, 1000);
-    } else {
+    } 
+    // Add secret preview username
+    else if (username === 'prev') {
+        document.getElementById('login-section').classList.add('hidden');
+        document.getElementById('celebration-section').classList.remove('hidden');
+        
+        // Add preview mode indicator
+        const indicator = document.createElement('div');
+        indicator.className = 'preview-mode';
+        indicator.textContent = '👀 Preview Mode - Day 1';
+        document.body.appendChild(indicator);
+
+        // Show all days as buttons
+        const previewContainer = document.createElement('div');
+        previewContainer.className = 'preview-days';
+        previewContainer.innerHTML = `
+            <div class="preview-buttons">
+                ${Array.from({length: 8}, (_, i) => `
+                    <button onclick="previewDay(${i + 1})">Day ${i + 1}</button>
+                `).join('')}
+            </div>
+            <button onclick="exitPreview()" class="exit-preview">Exit Preview</button>
+        `;
+        document.body.appendChild(previewContainer);
+        
+        // Show day 1 by default
+        previewDay(1);
+    } 
+    else {
         alert('Please enter the correct username!');
     }
 }
 
 function calculateDaysCompleted() {
-    // Get current time in GMT+2
     const now = new Date();
-    const gmt2Offset = 2 * 60 * 60 * 1000; // 2 hours in milliseconds
-    const nowGMT2 = new Date(now.getTime() + gmt2Offset);
-
-    // Calculate days completed (starting with 1 since first day is done)
-    return 1; // Fixed at 1 since only first day is completed
+    const timeDifference = now - challengeStartDate;
+    const daysPassed = Math.floor(timeDifference / (1000 * 60 * 60 * 24));
+    
+    // Ensure we don't exceed 8 days and don't go below 2 (since we're on day 2)
+    return Math.max(2, Math.min(daysPassed + 1, 8));
 }
 
 function updateProgress() {
@@ -253,34 +287,82 @@ function updateProgress() {
     // Update text
     daysCompletedText.textContent = `${daysCompleted} day${daysCompleted > 1 ? 's' : ''} completed out of ${totalDays} days!`;
 
+    // Update badges
+    updateBadges(daysCompleted);
+
     // Update motivation text based on progress
     updateMotivationText(daysCompleted);
 }
 
 function updateMotivationText(daysCompleted) {
     const motivationText = document.querySelector('.motivation-text');
+    const messages = {
+        1: {
+            title: "First day conquered! 🌟",
+            message1: "You've taken the first step on this amazing journey!",
+            message2: "Try clicking the progress bar for a colorful surprise! 🌈"
+        },
+        2: {
+            title: "Double the achievement! 💫",
+            message1: "Two days down, you're building momentum!",
+            message2: "Click your achievement badges for a special effect! ✨"
+        },
+        3: {
+            title: "Triple the power! 🔥",
+            message1: "Three days strong, you're on a roll!",
+            message2: "Type 'dance' to show off your moves! 💃"
+        },
+        4: {
+            title: "Halfway champion! ",
+            message1: "You're at the halfway point, and you're crushing it!",
+            message2: "Double-click the daily quote for some magic! ✨"
+        },
+        5: {
+            title: "High five! 🖐️",
+            message1: "Five days of pure determination!",
+            message2: "Press 'F' to pay respects to your progress! 🎮"
+        },
+        6: {
+            title: "Super six! ⚡",
+            message1: "Six days of showing what you're made of!",
+            message2: "Click the timer three times for a shake! ⏰"
+        },
+        7: {
+            title: "Seventh heaven! 🌠",
+            message1: "One more day to go, you're nearly there!",
+            message2: "Type 'colors' to see something special! 🎨"
+        },
+        8: {
+            title: "Ultimate victory! 👑",
+            message1: "You've done it! All 8 days completed!",
+            message2: "Click anywhere for a celebration! 🎉"
+        }
+    };
+
+    const dayMessage = messages[daysCompleted];
     motivationText.innerHTML = `
-        <h2>You're doing amazing! 💪</h2>
-        <p>You've completed ${daysCompleted} day, showing incredible strength!</p>
-        <p>Keep going, you've got this! 🌟</p>
+        <h2>${dayMessage.title}</h2>
+        <p>${dayMessage.message1}</p>
+        <p>${dayMessage.message2}</p>
     `;
 }
 
 function startCountdown() {
     function updateCountdown() {
         const now = new Date();
-        const gmt2Offset = 2 * 60 * 60 * 1000;
-        const nowGMT2 = new Date(now.getTime() + gmt2Offset);
-
-        // Calculate next milestone (today at 10 PM GMT+2)
-        const nextMilestone = new Date();
+        
+        // Calculate next milestone
+        const nextMilestone = new Date(challengeStartDate);
+        nextMilestone.setDate(nextMilestone.getDate() + calculateDaysCompleted());
         nextMilestone.setUTCHours(20, 0, 0, 0); // 22:00 GMT+2 = 20:00 UTC
 
-        // If we're past today's 10 PM, set for next day
-        if (nowGMT2 > nextMilestone) {
-            nextMilestone.setDate(nextMilestone.getDate() + 1);
-        }
         const diff = nextMilestone - now;
+
+        // If we've passed the milestone, refresh the page to show new day
+        if (diff < 0 && calculateDaysCompleted() < 8) {
+            window.location.reload();
+            return;
+        }
 
         // Convert to hours, minutes, seconds
         const hours = Math.floor(diff / (1000 * 60 * 60));
@@ -292,19 +374,14 @@ function startCountdown() {
         document.getElementById('minutes').textContent = minutes.toString().padStart(2, '0');
         document.getElementById('seconds').textContent = seconds.toString().padStart(2, '0');
 
-        // Update progress
+        // Update content
         updateProgress();
         updateDailyContent();
     }
+
     // Update immediately and then every second
     updateCountdown();
     setInterval(updateCountdown, 1000);
-}
-
-function updateQuote() {
-    const quote = motivationalQuotes[Math.floor(Math.random() * motivationalQuotes.length)];
-    document.getElementById('quote-text').textContent = `"${quote.text}"`;
-    document.getElementById('quote-author').textContent = `- ${quote.author}`;
 }
 
 function showEncouragement() {
@@ -313,7 +390,8 @@ function showEncouragement() {
     confetti({
         particleCount: 100,
         spread: 70,
-        origin: { y: 0.6 }
+        origin: { y: 0.6 },
+        colors: ['#F472B6', '#3B82F6']
     });
 }
 
@@ -327,9 +405,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
-
-// Update quote every day
-setInterval(updateQuote, 24 * 60 * 60 * 1000);
 
 // Add these functions after your existing code
 function addEasterEggs() {
@@ -390,6 +465,16 @@ function updateDailyContent() {
     const amongUsDiv = document.getElementById('amongus-content');
     const bookDiv = document.getElementById('book-content');
 
+    // Update the daily quote (add this at the beginning of the function)
+    const dailyQuote = motivationalQuotes[daysCompleted - 1];
+    const quoteDiv = document.querySelector('#quote-text');
+    const authorDiv = document.querySelector('#quote-author');
+    
+    if (quoteDiv && authorDiv && dailyQuote) {
+        quoteDiv.textContent = `"${dailyQuote.text}"`;
+        authorDiv.textContent = `- ${dailyQuote.author}`;
+    }
+
     // Update Among Us content with styled message
     const amongUsDay = amongUsContent[daysCompleted - 1];
     let amongUsHTML = `
@@ -440,13 +525,104 @@ function updateDailyContent() {
 
     // Book content remains the same
     const bookDay = bookQuotes[daysCompleted - 1];
-    bookDiv.innerHTML = `
-        <p>${bookDay.emoji} "${bookDay.quote}"</p>
+    bookDiv.innerHTML = `        <p>${bookDay.emoji} "${bookDay.quote}"</p>
         <p style="color: #F472B6; margin-top: 0.5rem;">- ${bookDay.author}</p>
     `;
 
     // Update celebration GIFs
     updateCelebrationGifs(daysCompleted);
+
+    // Add special effect buttons
+    const buttonContainer = document.createElement('div');
+    buttonContainer.className = 'special-buttons';
+    
+    // Day 3 Dance Button
+    if (daysCompleted === 3) {
+        const danceButton = document.createElement('button');
+        danceButton.textContent = "Let's Dance! 💃";
+        danceButton.className = 'special-effect-button';
+        danceButton.onclick = function() {
+            document.body.style.animation = 'dance 0.5s infinite';
+            
+            // Add floating music notes
+            for (let i = 0; i < 10; i++) {
+                const note = document.createElement('div');
+                note.className = 'music-note';
+                note.innerHTML = ['♪', '♫', '♬', '♩'][Math.floor(Math.random() * 4)];
+                note.style.left = Math.random() * window.innerWidth + 'px';
+                note.style.top = window.innerHeight + 'px';
+                document.body.appendChild(note);
+            }
+
+            // Add confetti
+            confetti({
+                particleCount: 50,
+                spread: 70,
+                origin: { y: 0.6 }
+            });
+
+            setTimeout(() => {
+                document.body.style.animation = '';
+                document.querySelectorAll('.music-note').forEach(note => note.remove());
+            }, 3000);
+        };
+        buttonContainer.appendChild(danceButton);
+    }
+
+    // Day 5 Fireworks Button
+    if (daysCompleted === 5) {
+        const fireworksButton = document.createElement('button');
+        fireworksButton.textContent = 'Launch Fireworks! 🎆';
+        fireworksButton.className = 'special-effect-button';
+        fireworksButton.onclick = function() {
+            confetti({
+                particleCount: 100,
+                spread: 180,
+                origin: { y: 0.6 },
+                colors: ['#FF0000', '#00FF00', '#0000FF', '#FFFF00']
+            });
+        };
+        buttonContainer.appendChild(fireworksButton);
+    }
+
+    // Day 7 - Changed to Disco Mode
+    if (daysCompleted === 7) {
+        const discoButton = document.createElement('button');
+        discoButton.textContent = 'Disco Time! 🕺';
+        discoButton.className = 'special-effect-button';
+        discoButton.onclick = function() {
+            document.body.style.animation = 'disco 1.5s infinite';
+            confetti({
+                particleCount: 100,
+                spread: 70,
+                origin: { y: 0.6 },
+                colors: ['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF']
+            });
+            setTimeout(() => {
+                document.body.style.animation = '';
+            }, 3000);
+        };
+        buttonContainer.appendChild(discoButton);
+    }
+
+    // Add the button container after the motivation text
+    const motivationText = document.querySelector('.motivation-text');
+    if (motivationText && buttonContainer.children.length > 0) {
+        motivationText.appendChild(buttonContainer);
+    }
+}
+
+// Helper function for music notes
+function createMusicNotes() {
+    for (let i = 0; i < 10; i++) {
+        const note = document.createElement('div');
+        note.className = 'music-note';
+        note.innerHTML = ['♪', '♫', '♬', '♩'][Math.floor(Math.random() * 4)];
+        note.style.left = Math.random() * window.innerWidth + 'px';
+        note.style.top = window.innerHeight + 'px';
+        document.body.appendChild(note);
+        setTimeout(() => note.remove(), 3000);
+    }
 }
 
 // Add this CSS for the game surprise
@@ -473,3 +649,289 @@ const styles = `
     text-align: center;
 }
 `;
+
+// Add event listener for the encouragement button
+document.addEventListener('DOMContentLoaded', function() {
+    const encourageBtn = document.getElementById('encourageBtn');
+    if (encourageBtn) {
+        encourageBtn.addEventListener('click', showEncouragement);
+    }
+});
+
+// Add these event listeners for daily interactive features
+document.addEventListener('DOMContentLoaded', function() {
+    // Create and add buttons for each day's special effect
+    const daysCompleted = calculateDaysCompleted();
+    const motivationText = document.querySelector('.motivation-text');
+    
+    if (daysCompleted === 3) {
+        const danceButton = document.createElement('button');
+        danceButton.textContent = "Let's Dance! 💃";
+        danceButton.className = 'special-effect-button';
+        danceButton.onclick = function() {
+            document.body.style.animation = 'dance 0.5s infinite';
+            
+            // Add floating music notes
+            for (let i = 0; i < 10; i++) {
+                const note = document.createElement('div');
+                note.className = 'music-note';
+                note.innerHTML = ['♪', '♫', '♬', '♩'][Math.floor(Math.random() * 4)];
+                note.style.left = Math.random() * window.innerWidth + 'px';
+                note.style.top = window.innerHeight + 'px';
+                document.body.appendChild(note);
+            }
+
+            // Add confetti
+            confetti({
+                particleCount: 50,
+                spread: 70,
+                origin: { y: 0.6 }
+            });
+
+            setTimeout(() => {
+                document.body.style.animation = '';
+                document.querySelectorAll('.music-note').forEach(note => note.remove());
+            }, 3000);
+        };
+        motivationText.appendChild(danceButton);
+    }
+
+    if (daysCompleted === 5) {
+        const fireworksButton = document.createElement('button');
+        fireworksButton.textContent = 'Launch Fireworks! 🎆';
+        fireworksButton.className = 'special-effect-button';
+        fireworksButton.onclick = function() {
+            document.body.style.animation = 'shake 0.5s infinite';
+            confetti({
+                particleCount: 100,
+                spread: 180,
+                origin: { y: 0.9 }
+            });
+            setTimeout(() => {
+                document.body.style.animation = '';
+            }, 1000);
+        };
+        motivationText.appendChild(fireworksButton);
+    }
+
+    // Day 7 - Changed to Disco Mode
+    if (daysCompleted === 7) {
+        const discoButton = document.createElement('button');
+        discoButton.textContent = 'Disco Time! 🕺';
+        discoButton.className = 'special-effect-button';
+        discoButton.onclick = function() {
+            document.body.style.animation = 'disco 1.5s infinite';
+            confetti({
+                particleCount: 100,
+                spread: 70,
+                origin: { y: 0.6 },
+                colors: ['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF']
+            });
+            setTimeout(() => {
+                document.body.style.animation = '';
+            }, 3000);
+        };
+        motivationText.appendChild(discoButton);
+    }
+
+    // Add styles for the special effect buttons
+    const newStyles = `
+        .special-effect-button {
+            background: linear-gradient(45deg, #F472B6, #3B82F6);
+            border: none;
+            border-radius: 20px;
+            color: white;
+            padding: 10px 20px;
+            margin: 10px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .special-effect-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(244, 114, 182, 0.3);
+        }
+
+        @keyframes dance {
+            0% { transform: translateY(0) rotate(0deg); }
+            25% { transform: translateY(-15px) rotate(-5deg); }
+            50% { transform: translateY(0) rotate(0deg); }
+            75% { transform: translateY(-15px) rotate(5deg); }
+            100% { transform: translateY(0) rotate(0deg); }
+        }
+
+        @keyframes disco {
+            0% { filter: hue-rotate(0deg) brightness(1); }
+            25% { filter: hue-rotate(90deg) brightness(1.2); }
+            50% { filter: hue-rotate(180deg) brightness(1); }
+            75% { filter: hue-rotate(270deg) brightness(1.2); }
+            100% { filter: hue-rotate(360deg) brightness(1); }
+        }
+    `;
+
+    const styleSheet = document.createElement("style");
+    styleSheet.textContent = newStyles;
+    document.head.appendChild(styleSheet);
+});
+
+// Helper functions for the effects
+function createMusicNote() {
+    const note = document.createElement('div');
+    note.className = 'music-note';
+    note.innerHTML = ['♪', '♫', '♬', '♩'][Math.floor(Math.random() * 4)];
+    note.style.left = Math.random() * window.innerWidth + 'px';
+    note.style.top = window.innerHeight + 'px';
+    document.body.appendChild(note);
+    setTimeout(() => note.remove(), 3000);
+}
+
+function createSparkle(x, y) {
+    const sparkle = document.createElement('div');
+    sparkle.className = 'sparkle';
+    sparkle.innerHTML = '✨';
+    sparkle.style.left = (x - 10) + 'px';
+    sparkle.style.top = (y - 10) + 'px';
+    document.body.appendChild(sparkle);
+    setTimeout(() => sparkle.remove(), 1000);
+}
+
+function createMatrixEffect() {
+    // Matrix-style effect
+    const matrix = document.createElement('div');
+    matrix.className = 'matrix-effect';
+    document.body.appendChild(matrix);
+    setTimeout(() => matrix.remove(), 3000);
+}
+
+function createPixelExplosion(element) {
+    const rect = element.getBoundingClientRect();
+    for (let i = 0; i < 20; i++) {
+        const pixel = document.createElement('div');
+        pixel.className = 'pixel';
+        pixel.style.left = (rect.left + rect.width/2) + 'px';
+        pixel.style.top = (rect.top + rect.height/2) + 'px';
+        document.body.appendChild(pixel);
+        setTimeout(() => pixel.remove(), 1000);
+    }
+}
+
+function createRainbowTrail(x, y) {
+    const trail = document.createElement('div');
+    trail.className = 'rainbow-trail';
+    trail.style.left = x + 'px';
+    trail.style.top = y + 'px';
+    document.body.appendChild(trail);
+    setTimeout(() => trail.remove(), 500);
+}
+
+// Add this function to update celebration GIFs
+function updateCelebrationGifs(day) {
+    const celebrationDiv = document.querySelector('.celebration-images');
+    if (!celebrationDiv) return;
+
+    const dayGifs = dailyCelebrationGifs[day - 1];
+    if (!dayGifs) return;
+
+    celebrationDiv.innerHTML = `
+        <img src="${dayGifs.gif1}" alt="Celebration" />
+        <img src="${dayGifs.gif2}" alt="Success" />
+        <img src="${dayGifs.gif3}" alt="Motivation" />
+        <img src="${dayGifs.gif4}" alt="Stars" />
+    `;
+}
+
+// Update the badges in your HTML to show these achievements
+const achievements = [
+    {
+        day: 1,
+        icon: "🌟",
+        title: "First Step Champion",
+        description: "Started the journey with determination!"
+    },
+    {
+        day: 2,
+        icon: "💪",
+        title: "Momentum Builder",
+        description: "Two days strong and getting stronger!"
+    },
+    {
+        day: 3,
+        icon: "🎵",
+        title: "Rhythm Master",
+        description: "Found your groove and kept moving!"
+    },
+    {
+        day: 4,
+        icon: "✨",
+        title: "Halfway Hero",
+        description: "Crossed the midpoint with style!"
+    },
+    {
+        day: 5,
+        icon: "🖐️",
+        title: "High Five Hero",
+        description: "Gave junk food the hand!"
+    },
+    {
+        day: 6,
+        icon: "🎮",
+        title: "Game Master",
+        description: "Played the health game and won!"
+    },
+    {
+        day: 7,
+        icon: "⭐",
+        title: "Star Seeker",
+        description: "Almost there, shining brighter each day!"
+    },
+    {
+        day: 8,
+        icon: "👑",
+        title: "Ultimate Champion",
+        description: "Completed the entire challenge!"
+    }
+];
+
+// Function to update badges
+function updateBadges(daysCompleted) {
+    const badgesContainer = document.querySelector('.badges');
+    badgesContainer.innerHTML = achievements.map((achievement, index) => `
+        <div class="badge ${index >= daysCompleted ? 'locked' : ''}" 
+             onclick="if(${index < daysCompleted}) this.classList.add('animate')">
+            <div class="badge-icon">${achievement.icon}</div>
+            <div class="badge-title">${achievement.title}</div>
+            <div class="badge-description">${achievement.description}</div>
+        </div>
+    `).join('');
+}
+
+// Keep these preview helper functions
+function previewDay(day) {
+    // Update preview mode indicator
+    const indicator = document.querySelector('.preview-mode');
+    if (indicator) {
+        indicator.textContent = `👀 Preview Mode - Day ${day}`;
+    }
+    
+    // Override calculateDaysCompleted temporarily
+    const originalCalculate = calculateDaysCompleted;
+    calculateDaysCompleted = () => day;
+    
+    // Update content
+    updateProgress();
+    updateDailyContent();
+    
+    // Restore original function
+    calculateDaysCompleted = originalCalculate;
+}
+
+function exitPreview() {
+    // Remove preview elements
+    document.querySelector('.preview-days')?.remove();
+    document.querySelector('.preview-mode')?.remove();
+    
+    // Show login section again
+    document.getElementById('celebration-section').classList.add('hidden');
+    document.getElementById('login-section').classList.remove('hidden');
+}
