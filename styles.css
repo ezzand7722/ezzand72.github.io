@@ -214,13 +214,14 @@ button:hover {
     align-items: center;
     color: white;
     width: 150px;
-    transition: transform 0.3s;
+    transition: all 0.3s ease;
     position: relative;
     overflow: hidden;
+    cursor: pointer;
 }
 
-.badge:hover {
-    transform: translateY(-5px);
+.badge:not(.locked):hover {
+    transform: translateY(-5px) rotate(5deg);
     box-shadow: 0 5px 15px rgba(244, 114, 182, 0.3);
 }
 
@@ -228,6 +229,16 @@ button:hover {
     background: #f0f0f0;
     color: #999;
     opacity: 0.7;
+}
+
+.badge.animate {
+    animation: badge-unlock 1s ease-in-out;
+}
+
+@keyframes badge-unlock {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.2) rotate(180deg); }
+    100% { transform: scale(1) rotate(360deg); }
 }
 
 .badge-icon {
@@ -240,22 +251,15 @@ button:hover {
     text-align: center;
 }
 
-.badge::after {
-    content: '';
-    position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: linear-gradient(45deg, transparent, rgba(255,255,255,0.2), transparent);
-    transform: rotate(45deg);
-    transition: 0.3s;
+.badge-description {
+    font-size: 0.8rem;
+    margin-top: 0.5rem;
     opacity: 0;
+    transition: opacity 0.3s;
 }
 
-.badge:hover::after {
+.badge:hover .badge-description {
     opacity: 1;
-    transform: rotate(45deg) translate(50%, 50%);
 }
 
 @keyframes gradient {
@@ -265,14 +269,39 @@ button:hover {
 }
 
 @keyframes rainbow {
-    0% { filter: hue-rotate(0deg); }
-    100% { filter: hue-rotate(360deg); }
+    0% { background: red; }
+    20% { background: yellow; }
+    40% { background: green; }
+    60% { background: blue; }
+    80% { background: purple; }
+    100% { background: red; }
 }
 
-@keyframes float {
-    0% { transform: translateY(0px); }
-    50% { transform: translateY(-10px); }
-    100% { transform: translateY(0px); }
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+@keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-20px); }
+}
+
+@keyframes glitter {
+    0% { text-shadow: 0 0 5px #fff; }
+    50% { text-shadow: 0 0 20px #F472B6; }
+    100% { text-shadow: 0 0 5px #fff; }
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-10px); }
+    75% { transform: translateX(10px); }
+}
+
+@keyframes colorshift {
+    0% { filter: hue-rotate(0deg); }
+    100% { filter: hue-rotate(360deg); }
 }
 
 .daily-amongus, .daily-book {
@@ -374,25 +403,9 @@ button:hover {
     to { transform: translateY(0); opacity: 1; }
 }
 
-@keyframes shake {
-    0%, 100% { transform: translateX(0); }
-    25% { transform: translateX(-10px); }
-    75% { transform: translateX(10px); }
-}
-
-@keyframes rotate {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-}
-
 @keyframes twinkle {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.5; }
-}
-
-@keyframes bounce {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-20px); }
 }
 
 .preview-buttons {
