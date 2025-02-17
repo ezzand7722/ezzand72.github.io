@@ -1,7 +1,7 @@
 // Challenge start date and time (first day just completed)
 const today = new Date();
 const challengeStartDate = new Date();
-challengeStartDate.setDate(today.getDate() - 2); // Set start date to 2 days ago
+challengeStartDate.setDate(today.getDate() - 3); // Changed from -2 to -3
 challengeStartDate.setUTCHours(20, 0, 0, 0); // 22:00 GMT+2 = 20:00 UTC
 const totalDays = 8;
 
@@ -449,14 +449,44 @@ function addEasterEggs() {
     });
 
     // Daily quote double-click effect
-    document.querySelector('.daily-quote').addEventListener('dblclick', () => {
-        const quote = document.querySelector('.daily-quote');
-        quote.style.transform = 'scale(1.05)';
-        quote.style.transition = 'transform 0.3s';
-        setTimeout(() => {
-            quote.style.transform = 'scale(1)';
-        }, 300);
-    });
+    const quoteDiv = document.querySelector('.daily-quote');
+    if (quoteDiv) {
+        // Create audio element with a more fun sound
+        const magicSound = new Audio('https://www.myinstants.com/media/sounds/fairy-sparkle.mp3');
+        magicSound.volume = 0.4; // Set volume to 40%
+
+        quoteDiv.addEventListener('dblclick', function() {
+            if (calculateDaysCompleted() === 4) {
+                // Play the fun sparkle sound
+                magicSound.currentTime = 0; // Reset sound to start
+                magicSound.play();
+
+                this.style.animation = 'glitter 1s infinite';
+                // Add more sparkle effects
+                for (let i = 0; i < 30; i++) { // Increased number of sparkles
+                    const sparkle = document.createElement('div');
+                    sparkle.className = 'sparkle';
+                    sparkle.innerHTML = ['✨', '⭐', '🌟'][Math.floor(Math.random() * 3)]; // Random sparkle types
+                    sparkle.style.left = Math.random() * window.innerWidth + 'px';
+                    sparkle.style.top = Math.random() * window.innerHeight + 'px';
+                    document.body.appendChild(sparkle);
+                    setTimeout(() => sparkle.remove(), 1500); // Longer duration
+                }
+                // More colorful confetti
+                confetti({
+                    particleCount: 80,
+                    spread: 100,
+                    origin: { y: 0.6 },
+                    colors: ['#FFD700', '#FFA500', '#FF69B4', '#00FF00', '#4169E1'],
+                    scalar: 1.2
+                });
+                
+                setTimeout(() => {
+                    this.style.animation = '';
+                }, 1000);
+            }
+        });
+    }
 }
 
 // Add this function to update Among Us and Book content
@@ -935,3 +965,71 @@ function exitPreview() {
     document.getElementById('celebration-section').classList.add('hidden');
     document.getElementById('login-section').classList.remove('hidden');
 }
+
+// Add this inside your DOMContentLoaded event listener
+document.addEventListener('DOMContentLoaded', function() {
+    // Day 4 - Double click quote for magic sparkles
+    const quoteDiv = document.querySelector('.daily-quote');
+    if (quoteDiv) {
+        // Create audio element with a more fun sound
+        const magicSound = new Audio('https://www.myinstants.com/media/sounds/fairy-sparkle.mp3');
+        magicSound.volume = 0.4; // Set volume to 40%
+
+        quoteDiv.addEventListener('dblclick', function() {
+            if (calculateDaysCompleted() === 4) {
+                // Play the fun sparkle sound
+                magicSound.currentTime = 0; // Reset sound to start
+                magicSound.play();
+
+                this.style.animation = 'glitter 1s infinite';
+                // Add more sparkle effects
+                for (let i = 0; i < 30; i++) { // Increased number of sparkles
+                    const sparkle = document.createElement('div');
+                    sparkle.className = 'sparkle';
+                    sparkle.innerHTML = ['✨', '⭐', '🌟'][Math.floor(Math.random() * 3)]; // Random sparkle types
+                    sparkle.style.left = Math.random() * window.innerWidth + 'px';
+                    sparkle.style.top = Math.random() * window.innerHeight + 'px';
+                    document.body.appendChild(sparkle);
+                    setTimeout(() => sparkle.remove(), 1500); // Longer duration
+                }
+                // More colorful confetti
+                confetti({
+                    particleCount: 80,
+                    spread: 100,
+                    origin: { y: 0.6 },
+                    colors: ['#FFD700', '#FFA500', '#FF69B4', '#00FF00', '#4169E1'],
+                    scalar: 1.2
+                });
+                
+                setTimeout(() => {
+                    this.style.animation = '';
+                }, 1000);
+            }
+        });
+    }
+});
+
+// Add these styles to your CSS
+const newStyles = `
+    @keyframes glitter {
+        0% { text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 15px #FFD700; }
+        50% { text-shadow: 0 0 20px #fff, 0 0 30px #fff, 0 0 40px #FFD700; }
+        100% { text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 15px #FFD700; }
+    }
+
+    .sparkle {
+        position: fixed;
+        pointer-events: none;
+        animation: sparkle-fade 1s ease-in forwards;
+        z-index: 1000;
+    }
+
+    @keyframes sparkle-fade {
+        0% { transform: scale(0) rotate(0deg); opacity: 1; }
+        100% { transform: scale(1) rotate(360deg); opacity: 0; }
+    }
+`;
+
+const styleSheet = document.createElement("style");
+styleSheet.textContent = newStyles;
+document.head.appendChild(styleSheet);
