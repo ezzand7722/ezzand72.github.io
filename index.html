@@ -2,19 +2,19 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Slime Survivor v7</title>
+  <title>Slime Survivor v8</title>
   <style>
     html, body {
       margin: 0;
       padding: 0;
       overflow: hidden;
-      background: #050509;
+      background: #0a0a14;
       font-family: system-ui, sans-serif;
       color: #fff;
     }
     #gameCanvas {
       display: block;
-      background: radial-gradient(circle at center, #17172a 0, #050509 70%);
+      background: radial-gradient(circle at center, #1a1a2e 0, #0a0a14 70%);
     }
     #hud {
       position: fixed;
@@ -72,14 +72,14 @@
     }
     #joystickArea {
       position: fixed;
-      left: 20px;
-      bottom: 20px;
-      width: 140px;
-      height: 140px;
+      left: 50px;
+      bottom: 50px;
+      width: 180px;
+      height: 180px;
       border-radius: 50%;
-      background: #0004;
-      border: 2px solid #666;
-      box-shadow: 0 0 10px #000;
+      background: #0006;
+      border: 3px solid #888;
+      box-shadow: 0 0 15px #000;
       touch-action: none;
       z-index: 20;
     }
@@ -87,13 +87,13 @@
       position: absolute;
       left: 50%;
       top: 50%;
-      width: 60px;
-      height: 60px;
-      margin-left: -30px;
-      margin-top: -30px;
+      width: 80px;
+      height: 80px;
+      margin-left: -40px;
+      margin-top: -40px;
       border-radius: 50%;
       background: radial-gradient(circle at 30% 30%, #eee, #777);
-      box-shadow: 0 0 8px #000;
+      box-shadow: 0 0 10px #000;
       pointer-events: none;
       transition: transform 0.1s ease-out;
     }
@@ -103,7 +103,6 @@
   <canvas id="gameCanvas"></canvas>
 
   <div id="hud">
-    <div><span class="label">Bananas:</span><span id="bananaCount">0</span></div>
     <div><span class="label">Score:</span><span id="scoreCount">0</span></div>
     <div><span class="label">Phase:</span><span id="phaseLabel">Trainee</span></div>
     <div id="healthBarOuter"><div id="healthBarInner"></div></div>
@@ -128,7 +127,6 @@
     window.addEventListener('resize', resize);
     resize();
 
-    const hudBananas = document.getElementById('bananaCount');
     const hudScore   = document.getElementById('scoreCount');
     const hudPhase   = document.getElementById('phaseLabel');
     const hudWeapons = document.getElementById('weaponHud');
@@ -159,7 +157,7 @@
       mouseY = e.clientY - rect.top;
     });
 
-    // Virtual joystick
+    // Virtual joystick (bigger, less corner)
     const joyArea = document.getElementById('joystickArea');
     const joyStick = document.getElementById('joyStick');
     let joyCenter = { x: 0, y: 0 };
@@ -191,7 +189,7 @@
       const t = e.touches ? e.touches[0] : e;
       const dx = t.clientX - joyCenter.x;
       const dy = t.clientY - joyCenter.y;
-      const maxDist = 50;
+      const maxDist = 65;
       const dist = Math.hypot(dx, dy) || 1;
       const strength = Math.min(dist, maxDist) / maxDist;
       joyInputX = (dx / dist) * strength;
@@ -237,7 +235,6 @@
       radius: 24,
       baseSpeed: 220,
       phase: 0,
-      bananas: 0,
       health: 100,
       maxHealth: 100
     };
@@ -247,7 +244,7 @@
     let chests  = [];
     let particles = [];
     let healthPacks = [];
-    let decorations = []; // trees, rocks, lamps
+    let decorations = [];
     let score = 0;
     let totalTime = 0;
 
@@ -330,32 +327,37 @@
       }
     }
 
-    // ====== Environment decorations ======
+    // ====== Environment decorations (with collision for trees) ======
     function spawnDecorations() {
       decorations = [];
       const count = 80;
       for (let i = 0; i < count; i++) {
         const type = Math.random();
-        let kind, color, size;
+        let kind, color, size, hasCollision;
         if (type < 0.5) {
           kind = 'tree';
           color = Math.random() < 0.6 ? '#2d5016' : '#8b4513';
           size = 40 + Math.random() * 30;
+          hasCollision = true;
         } else if (type < 0.75) {
           kind = 'rock';
           color = '#555';
           size = 20 + Math.random() * 20;
+          hasCollision = false;
         } else {
           kind = 'lamp';
           color = '#ffd700';
           size = 50;
+          hasCollision = false;
         }
         decorations.push({
           x: Math.random() * WORLD_WIDTH,
           y: Math.random() * WORLD_HEIGHT,
           kind,
           color,
-          size
+          size,
+          hasCollision,
+          collisionRadius: kind === 'tree' ? 20 : 0
         });
       }
     }
@@ -462,31 +464,23 @@
     let chestTimer = 0;
     let healthTimer = 0;
 
-    // ====== Phase based on bananas ======
+    // ====== Phase (no longer banana-based, just visual) ======
     function updatePhase() {
-      const b = player.bananas;
-      let newPhase = player.phase;
-      if (b >= 40) newPhase = 2;
-      else if (b >= 15) newPhase = 1;
-      else newPhase = 0;
-
-      if (newPhase !== player.phase) {
-        player.phase = newPhase;
-        spawnBurst(player.x, player.y, '#00ffff', 30);
-      }
-
-      if (player.phase === 0) {
-        player.radius = 22;
-        player.baseSpeed = 220;
-        hudPhase.textContent = 'Trainee';
-      } else if (player.phase === 1) {
+      if (level >= 10) {
+        player.phase = 2;
+        player.radius = 30;
+        player.baseSpeed = 300;
+        hudPhase.textContent = 'Master';
+      } else if (level >= 5) {
+        player.phase = 1;
         player.radius = 26;
         player.baseSpeed = 260;
         hudPhase.textContent = 'Adept';
       } else {
-        player.radius = 30;
-        player.baseSpeed = 300;
-        hudPhase.textContent = 'Master';
+        player.phase = 0;
+        player.radius = 22;
+        player.baseSpeed = 220;
+        hudPhase.textContent = 'Trainee';
       }
     }
 
@@ -500,6 +494,7 @@
         xp -= nextLevelXp;
         level++;
         nextLevelXp = Math.floor(nextLevelXp * 1.9);
+        updatePhase();
         openLevelUpMenu();
       }
       updateWeaponHud();
@@ -760,8 +755,27 @@
       player.vx += (targetVX - player.vx) * Math.min(1, accel * dt);
       player.vy += (targetVY - player.vy) * Math.min(1, accel * dt);
 
-      player.x += player.vx * dt;
-      player.y += player.vy * dt;
+      let newX = player.x + player.vx * dt;
+      let newY = player.y + player.vy * dt;
+
+      // tree collision
+      for (const d of decorations) {
+        if (d.hasCollision) {
+          const dx = newX - d.x;
+          const dy = newY - d.y;
+          const dist = Math.hypot(dx, dy);
+          if (dist < player.radius + d.collisionRadius) {
+            const overlap = player.radius + d.collisionRadius - dist;
+            const pushX = (dx / dist) * overlap;
+            const pushY = (dy / dist) * overlap;
+            newX += pushX;
+            newY += pushY;
+          }
+        }
+      }
+
+      player.x = newX;
+      player.y = newY;
 
       player.x = Math.max(player.radius, Math.min(WORLD_WIDTH - player.radius, player.x));
       player.y = Math.max(player.radius, Math.min(WORLD_HEIGHT - player.radius, player.y));
@@ -816,6 +830,7 @@
         e.y += e.vy * dt;
       });
 
+      // bananas now heal small amounts
       for (let i = bananas.length - 1; i >= 0; i--) {
         const b = bananas[i];
         const dx = b.x - player.x;
@@ -823,13 +838,11 @@
         const dist = Math.hypot(dx, dy);
         if (dist < player.radius + b.r) {
           bananas.splice(i, 1);
-          player.bananas++;
-          score += 10;
-          hudBananas.textContent = player.bananas;
+          score += 5;
           hudScore.textContent = score;
-          spawnBurst(b.x, b.y, '#ffd84a', 18);
-          updatePhase();
-          applyStaticUpgradesFromBananas();
+          const heal = 5;
+          player.health = Math.min(player.maxHealth, player.health + heal);
+          spawnBurst(b.x, b.y, '#ffd84a', 10);
         }
       }
 
@@ -894,7 +907,6 @@
 
       if (player.health <= 0) {
         player.health = player.maxHealth;
-        player.bananas = 0;
         player.phase = 0;
         player.x = SPAWN_POINT.x;
         player.y = SPAWN_POINT.y;
@@ -933,11 +945,11 @@
         weapons.laser.fireCooldown = 0;
 
         rebuildBlades();
+        updatePhase();
         updateWeaponHud();
 
         for (let i = 0; i < 40; i++) spawnBanana();
         spawnDecorations();
-        hudBananas.textContent = 0;
         hudPhase.textContent = 'Trainee';
       }
     }
@@ -949,7 +961,7 @@
       const tileSize = 120;
       ctx.save();
       ctx.translate(-camera.x % tileSize, -camera.y % tileSize);
-      ctx.fillStyle = '#111320';
+      ctx.fillStyle = '#16213e';
       for (let x = -tileSize; x < canvas.width + tileSize; x += tileSize) {
         for (let y = -tileSize; y < canvas.height + tileSize; y += tileSize) {
           ctx.fillRect(x + 4, y + 4, tileSize - 8, tileSize - 8);
@@ -960,26 +972,46 @@
       ctx.save();
       ctx.translate(-camera.x + camera.shakeX, -camera.y + camera.shakeY);
 
-      // decorations (trees, rocks, lamps)
+      // decorations (3D trees with collision)
       decorations.forEach(d => {
         ctx.save();
         ctx.translate(d.x, d.y);
 
         if (d.kind === 'tree') {
-          ctx.fillStyle = '#5c3a21';
-          ctx.fillRect(-8, -10, 16, 30);
-          ctx.fillStyle = d.color;
+          // trunk with shading
+          const trunkGrad = ctx.createLinearGradient(-10, 0, 10, 0);
+          trunkGrad.addColorStop(0, '#3d2817');
+          trunkGrad.addColorStop(0.5, '#5c3a21');
+          trunkGrad.addColorStop(1, '#3d2817');
+          ctx.fillStyle = trunkGrad;
+          ctx.fillRect(-10, -15, 20, 35);
+
+          // foliage with depth
+          const foliageGrad = ctx.createRadialGradient(-5, -30, 5, 0, -25, d.size * 0.6);
+          foliageGrad.addColorStop(0, '#4a7c2e');
+          foliageGrad.addColorStop(0.7, d.color);
+          foliageGrad.addColorStop(1, '#1a3d0f');
+          ctx.fillStyle = foliageGrad;
           ctx.beginPath();
-          ctx.arc(0, -20, d.size * 0.5, 0, Math.PI * 2);
+          ctx.arc(0, -25, d.size * 0.5, 0, Math.PI * 2);
           ctx.fill();
           ctx.beginPath();
-          ctx.arc(-15, -10, d.size * 0.35, 0, Math.PI * 2);
+          ctx.arc(-18, -15, d.size * 0.35, 0, Math.PI * 2);
           ctx.fill();
           ctx.beginPath();
-          ctx.arc(15, -10, d.size * 0.35, 0, Math.PI * 2);
+          ctx.arc(18, -15, d.size * 0.35, 0, Math.PI * 2);
+          ctx.fill();
+
+          // shadow at base
+          ctx.fillStyle = 'rgba(0,0,0,0.3)';
+          ctx.beginPath();
+          ctx.ellipse(0, 20, 15, 5, 0, 0, Math.PI * 2);
           ctx.fill();
         } else if (d.kind === 'rock') {
-          ctx.fillStyle = d.color;
+          const rockGrad = ctx.createRadialGradient(-5, -5, 5, 0, 0, d.size);
+          rockGrad.addColorStop(0, '#777');
+          rockGrad.addColorStop(1, d.color);
+          ctx.fillStyle = rockGrad;
           ctx.beginPath();
           ctx.ellipse(0, 0, d.size * 0.6, d.size * 0.4, 0, 0, Math.PI * 2);
           ctx.fill();
@@ -988,17 +1020,17 @@
           ctx.stroke();
         } else if (d.kind === 'lamp') {
           ctx.fillStyle = '#444';
-          ctx.fillRect(-4, -30, 8, 50);
+          ctx.fillRect(-5, -35, 10, 55);
           ctx.fillStyle = d.color;
           ctx.beginPath();
-          ctx.arc(0, -35, 12, 0, Math.PI * 2);
+          ctx.arc(0, -40, 14, 0, Math.PI * 2);
           ctx.fill();
-          const glow = ctx.createRadialGradient(0, -35, 5, 0, -35, 25);
-          glow.addColorStop(0, 'rgba(255,223,0,0.6)');
+          const glow = ctx.createRadialGradient(0, -40, 6, 0, -40, 30);
+          glow.addColorStop(0, 'rgba(255,223,0,0.7)');
           glow.addColorStop(1, 'rgba(255,223,0,0)');
           ctx.fillStyle = glow;
           ctx.beginPath();
-          ctx.arc(0, -35, 25, 0, Math.PI * 2);
+          ctx.arc(0, -40, 30, 0, Math.PI * 2);
           ctx.fill();
         }
 
