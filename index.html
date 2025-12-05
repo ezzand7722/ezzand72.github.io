@@ -1,0 +1,1199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Slime Survivor v6</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background: #050509;
+      font-family: system-ui, sans-serif;
+      color: #fff;
+    }
+    #gameCanvas {
+      display: block;
+      background: radial-gradient(circle at center, #17172a 0, #050509 70%);
+    }
+    #hud {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      z-index: 10;
+      font-size: 14px;
+      line-height: 1.4;
+      background: #0008;
+      padding: 8px 12px;
+      border-radius: 6px;
+      backdrop-filter: blur(6px);
+    }
+    #hud span.label {
+      color: #aaa;
+      margin-right: 4px;
+    }
+    #healthBarOuter {
+      width: 160px;
+      height: 12px;
+      border-radius: 6px;
+      background: #333;
+      overflow: hidden;
+      margin-top: 4px;
+    }
+    #healthBarInner {
+      height: 100%;
+      width: 100%;
+      background: linear-gradient(90deg, #0f0, #ff0, #f00);
+      transition: width 0.15s linear;
+    }
+    #weaponHud {
+      margin-top: 6px;
+      font-size: 12px;
+      color: #ddd;
+    }
+    #xpHud {
+      margin-top: 4px;
+      font-size: 12px;
+      color: #9cf;
+    }
+    #xpBarOuter {
+      width: 160px;
+      height: 8px;
+      border-radius: 4px;
+      background: #222;
+      overflow: hidden;
+      margin-top: 3px;
+    }
+    #xpBarInner {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, #4fd1ff, #9f7aea);
+      transition: width 0.15s linear;
+    }
+    #joystickArea {
+      position: fixed;
+      left: 20px;
+      bottom: 20px;
+      width: 140px;
+      height: 140px;
+      border-radius: 50%;
+      background: #0004;
+      border: 2px solid #666;
+      box-shadow: 0 0 10px #000;
+      touch-action: none;
+      z-index: 20;
+    }
+    #joyStick {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 60px;
+      height: 60px;
+      margin-left: -30px;
+      margin-top: -30px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, #eee, #777);
+      box-shadow: 0 0 8px #000;
+      pointer-events: none;
+      transition: transform 0.1s ease-out;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="gameCanvas"></canvas>
+
+  <div id="hud">
+    <div><span class="label">Bananas:</span><span id="bananaCount">0</span></div>
+    <div><span class="label">Score:</span><span id="scoreCount">0</span></div>
+    <div><span class="label">Phase:</span><span id="phaseLabel">Trainee</span></div>
+    <div id="healthBarOuter"><div id="healthBarInner"></div></div>
+    <div id="weaponHud"></div>
+    <div id="xpHud"></div>
+    <div id="xpBarOuter"><div id="xpBarInner"></div></div>
+  </div>
+
+  <div id="joystickArea">
+    <div id="joyStick"></div>
+  </div>
+
+  <script>
+    // ====== Canvas setup ======
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    function resize() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    const hudBananas = document.getElementById('bananaCount');
+    const hudScore   = document.getElementById('scoreCount');
+    const hudPhase   = document.getElementById('phaseLabel');
+    const hudWeapons = document.getElementById('weaponHud');
+    const hudXp      = document.getElementById('xpHud');
+    const healthInner = document.getElementById('healthBarInner');
+    const xpBarInner = document.getElementById('xpBarInner');
+
+    // ====== World & camera ======
+    const WORLD_WIDTH = 4000;
+    const WORLD_HEIGHT = 4000;
+
+    const camera = {
+      x: 0,
+      y: 0,
+      w: () => canvas.width,
+      h: () => canvas.height
+    };
+
+    // ====== Input (joystick + keyboard only) ======
+    let mouseX = canvas.width / 2;
+    let mouseY = canvas.height / 2;
+
+    canvas.addEventListener('mousemove', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      mouseX = e.clientX - rect.left;
+      mouseY = e.clientY - rect.top;
+    });
+
+    // Virtual joystick
+    const joyArea = document.getElementById('joystickArea');
+    const joyStick = document.getElementById('joyStick');
+    let joyCenter = { x: 0, y: 0 };
+    let joyInputX = 0, joyInputY = 0;
+
+    function updateJoyCenter() {
+      const r = joyArea.getBoundingClientRect();
+      joyCenter.x = r.left + r.width / 2;
+      joyCenter.y = r.top + r.height / 2;
+    }
+    window.addEventListener('resize', updateJoyCenter);
+    window.addEventListener('load', updateJoyCenter);
+
+    function setJoystickVisual(dx, dy, maxDist) {
+      const dist = Math.hypot(dx, dy) || 1;
+      const clamped = Math.min(dist, maxDist);
+      const nx = (dx / dist) * clamped;
+      const ny = (dy / dist) * clamped;
+      joyStick.style.transform = `translate(${nx}px, ${ny}px)`;
+    }
+
+    function joyStart(e) {
+      e.preventDefault();
+      updateJoyCenter();
+      joyMove(e);
+    }
+    function joyMove(e) {
+      e.preventDefault();
+      const t = e.touches ? e.touches[0] : e;
+      const dx = t.clientX - joyCenter.x;
+      const dy = t.clientY - joyCenter.y;
+      const maxDist = 50;
+      const dist = Math.hypot(dx, dy) || 1;
+      const strength = Math.min(dist, maxDist) / maxDist;
+      joyInputX = (dx / dist) * strength;
+      joyInputY = (dy / dist) * strength;
+      setJoystickVisual(dx, dy, maxDist);
+    }
+    function joyEnd(e) {
+      e.preventDefault();
+      joyInputX = 0;
+      joyInputY = 0;
+      joyStick.style.transform = 'translate(0,0)';
+    }
+
+    joyArea.addEventListener('touchstart', joyStart, { passive: false });
+    joyArea.addEventListener('touchmove', joyMove, { passive: false });
+    joyArea.addEventListener('touchend', joyEnd, { passive: false });
+    joyArea.addEventListener('touchcancel', joyEnd, { passive: false });
+
+    // Keyboard (arrow keys)
+    let keyLeft = false, keyRight = false, keyUp = false, keyDown = false;
+
+    window.addEventListener('keydown', e => {
+      if (e.key === 'ArrowLeft')  keyLeft  = true;
+      if (e.key === 'ArrowRight') keyRight = true;
+      if (e.key === 'ArrowUp')    keyUp    = true;
+      if (e.key === 'ArrowDown')  keyDown  = true;
+    });
+    window.addEventListener('keyup', e => {
+      if (e.key === 'ArrowLeft')  keyLeft  = false;
+      if (e.key === 'ArrowRight') keyRight = false;
+      if (e.key === 'ArrowUp')    keyUp    = false;
+      if (e.key === 'ArrowDown')  keyDown  = false;
+    });
+
+    // ====== Game state ======
+    const SPAWN_POINT = { x: WORLD_WIDTH / 2, y: WORLD_HEIGHT / 2 };
+
+    const player = {
+      x: SPAWN_POINT.x,
+      y: SPAWN_POINT.y,
+      vx: 0,
+      vy: 0,
+      radius: 24,
+      baseSpeed: 220,
+      phase: 0,
+      bananas: 0,
+      health: 100,
+      maxHealth: 100
+    };
+
+    let bananas = [];
+    let enemies = [];
+    let chests  = [];
+    let particles = [];
+    let healthPacks = [];
+    let score = 0;
+    let totalTime = 0;
+
+    // XP & level-up
+    let xp = 0;
+    let level = 1;
+    let nextLevelXp = 40;
+
+    // Weapons with unlock flags
+    const weapons = {
+      blades: {
+        unlocked: true,
+        countLevel: 1,   // how many blades
+        speedLevel: 1,   // blade speed tier
+        baseCount: 1,
+        baseSpeed: 1.5,
+        radius: 70
+      },
+      gun: {
+        unlocked: false,
+        level: 0,
+        fireCooldown: 0,
+        baseRate: 2,
+        bulletsPerShot: 1
+      },
+      laser: {
+        unlocked: false,
+        level: 0,
+        fireCooldown: 0,
+        baseRate: 0.8,
+        beamsPerShot: 1
+      }
+    };
+
+    // upgrade definitions with requirements
+    const allUpgrades = [
+      { id: 'blades_rate',    label: 'Blades: Faster spin',  requires: () => weapons.blades.unlocked },
+      { id: 'blades_count',   label: 'Blades: +1 blade',     requires: () => weapons.blades.unlocked },
+
+      { id: 'gun_unlock',     label: 'Acquire Gun',          requires: () => !weapons.gun.unlocked },
+      { id: 'gun_rate',       label: 'Gun: Faster fire',     requires: () => weapons.gun.unlocked },
+      { id: 'gun_multi',      label: 'Gun: +1 bullet',       requires: () => weapons.gun.unlocked },
+
+      { id: 'laser_unlock',   label: 'Acquire Laser Beams',  requires: () => !weapons.laser.unlocked },
+      { id: 'laser_rate',     label: 'Laser: Faster',        requires: () => weapons.laser.unlocked },
+      { id: 'laser_multi',    label: 'Laser: +1 beam',       requires: () => weapons.laser.unlocked }
+    ];
+
+    let blades = [];
+    let bullets = [];
+    let lasers = [];
+
+    function updateWeaponHud() {
+      const b = weapons.blades.unlocked
+        ? `Blades C${weapons.blades.countLevel}/S${weapons.blades.speedLevel}`
+        : 'Blades -';
+      const g = weapons.gun.unlocked    ? `Gun L${weapons.gun.level}`     : 'Gun -';
+      const l = weapons.laser.unlocked  ? `Laser L${weapons.laser.level}` : 'Laser -';
+      hudWeapons.textContent = `${b} | ${g} | ${l}`;
+      hudXp.textContent = `Level ${level}  XP: ${xp}/${nextLevelXp}`;
+      const pct = Math.max(0, Math.min(1, xp / nextLevelXp));
+      xpBarInner.style.width = (pct * 100) + '%';
+    }
+
+    // ====== Spawns & effects ======
+    function spawnBanana() {
+      bananas.push({
+        x: Math.random() * WORLD_WIDTH,
+        y: Math.random() * WORLD_HEIGHT,
+        r: 10
+      });
+    }
+
+    function spawnEnemy() {
+      const edge = Math.floor(Math.random() * 4);
+      let x, y;
+      const margin = 60;
+      if (edge === 0) {
+        x = Math.random() * WORLD_WIDTH;
+        y = -margin;
+      } else if (edge === 1) {
+        x = WORLD_WIDTH + margin;
+        y = Math.random() * WORLD_HEIGHT;
+      } else if (edge === 2) {
+        x = Math.random() * WORLD_WIDTH;
+        y = WORLD_HEIGHT + margin;
+      } else {
+        x = -margin;
+        y = Math.random() * WORLD_HEIGHT;
+      }
+
+      const type = Math.random() < 0.5 ? 'spike' : 'blob';
+      const baseHp = type === 'spike' ? 5 : 3;
+      const scale = 1 + totalTime / 40 + (level - 1) * 0.3;
+
+      const eliteChance = (level >= 4 || totalTime > 60) ? 0.25 : 0.05;
+      const isElite = Math.random() < eliteChance;
+
+      enemies.push({
+        x, y,
+        vx: 0,
+        vy: 0,
+        r: type === 'spike' ? 26 : 22,
+        type,
+        hp: Math.round(baseHp * scale * (isElite ? 3 : 1)),
+        elite: isElite,
+        shape: isElite ? 'diamond' : 'normal'
+      });
+    }
+
+    function spawnChest() {
+      chests.push({
+        x: Math.random() * WORLD_WIDTH,
+        y: Math.random() * WORLD_HEIGHT,
+        opened: false
+      });
+    }
+
+    function spawnHealthPack() {
+      healthPacks.push({
+        x: Math.random() * WORLD_WIDTH,
+        y: Math.random() * WORLD_HEIGHT,
+        r: 14,
+        taken: false
+      });
+    }
+
+    function spawnBurst(x, y, color, count = 12) {
+      for (let i = 0; i < count; i++) {
+        const a = Math.random() * Math.PI * 2;
+        const speed = 40 + Math.random() * 140;
+        particles.push({
+          x, y,
+          vx: Math.cos(a) * speed,
+          vy: Math.sin(a) * speed,
+          life: 0.4 + Math.random() * 0.4,
+          maxLife: 0.6,
+          color
+        });
+      }
+    }
+
+    for (let i = 0; i < 40; i++) spawnBanana();
+
+    let enemySpawnTimer = 0;
+    let bananaSpawnTimer = 0;
+    let chestTimer = 0;
+    let healthTimer = 0;
+
+    // ====== Phase based on bananas ======
+    function updatePhase() {
+      const b = player.bananas;
+      let newPhase = player.phase;
+      if (b >= 40) newPhase = 2;
+      else if (b >= 15) newPhase = 1;
+      else newPhase = 0;
+
+      if (newPhase !== player.phase) {
+        player.phase = newPhase;
+        spawnBurst(player.x, player.y, '#00ffff', 30);
+      }
+
+      if (player.phase === 0) {
+        player.radius = 22;
+        player.baseSpeed = 220;
+        hudPhase.textContent = 'Trainee';
+      } else if (player.phase === 1) {
+        player.radius = 26;
+        player.baseSpeed = 260;
+        hudPhase.textContent = 'Adept';
+      } else {
+        player.radius = 30;
+        player.baseSpeed = 300;
+        hudPhase.textContent = 'Master';
+      }
+    }
+
+    function applyStaticUpgradesFromBananas() {
+      // kept minimal; main progression via level-ups
+    }
+
+    // ====== Level-up upgrades ======
+    function addXp(amount) {
+      xp += amount;
+      while (xp >= nextLevelXp) {
+        xp -= nextLevelXp;
+        level++;
+        nextLevelXp = Math.floor(nextLevelXp * 1.9);
+        openLevelUpMenu();
+      }
+      updateWeaponHud();
+    }
+
+    function openLevelUpMenu() {
+      const possible = allUpgrades.filter(u => !u.requires || u.requires());
+      if (possible.length === 0) return;
+
+      const pool = [...possible];
+      const choices = [];
+      for (let i = 0; i < 3 && pool.length > 0; i++) {
+        const idx = Math.floor(Math.random() * pool.length);
+        choices.push(pool.splice(idx, 1)[0]);
+      }
+
+      let msg = `Level ${level}! Choose an upgrade:\n`;
+      choices.forEach((u, i) => msg += `${i + 1}. ${u.label}\n`);
+      const pick = parseInt(prompt(msg, '1'), 10) || 1;
+      const chosen = choices[Math.max(0, Math.min(choices.length - 1, pick - 1))];
+      applyUpgrade(chosen.id);
+    }
+
+    function applyUpgrade(id) {
+      switch (id) {
+        case 'blades_rate':
+          weapons.blades.speedLevel++;
+          weapons.blades.baseSpeed += 0.25;
+          break;
+        case 'blades_count':
+          weapons.blades.countLevel++;
+          weapons.blades.baseCount += 1;
+          break;
+
+        case 'gun_unlock':
+          weapons.gun.unlocked = true;
+          weapons.gun.level = 1;
+          break;
+        case 'gun_rate':
+          weapons.gun.level++;
+          weapons.gun.baseRate += 0.6;
+          break;
+        case 'gun_multi':
+          weapons.gun.level++;
+          weapons.gun.bulletsPerShot += 1;
+          break;
+
+        case 'laser_unlock':
+          weapons.laser.unlocked = true;
+          weapons.laser.level = 1;
+          break;
+        case 'laser_rate':
+          weapons.laser.level++;
+          weapons.laser.baseRate += 0.4;
+          break;
+        case 'laser_multi':
+          weapons.laser.level++;
+          weapons.laser.beamsPerShot += 1;
+          break;
+      }
+      rebuildBlades();
+      updateWeaponHud();
+    }
+
+    // ====== Weapons ======
+    function rebuildBlades() {
+      blades = [];
+      if (!weapons.blades.unlocked) return;
+
+      const count = weapons.blades.baseCount;
+      const speed = weapons.blades.baseSpeed;
+
+      for (let i = 0; i < count; i++) {
+        blades.push({
+          angle: (i / count) * Math.PI * 2,
+          speed,
+          radius: weapons.blades.radius
+        });
+      }
+    }
+
+    function updateBlades(dt) {
+      blades.forEach(bl => {
+        bl.angle += bl.speed * Math.PI * 2 * dt;
+      });
+
+      for (let i = enemies.length - 1; i >= 0; i--) {
+        const e = enemies[i];
+        for (const bl of blades) {
+          const px = player.x + Math.cos(bl.angle) * bl.radius;
+          const py = player.y + Math.sin(bl.angle) * bl.radius;
+          const dist = Math.hypot(e.x - px, e.y - py);
+          if (dist < e.r + 10) {
+            e.hp -= 2;
+            if (e.hp <= 0) {
+              spawnBurst(e.x, e.y, '#66ffcc', 18);
+              enemies.splice(i, 1);
+              score += 40;
+              hudScore.textContent = score;
+              addXp(3);
+            }
+            break;
+          }
+        }
+      }
+    }
+
+    function updateGun(dt) {
+      if (!weapons.gun.unlocked) return;
+      weapons.gun.fireCooldown -= dt;
+
+      const rate = weapons.gun.baseRate + (weapons.gun.level - 1);
+      const interval = 1 / rate;
+
+      if (weapons.gun.fireCooldown <= 0) {
+        weapons.gun.fireCooldown = interval;
+
+        const bulletsPerShot = weapons.gun.bulletsPerShot + (weapons.gun.level - 1);
+
+        // facing direction from movement
+        let faceAngle = Math.atan2(player.vy, player.vx);
+        if (!isFinite(faceAngle) || (Math.abs(player.vx) < 5 && Math.abs(player.vy) < 5)) {
+          faceAngle = 0; // default facing right
+        }
+        // shoot opposite of facing
+        const baseAngle = faceAngle + Math.PI;
+
+        for (let i = 0; i < bulletsPerShot; i++) {
+          const spread = (i - (bulletsPerShot - 1) / 2) * 0.12;
+          const ang = baseAngle + spread;
+          bullets.push({
+            x: player.x,
+            y: player.y,
+            vx: Math.cos(ang) * 600,
+            vy: Math.sin(ang) * 600,
+            life: 1.2
+          });
+        }
+      }
+    }
+
+    function updateBullets(dt) {
+      bullets.forEach(b => {
+        b.x += b.vx * dt;
+        b.y += b.vy * dt;
+        b.life -= dt;
+      });
+
+      for (let i = enemies.length - 1; i >= 0; i--) {
+        const e = enemies[i];
+        for (let j = bullets.length - 1; j >= 0; j--) {
+          const b = bullets[j];
+          const dist = Math.hypot(e.x - b.x, e.y - b.y);
+          if (dist < e.r + 4) {
+            e.hp -= 1;
+            bullets.splice(j, 1);
+            if (e.hp <= 0) {
+              spawnBurst(e.x, e.y, '#88ccff', 15);
+              enemies.splice(i, 1);
+              score += 35;
+              hudScore.textContent = score;
+              addXp(3);
+            }
+            break;
+          }
+        }
+      }
+
+      bullets = bullets.filter(b => b.life > 0);
+    }
+
+    function updateLaser(dt) {
+      if (!weapons.laser.unlocked) return;
+      weapons.laser.fireCooldown -= dt;
+
+      const rate = weapons.laser.baseRate + 0.5 * (weapons.laser.level - 1);
+      const interval = 1 / rate;
+
+      if (weapons.laser.fireCooldown <= 0) {
+        weapons.laser.fireCooldown = interval;
+        const beamsPerShot = weapons.laser.beamsPerShot + (weapons.laser.level - 1);
+
+        for (let i = 0; i < beamsPerShot; i++) {
+          const angle = Math.random() * Math.PI * 2;
+          const length = 260;
+          const x1 = player.x;
+          const y1 = player.y;
+          lasers.push({
+            x1, y1,
+            x2: x1 + Math.cos(angle) * length,
+            y2: y1 + Math.sin(angle) * length,
+            life: 0.3
+          });
+        }
+      }
+    }
+
+    function updateLasers(dt) {
+      lasers.forEach(l => { l.life -= dt; });
+
+      for (let i = enemies.length - 1; i >= 0; i--) {
+        const e = enemies[i];
+        for (const l of lasers) {
+          if (l.life <= 0) continue;
+          const A = { x: l.x1, y: l.y1 };
+          const B = { x: l.x2, y: l.y2 };
+          const denom = ((B.x - A.x) ** 2 + (B.y - A.y) ** 2) || 1;
+          const t = Math.max(0, Math.min(1,
+            ((e.x - A.x) * (B.x - A.x) + (e.y - A.y) * (B.y - A.y)) / denom));
+          const px = A.x + t * (B.x - A.x);
+          const py = A.y + t * (B.y - A.y);
+          const dist = Math.hypot(e.x - px, e.y - py);
+          if (dist < e.r + 6) {
+            e.hp -= 2;
+            if (e.hp <= 0) {
+              spawnBurst(e.x, e.y, '#ff66ff', 20);
+              enemies.splice(i, 1);
+              score += 45;
+              hudScore.textContent = score;
+              addXp(4);
+            }
+            break;
+          }
+        }
+      }
+
+      lasers = lasers.filter(l => l.life > 0);
+    }
+
+    // ====== Main update ======
+    function update(dt) {
+      totalTime += dt;
+
+      // movement from keyboard, then joystick only
+      let dirX = 0, dirY = 0;
+
+      if (keyLeft)  dirX -= 1;
+      if (keyRight) dirX += 1;
+      if (keyUp)    dirY -= 1;
+      if (keyDown)  dirY += 1;
+
+      if (dirX !== 0 || dirY !== 0) {
+        const d = Math.hypot(dirX, dirY);
+        dirX /= d; dirY /= d;
+      } else {
+        dirX = joyInputX;
+        dirY = joyInputY;
+      }
+
+      if (Math.abs(dirX) < 0.01 && Math.abs(dirY) < 0.01) {
+        dirX = 0;
+        dirY = 0;
+      }
+
+      const speed = player.baseSpeed;
+      const accel = 10;
+      const targetVX = dirX * speed;
+      const targetVY = dirY * speed;
+
+      player.vx += (targetVX - player.vx) * Math.min(1, accel * dt);
+      player.vy += (targetVY - player.vy) * Math.min(1, accel * dt);
+
+      player.x += player.vx * dt;
+      player.y += player.vy * dt;
+
+      player.x = Math.max(player.radius, Math.min(WORLD_WIDTH - player.radius, player.x));
+      player.y = Math.max(player.radius, Math.min(WORLD_HEIGHT - player.radius, player.y));
+
+      // camera follow
+      const camLerp = 4;
+      camera.x += (player.x - camera.x - camera.w() / 2) * Math.min(1, camLerp * dt);
+      camera.y += (player.y - camera.y - camera.h() / 2) * Math.min(1, camLerp * dt);
+      camera.x = Math.max(0, Math.min(WORLD_WIDTH - camera.w(), camera.x));
+      camera.y = Math.max(0, Math.min(WORLD_HEIGHT - camera.h(), camera.y));
+
+      // spawning
+      bananaSpawnTimer += dt;
+      if (bananaSpawnTimer > 0.5) {
+        bananaSpawnTimer = 0;
+        if (bananas.length < 80) spawnBanana();
+      }
+
+      enemySpawnTimer += dt;
+      const difficultyFactor = 1 + totalTime / 80 + (level - 1) * 0.15;
+      const baseInterval = 1.6 / difficultyFactor;
+      if (enemySpawnTimer > baseInterval) {
+        enemySpawnTimer = 0;
+        const maxEnemies = 20 + Math.floor(totalTime / 20) + (level - 1) * 4;
+        if (enemies.length < maxEnemies) spawnEnemy();
+      }
+
+      chestTimer += dt;
+      if (chestTimer > 25) {
+        chestTimer = 0;
+        spawnChest();
+      }
+
+      // health packs (more frequent & up to 5)
+      healthTimer += dt;
+      if (healthTimer > 20) {
+        healthTimer = 0;
+        if (healthPacks.length < 5) spawnHealthPack();
+      }
+
+      // enemy movement
+      enemies.forEach(e => {
+        const dx = player.x - e.x;
+        const dy = player.y - e.y;
+        const dist = Math.hypot(dx, dy) || 1;
+        const chaseSpeed = 150;
+        const desiredVX = (dx / dist) * chaseSpeed;
+        const desiredVY = (dy / dist) * chaseSpeed;
+        const follow = 4;
+        e.vx += (desiredVX - e.vx) * Math.min(1, follow * dt);
+        e.vy += (desiredVY - e.vy) * Math.min(1, follow * dt);
+
+        e.x += e.vx * dt;
+        e.y += e.vy * dt;
+      });
+
+      // banana collisions
+      for (let i = bananas.length - 1; i >= 0; i--) {
+        const b = bananas[i];
+        const dx = b.x - player.x;
+        const dy = b.y - player.y;
+        const dist = Math.hypot(dx, dy);
+        if (dist < player.radius + b.r) {
+          bananas.splice(i, 1);
+          player.bananas++;
+          score += 10;
+          hudBananas.textContent = player.bananas;
+          hudScore.textContent = score;
+          spawnBurst(b.x, b.y, '#ffd84a', 18);
+          updatePhase();
+          applyStaticUpgradesFromBananas();
+        }
+      }
+
+      // chest collisions
+      for (let i = chests.length - 1; i >= 0; i--) {
+        const c = chests[i];
+        const dx = c.x - player.x;
+        const dy = c.y - player.y;
+        const dist = Math.hypot(dx, dy);
+        if (!c.opened && dist < player.radius + 20) {
+          c.opened = true;
+          spawnBurst(c.x, c.y, '#ffd700', 25);
+          if (Math.random() < 0.5) {
+            addXp(10);
+          } else {
+            openLevelUpMenu();
+          }
+        }
+      }
+
+      // health pack collisions
+      for (let i = healthPacks.length - 1; i >= 0; i--) {
+        const h = healthPacks[i];
+        const dx = h.x - player.x;
+        const dy = h.y - player.y;
+        const dist = Math.hypot(dx, dy);
+        if (!h.taken && dist < player.radius + h.r) {
+          h.taken = true;
+          healthPacks.splice(i, 1);
+          spawnBurst(h.x, h.y, '#6cff6c', 20);
+          const healAmount = 30;
+          player.health = Math.min(player.maxHealth, player.health + healAmount);
+        }
+      }
+
+      // enemy collisions with player
+      for (let i = enemies.length - 1; i >= 0; i--) {
+        const e = enemies[i];
+        const dx = e.x - player.x;
+        const dy = e.y - player.y;
+        const dist = Math.hypot(dx, dy);
+        if (dist < player.radius + e.r) {
+          spawnBurst(player.x, player.y, '#ff3355', 30);
+          player.health -= 16;
+          if (player.health < 0) player.health = 0;
+          enemies.splice(i, 1);
+        }
+      }
+
+      // particles
+      particles.forEach(p => {
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.life -= dt;
+      });
+      particles = particles.filter(p => p.life > 0);
+
+      // weapons
+      updateBlades(dt);
+      updateGun(dt);
+      updateBullets(dt);
+      updateLaser(dt);
+      updateLasers(dt);
+
+      // health bar
+      const hpPct = player.health / player.maxHealth;
+      healthInner.style.width = (hpPct * 100) + '%';
+
+      // death & full reset
+      if (player.health <= 0) {
+        player.health = player.maxHealth;
+        player.bananas = 0;
+        player.phase = 0;
+        player.x = SPAWN_POINT.x;
+        player.y = SPAWN_POINT.y;
+        player.vx = player.vy = 0;
+
+        bananas = [];
+        enemies = [];
+        bullets = [];
+        lasers = [];
+        blades = [];
+        chests = [];
+        particles = [];
+        healthPacks = [];
+
+        xp = 0;
+        level = 1;
+        nextLevelXp = 40;
+        totalTime = 0;
+
+        weapons.blades.unlocked = true;
+        weapons.blades.countLevel = 1;
+        weapons.blades.speedLevel = 1;
+        weapons.blades.baseCount = 1;
+        weapons.blades.baseSpeed = 1.5;
+
+        weapons.gun.unlocked = false;
+        weapons.gun.level = 0;
+        weapons.gun.baseRate = 2;
+        weapons.gun.bulletsPerShot = 1;
+        weapons.gun.fireCooldown = 0;
+
+        weapons.laser.unlocked = false;
+        weapons.laser.level = 0;
+        weapons.laser.baseRate = 0.8;
+        weapons.laser.beamsPerShot = 1;
+        weapons.laser.fireCooldown = 0;
+
+        rebuildBlades();
+        updateWeaponHud();
+
+        for (let i = 0; i < 40; i++) spawnBanana();
+        hudBananas.textContent = 0;
+        hudPhase.textContent = 'Trainee';
+      }
+    }
+
+    // ====== Draw ======
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const tileSize = 120;
+      ctx.save();
+      ctx.translate(-camera.x % tileSize, -camera.y % tileSize);
+      ctx.fillStyle = '#111320';
+      for (let x = -tileSize; x < canvas.width + tileSize; x += tileSize) {
+        for (let y = -tileSize; y < canvas.height + tileSize; y += tileSize) {
+          ctx.fillRect(x + 4, y + 4, tileSize - 8, tileSize - 8);
+        }
+      }
+      ctx.restore();
+
+      ctx.save();
+      ctx.translate(-camera.x, -camera.y);
+
+      // bananas
+      bananas.forEach(b => {
+        ctx.save();
+        ctx.translate(b.x, b.y);
+        ctx.fillStyle = '#ffdd55';
+        ctx.beginPath();
+        ctx.ellipse(0, 0, b.r * 1.4, b.r, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#c99a2a';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.restore();
+      });
+
+      // health packs
+      healthPacks.forEach(h => {
+        ctx.save();
+        ctx.translate(h.x, h.y);
+
+        const grad = ctx.createRadialGradient(0, 0, 4, 0, 0, h.r + 6);
+        grad.addColorStop(0, 'rgba(120,255,140,0.9)');
+        grad.addColorStop(1, 'rgba(0,120,40,0)');
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(0, 0, h.r + 6, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#ffffff';
+        if (ctx.roundRect) {
+          ctx.beginPath();
+          ctx.roundRect(-h.r, -h.r * 0.6, h.r * 2, h.r * 1.2, h.r * 0.6);
+          ctx.fill();
+        } else {
+          ctx.fillRect(-h.r, -h.r * 0.6, h.r * 2, h.r * 1.2);
+        }
+
+        ctx.fillStyle = '#3cd15f';
+        ctx.beginPath();
+        ctx.rect(-h.r + 2, -h.r * 0.6 + 2, h.r * 2 - 4, h.r * 1.2 - 4);
+        ctx.fill();
+
+        ctx.fillStyle = '#ffffff';
+        const s = h.r * 0.4;
+        ctx.fillRect(-s / 2, -s, s, s * 2);
+        ctx.fillRect(-s, -s / 2, s * 2, s);
+
+        ctx.restore();
+      });
+
+      // chests
+      chests.forEach(c => {
+        ctx.save();
+        ctx.translate(c.x, c.y);
+
+        const w = 32, h = 26;
+        const lidOpen = c.opened ? 1 : 0;
+        const lidAngle = -Math.PI * 0.6 * lidOpen;
+
+        ctx.fillStyle = '#8b5a2b';
+        ctx.strokeStyle = '#3d2410';
+        ctx.lineWidth = 3;
+        if (ctx.roundRect) {
+          ctx.beginPath();
+          ctx.roundRect(-w / 2, -h / 2, w, h, 4);
+          ctx.fill();
+          ctx.stroke();
+        } else {
+          ctx.fillRect(-w / 2, -h / 2, w, h);
+          ctx.strokeRect(-w / 2, -h / 2, w, h);
+        }
+
+        ctx.fillStyle = '#c9a55a';
+        ctx.fillRect(-w / 2, -3, w, 6);
+
+        ctx.fillStyle = '#333';
+        ctx.beginPath();
+        ctx.rect(-4, -2, 8, 10);
+        ctx.fill();
+
+        ctx.save();
+        ctx.translate(0, -h / 2);
+        ctx.rotate(lidAngle);
+        ctx.fillStyle = '#a66b33';
+        if (ctx.roundRect) {
+          ctx.beginPath();
+          ctx.roundRect(-w / 2, -h * 0.5, w, h * 0.6, 4);
+          ctx.fill();
+          ctx.strokeStyle = '#4a2a14';
+          ctx.stroke();
+        } else {
+          ctx.fillRect(-w / 2, -h * 0.5, w, h * 0.6);
+          ctx.strokeRect(-w / 2, -h * 0.5, w, h * 0.6);
+        }
+        ctx.restore();
+
+        ctx.restore();
+      });
+
+      // enemies (normal + elite)
+      enemies.forEach(e => {
+        ctx.save();
+        ctx.translate(e.x, e.y);
+
+        if (e.elite && e.shape === 'diamond') {
+          const size = e.r * 1.2;
+          ctx.fillStyle = '#ffb347';
+          ctx.beginPath();
+          ctx.moveTo(0, -size);
+          ctx.lineTo(size * 0.8, 0);
+          ctx.lineTo(0, size);
+          ctx.lineTo(-size * 0.8, 0);
+          ctx.closePath();
+          ctx.fill();
+          ctx.strokeStyle = '#d47a00';
+          ctx.lineWidth = 3;
+          ctx.stroke();
+
+          ctx.fillStyle = '#fff2cc';
+          ctx.beginPath();
+          ctx.arc(0, 0, size * 0.35, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (e.type === 'spike') {
+          ctx.fillStyle = '#b0202a';
+          ctx.beginPath();
+          const spikes = 7;
+          const outer = e.r;
+          const inner = e.r * 0.4;
+          for (let i = 0; i < spikes * 2; i++) {
+            const ang = (i / (spikes * 2)) * Math.PI * 2;
+            const rad = (i % 2 === 0) ? outer : inner;
+            const px = Math.cos(ang) * rad;
+            const py = Math.sin(ang) * rad;
+            if (i === 0) ctx.moveTo(px, py);
+            else ctx.lineTo(px, py);
+          }
+          ctx.closePath();
+          ctx.fill();
+          ctx.strokeStyle = '#ff8080';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        } else {
+          const grad = ctx.createRadialGradient(0, -e.r * 0.4, e.r * 0.2, 0, 0, e.r);
+          grad.addColorStop(0, '#ff9eff');
+          grad.addColorStop(1, '#8a2be2');
+          ctx.fillStyle = grad;
+          ctx.beginPath();
+          ctx.arc(0, 0, e.r, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        ctx.restore();
+      });
+
+      // bullets
+      bullets.forEach(b => {
+        ctx.save();
+        ctx.translate(b.x, b.y);
+        ctx.fillStyle = '#a0d8ff';
+        ctx.beginPath();
+        ctx.arc(0, 0, 4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      });
+
+      // lasers
+      lasers.forEach(l => {
+        const alpha = Math.max(0, l.life / 0.3);
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.strokeStyle = '#ff55ff';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(l.x1, l.y1);
+        ctx.lineTo(l.x2, l.y2);
+        ctx.stroke();
+        ctx.restore();
+      });
+
+      // blades
+      blades.forEach(bl => {
+        const px = player.x + Math.cos(bl.angle) * bl.radius;
+        const py = player.y + Math.sin(bl.angle) * bl.radius;
+        ctx.save();
+        ctx.translate(px, py);
+        ctx.rotate(bl.angle);
+
+        const bladeLen = 26;
+        const bladeWid = 6;
+
+        const grad = ctx.createLinearGradient(0, -bladeLen, 0, bladeLen);
+        grad.addColorStop(0, '#dfe7ff');
+        grad.addColorStop(0.5, '#9aa7c0');
+        grad.addColorStop(1, '#e1e9ff');
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.moveTo(0, -bladeLen);
+        ctx.lineTo(bladeWid, 0);
+        ctx.lineTo(0, bladeLen);
+        ctx.lineTo(-bladeWid, 0);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.strokeStyle = '#2b3648';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        ctx.fillStyle = '#ffcc55';
+        ctx.beginPath();
+        ctx.arc(0, 0, 4, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.restore();
+      });
+
+      // particles
+      particles.forEach(p => {
+        const t = p.life / p.maxLife;
+        const alpha = Math.max(0, t);
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 3 + 2 * t, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      });
+
+      // player (slime)
+      ctx.save();
+      ctx.translate(player.x, player.y);
+
+      const speedMag = Math.hypot(player.vx, player.vy);
+      const t = performance.now() / 250;
+      const wobble = Math.sin(t * 2) * 0.08;
+      const moveStretch = Math.min(0.25, speedMag / 400);
+
+      const baseR = player.radius;
+      const scaleX = 1 + moveStretch;
+      const scaleY = 1 - moveStretch + wobble;
+
+      ctx.scale(scaleX, scaleY);
+
+      const grd = ctx.createRadialGradient(0, -baseR * 0.4, baseR * 0.2, 0, 0, baseR * 1.2);
+      grd.addColorStop(0, '#ccfffa');
+      grd.addColorStop(1, '#2aa6b8');
+      ctx.fillStyle = grd;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, baseR * 1.2, baseR, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = 'rgba(255,255,255,0.6)';
+      ctx.beginPath();
+      ctx.ellipse(-baseR * 0.3, -baseR * 0.4, baseR * 0.4, baseR * 0.25, -0.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.ellipse(-baseR * 0.35, -baseR * 0.1, baseR * 0.25, baseR * 0.2, 0, 0, Math.PI * 2);
+      ctx.ellipse( baseR * 0.35, -baseR * 0.1, baseR * 0.25, baseR * 0.2, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#222222';
+      ctx.beginPath();
+      ctx.arc(-baseR * 0.35, -baseR * 0.1, baseR * 0.09, 0, Math.PI * 2);
+      ctx.arc( baseR * 0.35, -baseR * 0.1, baseR * 0.09, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = '#224';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(0, baseR * 0.05, baseR * 0.35, 0.15 * Math.PI, 0.85 * Math.PI);
+      ctx.stroke();
+
+      ctx.restore();
+      ctx.restore();
+    }
+
+    // ====== Game loop ======
+    let lastTime = 0;
+    function loop(time) {
+      requestAnimationFrame(loop);
+      const dt = Math.min(0.033, (time - lastTime) / 1000 || 0);
+      lastTime = time;
+      update(dt);
+      draw();
+    }
+
+    rebuildBlades();
+    updateWeaponHud();
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>
