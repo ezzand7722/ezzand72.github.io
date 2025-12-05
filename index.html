@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Slime Survivor v9</title>
+  <title>Slime Survivor v10</title>
   <style>
     html, body {
       margin: 0;
@@ -98,7 +98,6 @@
       transition: transform 0.1s ease-out;
     }
 
-    /* Level up menu */
     #levelUpMenu {
       display: none;
       position: fixed;
@@ -171,7 +170,6 @@
     <div id="joyStick"></div>
   </div>
 
-  <!-- Level up menu -->
   <div id="levelUpMenu">
     <div id="levelUpContent">
       <h2 id="levelUpTitle">Level Up!</h2>
@@ -180,7 +178,6 @@
   </div>
 
   <script>
-    // ====== Canvas setup ======
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
 
@@ -202,7 +199,6 @@
     const levelUpTitle = document.getElementById('levelUpTitle');
     const upgradeOptions = document.getElementById('upgradeOptions');
 
-    // ====== World & camera ======
     const WORLD_WIDTH = 4000;
     const WORLD_HEIGHT = 4000;
 
@@ -215,7 +211,6 @@
       h: () => canvas.height
     };
 
-    // ====== Input (joystick + keyboard only) ======
     let mouseX = canvas.width / 2;
     let mouseY = canvas.height / 2;
 
@@ -225,7 +220,6 @@
       mouseY = e.clientY - rect.top;
     });
 
-    // Virtual joystick
     const joyArea = document.getElementById('joystickArea');
     const joyStick = document.getElementById('joyStick');
     let joyCenter = { x: 0, y: 0 };
@@ -276,7 +270,6 @@
     joyArea.addEventListener('touchend', joyEnd, { passive: false });
     joyArea.addEventListener('touchcancel', joyEnd, { passive: false });
 
-    // Keyboard (arrow keys)
     let keyLeft = false, keyRight = false, keyUp = false, keyDown = false;
 
     window.addEventListener('keydown', e => {
@@ -292,7 +285,6 @@
       if (e.key === 'ArrowDown')  keyDown  = false;
     });
 
-    // ====== Game state ======
     const SPAWN_POINT = { x: WORLD_WIDTH / 2, y: WORLD_HEIGHT / 2 };
 
     const player = {
@@ -309,6 +301,7 @@
 
     let bananas = [];
     let enemies = [];
+    let enemyProjectiles = [];
     let chests  = [];
     let particles = [];
     let healthPacks = [];
@@ -317,12 +310,10 @@
     let totalTime = 0;
     let gamePaused = false;
 
-    // XP & level-up
     let xp = 0;
     let level = 1;
     let nextLevelXp = 40;
 
-    // Weapons with unlock flags
     const weapons = {
       blades: {
         unlocked: true,
@@ -375,7 +366,6 @@
       xpBarInner.style.width = (pct * 100) + '%';
     }
 
-    // ====== Camera Shake ======
     let shakeIntensity = 0;
     let shakeDuration = 0;
 
@@ -396,7 +386,6 @@
       }
     }
 
-    // ====== Environment decorations ======
     function spawnDecorations() {
       decorations = [];
       const count = 80;
@@ -431,7 +420,6 @@
       }
     }
 
-    // ====== Spawns & effects ======
     function spawnBanana() {
       bananas.push({
         x: Math.random() * WORLD_WIDTH,
@@ -440,6 +428,7 @@
       });
     }
 
+    // Enemy types: spike, blob, shooter, charger, tank
     function spawnEnemy() {
       const edge = Math.floor(Math.random() * 4);
       let x, y;
@@ -458,22 +447,60 @@
         y = Math.random() * WORLD_HEIGHT;
       }
 
-      const type = Math.random() < 0.5 ? 'spike' : 'blob';
-      const baseHp = type === 'spike' ? 5 : 3;
       const scale = 1 + totalTime / 40 + (level - 1) * 0.3;
+      const roll = Math.random();
 
-      const eliteChance = (level >= 4 || totalTime > 60) ? 0.25 : 0.05;
-      const isElite = Math.random() < eliteChance;
+      let type, baseHp, baseSpeed, color, shape, shootCooldown;
+
+      if (roll < 0.25) {
+        type = 'spike';
+        baseHp = 5;
+        baseSpeed = 180;
+        color = '#d32f2f';
+        shape = 'star';
+        shootCooldown = 0;
+      } else if (roll < 0.5) {
+        type = 'blob';
+        baseHp = 8;
+        baseSpeed = 100;
+        color = '#8a2be2';
+        shape = 'circle';
+        shootCooldown = 0;
+      } else if (roll < 0.7) {
+        type = 'shooter';
+        baseHp = 4;
+        baseSpeed = 120;
+        color = '#43a047';
+        shape = 'pentagon';
+        shootCooldown = 2;
+      } else if (roll < 0.85) {
+        type = 'charger';
+        baseHp = 10;
+        baseSpeed = 220;
+        color = '#ff6f00';
+        shape = 'diamond';
+        shootCooldown = 0;
+      } else {
+        type = 'tank';
+        baseHp = 20;
+        baseSpeed = 60;
+        color = '#616161';
+        shape = 'octagon';
+        shootCooldown = 0;
+      }
 
       enemies.push({
         x, y,
         vx: 0,
         vy: 0,
-        r: type === 'spike' ? 26 : 22,
+        r: 24,
         type,
-        hp: Math.round(baseHp * scale * (isElite ? 3 : 1)),
-        elite: isElite,
-        shape: isElite ? 'diamond' : 'normal'
+        hp: Math.round(baseHp * scale),
+        baseSpeed,
+        color,
+        shape,
+        shootCooldown,
+        shootTimer: shootCooldown
       });
     }
 
@@ -533,7 +560,6 @@
     let chestTimer = 0;
     let healthTimer = 0;
 
-    // ====== Phase ======
     function updatePhase() {
       if (level >= 10) {
         player.phase = 2;
@@ -553,7 +579,6 @@
       }
     }
 
-    // ====== Level-up upgrades (clickable menu) ======
     function addXp(amount) {
       xp += amount;
       while (xp >= nextLevelXp) {
@@ -635,7 +660,6 @@
       updateWeaponHud();
     }
 
-    // ====== Weapons ======
     function rebuildBlades() {
       blades = [];
       if (!weapons.blades.unlocked) return;
@@ -667,7 +691,7 @@
             e.hp -= 2;
             spawnHitEffect(e.x, e.y);
             if (e.hp <= 0) {
-              spawnBurst(e.x, e.y, '#66ffcc', 18);
+              spawnBurst(e.x, e.y, e.color, 18);
               enemies.splice(i, 1);
               score += 40;
               hudScore.textContent = score;
@@ -728,7 +752,7 @@
             bullets.splice(j, 1);
             spawnHitEffect(e.x, e.y);
             if (e.hp <= 0) {
-              spawnBurst(e.x, e.y, '#88ccff', 15);
+              spawnBurst(e.x, e.y, e.color, 15);
               enemies.splice(i, 1);
               score += 35;
               hudScore.textContent = score;
@@ -764,7 +788,7 @@
             y2: y1 + Math.sin(angle) * length,
             life: 0.4,
             maxLife: 0.4,
-            hue: Math.random() * 60 + 280  // purple to pink range
+            hue: Math.random() * 60 + 280
           });
         }
       }
@@ -789,7 +813,7 @@
             e.hp -= 2;
             spawnHitEffect(e.x, e.y);
             if (e.hp <= 0) {
-              spawnBurst(e.x, e.y, '#ff66ff', 20);
+              spawnBurst(e.x, e.y, e.color, 20);
               enemies.splice(i, 1);
               score += 45;
               hudScore.textContent = score;
@@ -803,7 +827,26 @@
       lasers = lasers.filter(l => l.life > 0);
     }
 
-    // ====== Main update ======
+    function updateEnemyProjectiles(dt) {
+      enemyProjectiles.forEach(p => {
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.life -= dt;
+      });
+
+      for (let i = enemyProjectiles.length - 1; i >= 0; i--) {
+        const p = enemyProjectiles[i];
+        const dist = Math.hypot(player.x - p.x, player.y - p.y);
+        if (dist < player.radius + 6) {
+          enemyProjectiles.splice(i, 1);
+          player.health -= 8;
+          spawnBurst(player.x, player.y, '#ff5555', 15);
+        }
+      }
+
+      enemyProjectiles = enemyProjectiles.filter(p => p.life > 0);
+    }
+
     function update(dt) {
       if (gamePaused) return;
 
@@ -900,15 +943,30 @@
         const dx = player.x - e.x;
         const dy = player.y - e.y;
         const dist = Math.hypot(dx, dy) || 1;
-        const chaseSpeed = 150;
-        const desiredVX = (dx / dist) * chaseSpeed;
-        const desiredVY = (dy / dist) * chaseSpeed;
+        const desiredVX = (dx / dist) * e.baseSpeed;
+        const desiredVY = (dy / dist) * e.baseSpeed;
         const follow = 4;
         e.vx += (desiredVX - e.vx) * Math.min(1, follow * dt);
         e.vy += (desiredVY - e.vy) * Math.min(1, follow * dt);
 
         e.x += e.vx * dt;
         e.y += e.vy * dt;
+
+        // shooter fires projectiles
+        if (e.type === 'shooter' && e.shootCooldown > 0) {
+          e.shootTimer -= dt;
+          if (e.shootTimer <= 0) {
+            e.shootTimer = e.shootCooldown;
+            const angle = Math.atan2(player.y - e.y, player.x - e.x);
+            enemyProjectiles.push({
+              x: e.x,
+              y: e.y,
+              vx: Math.cos(angle) * 250,
+              vy: Math.sin(angle) * 250,
+              life: 3
+            });
+          }
+        }
       });
 
       for (let i = bananas.length - 1; i >= 0; i--) {
@@ -981,6 +1039,7 @@
       updateBullets(dt);
       updateLaser(dt);
       updateLasers(dt);
+      updateEnemyProjectiles(dt);
 
       const hpPct = player.health / player.maxHealth;
       healthInner.style.width = (hpPct * 100) + '%';
@@ -994,6 +1053,7 @@
 
         bananas = [];
         enemies = [];
+        enemyProjectiles = [];
         bullets = [];
         lasers = [];
         blades = [];
@@ -1034,27 +1094,60 @@
       }
     }
 
-    // ====== Draw ======
     function draw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Smooth floor with gradient pattern (no grid)
-      const patternSize = 200;
+      // Stardew Valley-style terrain
+      const tileSize = 80;
       ctx.save();
-      const offsetX = camera.x % patternSize;
-      const offsetY = camera.y % patternSize;
+      const startX = Math.floor(camera.x / tileSize) * tileSize;
+      const startY = Math.floor(camera.y / tileSize) * tileSize;
 
-      for (let x = -patternSize; x < canvas.width + patternSize; x += patternSize) {
-        for (let y = -patternSize; y < canvas.height + patternSize; y += patternSize) {
-          const grad = ctx.createRadialGradient(x - offsetX + patternSize/2, y - offsetY + patternSize/2, 10, 
-                                                  x - offsetX + patternSize/2, y - offsetY + patternSize/2, patternSize/2);
-          grad.addColorStop(0, '#1e2a3a');
-          grad.addColorStop(1, '#141d28');
+      for (let x = startX - tileSize; x < camera.x + canvas.width + tileSize; x += tileSize) {
+        for (let y = startY - tileSize; y < camera.y + canvas.height + tileSize; y += tileSize) {
+          const hash = (x * 31 + y * 17) % 100;
+          let baseColor;
+          if (hash < 40) {
+            baseColor = '#7a9b47';  // grass
+          } else if (hash < 70) {
+            baseColor = '#c9a766';  // dirt path
+          } else {
+            baseColor = '#6b8e42';  // darker grass
+          }
+
+          const grad = ctx.createRadialGradient(
+            x - camera.x + tileSize / 2,
+            y - camera.y + tileSize / 2,
+            5,
+            x - camera.x + tileSize / 2,
+            y - camera.y + tileSize / 2,
+            tileSize / 1.5
+          );
+          grad.addColorStop(0, baseColor);
+          grad.addColorStop(1, shadeColor(baseColor, -15));
+
           ctx.fillStyle = grad;
-          ctx.fillRect(x - offsetX, y - offsetY, patternSize, patternSize);
+          ctx.fillRect(x - camera.x, y - camera.y, tileSize, tileSize);
+
+          // detail texture
+          ctx.fillStyle = shadeColor(baseColor, -8);
+          for (let i = 0; i < 3; i++) {
+            const dx = (hash * i * 7) % tileSize;
+            const dy = (hash * i * 11) % tileSize;
+            ctx.fillRect(x - camera.x + dx, y - camera.y + dy, 2, 2);
+          }
         }
       }
       ctx.restore();
+
+      function shadeColor(color, percent) {
+        const num = parseInt(color.slice(1), 16);
+        const amt = Math.round(2.55 * percent);
+        const R = Math.min(255, Math.max(0, (num >> 16) + amt));
+        const G = Math.min(255, Math.max(0, ((num >> 8) & 0x00FF) + amt));
+        const B = Math.min(255, Math.max(0, (num & 0x0000FF) + amt));
+        return `#${(0x1000000 + (R << 16) + (G << 8) + B).toString(16).slice(1)}`;
+      }
 
       ctx.save();
       ctx.translate(-camera.x + camera.shakeX, -camera.y + camera.shakeY);
@@ -1219,38 +1312,18 @@
         ctx.restore();
       });
 
-      // enemies
+      // enemies (5 types with different shapes)
       enemies.forEach(e => {
         ctx.save();
         ctx.translate(e.x, e.y);
 
-        if (e.elite && e.shape === 'diamond') {
-          const size = e.r * 1.2;
-          ctx.fillStyle = '#ffb347';
-          ctx.beginPath();
-          ctx.moveTo(0, -size);
-          ctx.lineTo(size * 0.8, 0);
-          ctx.lineTo(0, size);
-          ctx.lineTo(-size * 0.8, 0);
-          ctx.closePath();
-          ctx.fill();
-          ctx.strokeStyle = '#d47a00';
-          ctx.lineWidth = 3;
-          ctx.stroke();
+        ctx.fillStyle = e.color;
 
-          ctx.fillStyle = '#fff2cc';
+        if (e.shape === 'star') {
           ctx.beginPath();
-          ctx.arc(0, 0, size * 0.35, 0, Math.PI * 2);
-          ctx.fill();
-        } else if (e.type === 'spike') {
-          ctx.fillStyle = '#b0202a';
-          ctx.beginPath();
-          const spikes = 7;
-          const outer = e.r;
-          const inner = e.r * 0.4;
-          for (let i = 0; i < spikes * 2; i++) {
-            const ang = (i / (spikes * 2)) * Math.PI * 2;
-            const rad = (i % 2 === 0) ? outer : inner;
+          for (let i = 0; i < 10; i++) {
+            const ang = (i / 10) * Math.PI * 2 - Math.PI / 2;
+            const rad = (i % 2 === 0) ? e.r : e.r * 0.5;
             const px = Math.cos(ang) * rad;
             const py = Math.sin(ang) * rad;
             if (i === 0) ctx.moveTo(px, py);
@@ -1258,19 +1331,68 @@
           }
           ctx.closePath();
           ctx.fill();
-          ctx.strokeStyle = '#ff8080';
+          ctx.strokeStyle = '#fff';
           ctx.lineWidth = 2;
           ctx.stroke();
-        } else {
-          const grad = ctx.createRadialGradient(0, -e.r * 0.4, e.r * 0.2, 0, 0, e.r);
-          grad.addColorStop(0, '#ff9eff');
-          grad.addColorStop(1, '#8a2be2');
-          ctx.fillStyle = grad;
+        } else if (e.shape === 'circle') {
           ctx.beginPath();
           ctx.arc(0, 0, e.r, 0, Math.PI * 2);
           ctx.fill();
+          ctx.strokeStyle = '#fff';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        } else if (e.shape === 'pentagon') {
+          ctx.beginPath();
+          for (let i = 0; i < 5; i++) {
+            const ang = (i / 5) * Math.PI * 2 - Math.PI / 2;
+            const px = Math.cos(ang) * e.r;
+            const py = Math.sin(ang) * e.r;
+            if (i === 0) ctx.moveTo(px, py);
+            else ctx.lineTo(px, py);
+          }
+          ctx.closePath();
+          ctx.fill();
+          ctx.strokeStyle = '#fff';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        } else if (e.shape === 'diamond') {
+          ctx.beginPath();
+          ctx.moveTo(0, -e.r);
+          ctx.lineTo(e.r * 0.7, 0);
+          ctx.lineTo(0, e.r);
+          ctx.lineTo(-e.r * 0.7, 0);
+          ctx.closePath();
+          ctx.fill();
+          ctx.strokeStyle = '#fff';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        } else if (e.shape === 'octagon') {
+          ctx.beginPath();
+          for (let i = 0; i < 8; i++) {
+            const ang = (i / 8) * Math.PI * 2 - Math.PI / 2;
+            const px = Math.cos(ang) * e.r;
+            const py = Math.sin(ang) * e.r;
+            if (i === 0) ctx.moveTo(px, py);
+            else ctx.lineTo(px, py);
+          }
+          ctx.closePath();
+          ctx.fill();
+          ctx.strokeStyle = '#fff';
+          ctx.lineWidth = 2;
+          ctx.stroke();
         }
 
+        ctx.restore();
+      });
+
+      // enemy projectiles
+      enemyProjectiles.forEach(p => {
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.fillStyle = '#ff4444';
+        ctx.beginPath();
+        ctx.arc(0, 0, 6, 0, Math.PI * 2);
+        ctx.fill();
         ctx.restore();
       });
 
@@ -1285,7 +1407,7 @@
         ctx.restore();
       });
 
-      // beautiful lasers with glow
+      // lasers
       lasers.forEach(l => {
         const alpha = Math.max(0, l.life / l.maxLife);
         const hue = l.hue;
@@ -1423,7 +1545,6 @@
       ctx.restore();
     }
 
-    // ====== Game loop ======
     let lastTime = 0;
     function loop(time) {
       requestAnimationFrame(loop);
