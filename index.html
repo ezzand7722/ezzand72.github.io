@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Slime Survivor v8</title>
+  <title>Slime Survivor v9</title>
   <style>
     html, body {
       margin: 0;
@@ -97,6 +97,62 @@
       pointer-events: none;
       transition: transform 0.1s ease-out;
     }
+
+    /* Level up menu */
+    #levelUpMenu {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.85);
+      z-index: 100;
+      justify-content: center;
+      align-items: center;
+      backdrop-filter: blur(8px);
+    }
+    #levelUpMenu.active {
+      display: flex;
+    }
+    #levelUpContent {
+      background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+      padding: 30px;
+      border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+      max-width: 500px;
+      width: 90%;
+      border: 2px solid #4a90e2;
+    }
+    #levelUpContent h2 {
+      margin: 0 0 20px 0;
+      font-size: 28px;
+      text-align: center;
+      color: #ffd700;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+    }
+    .upgradeOption {
+      background: linear-gradient(135deg, #2d5a87 0%, #1e3c5e 100%);
+      padding: 16px 20px;
+      margin: 12px 0;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: 2px solid #3a6ea5;
+      font-size: 18px;
+      text-align: center;
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+    .upgradeOption:hover {
+      background: linear-gradient(135deg, #3a7bb5 0%, #2a5a8f 100%);
+      transform: translateY(-3px) scale(1.02);
+      border-color: #5a9fd4;
+      box-shadow: 0 6px 20px rgba(90, 159, 212, 0.5);
+    }
+    .upgradeOption:active {
+      transform: translateY(0) scale(0.98);
+    }
   </style>
 </head>
 <body>
@@ -113,6 +169,14 @@
 
   <div id="joystickArea">
     <div id="joyStick"></div>
+  </div>
+
+  <!-- Level up menu -->
+  <div id="levelUpMenu">
+    <div id="levelUpContent">
+      <h2 id="levelUpTitle">Level Up!</h2>
+      <div id="upgradeOptions"></div>
+    </div>
   </div>
 
   <script>
@@ -133,6 +197,10 @@
     const hudXp      = document.getElementById('xpHud');
     const healthInner = document.getElementById('healthBarInner');
     const xpBarInner = document.getElementById('xpBarInner');
+
+    const levelUpMenu = document.getElementById('levelUpMenu');
+    const levelUpTitle = document.getElementById('levelUpTitle');
+    const upgradeOptions = document.getElementById('upgradeOptions');
 
     // ====== World & camera ======
     const WORLD_WIDTH = 4000;
@@ -157,7 +225,7 @@
       mouseY = e.clientY - rect.top;
     });
 
-    // Virtual joystick (bigger, less corner)
+    // Virtual joystick
     const joyArea = document.getElementById('joystickArea');
     const joyStick = document.getElementById('joyStick');
     let joyCenter = { x: 0, y: 0 };
@@ -247,6 +315,7 @@
     let decorations = [];
     let score = 0;
     let totalTime = 0;
+    let gamePaused = false;
 
     // XP & level-up
     let xp = 0;
@@ -327,7 +396,7 @@
       }
     }
 
-    // ====== Environment decorations (with collision for trees) ======
+    // ====== Environment decorations ======
     function spawnDecorations() {
       decorations = [];
       const count = 80;
@@ -464,7 +533,7 @@
     let chestTimer = 0;
     let healthTimer = 0;
 
-    // ====== Phase (no longer banana-based, just visual) ======
+    // ====== Phase ======
     function updatePhase() {
       if (level >= 10) {
         player.phase = 2;
@@ -484,10 +553,7 @@
       }
     }
 
-    function applyStaticUpgradesFromBananas() {
-    }
-
-    // ====== Level-up upgrades ======
+    // ====== Level-up upgrades (clickable menu) ======
     function addXp(amount) {
       xp += amount;
       while (xp >= nextLevelXp) {
@@ -511,11 +577,23 @@
         choices.push(pool.splice(idx, 1)[0]);
       }
 
-      let msg = `Level ${level}! Choose an upgrade:\n`;
-      choices.forEach((u, i) => msg += `${i + 1}. ${u.label}\n`);
-      const pick = parseInt(prompt(msg, '1'), 10) || 1;
-      const chosen = choices[Math.max(0, Math.min(choices.length - 1, pick - 1))];
-      applyUpgrade(chosen.id);
+      levelUpTitle.textContent = `Level ${level}!`;
+      upgradeOptions.innerHTML = '';
+
+      choices.forEach(choice => {
+        const btn = document.createElement('div');
+        btn.className = 'upgradeOption';
+        btn.textContent = choice.label;
+        btn.onclick = () => {
+          applyUpgrade(choice.id);
+          levelUpMenu.classList.remove('active');
+          gamePaused = false;
+        };
+        upgradeOptions.appendChild(btn);
+      });
+
+      levelUpMenu.classList.add('active');
+      gamePaused = true;
     }
 
     function applyUpgrade(id) {
@@ -684,7 +762,9 @@
             x1, y1,
             x2: x1 + Math.cos(angle) * length,
             y2: y1 + Math.sin(angle) * length,
-            life: 0.3
+            life: 0.4,
+            maxLife: 0.4,
+            hue: Math.random() * 60 + 280  // purple to pink range
           });
         }
       }
@@ -725,6 +805,8 @@
 
     // ====== Main update ======
     function update(dt) {
+      if (gamePaused) return;
+
       totalTime += dt;
 
       let dirX = 0, dirY = 0;
@@ -758,7 +840,6 @@
       let newX = player.x + player.vx * dt;
       let newY = player.y + player.vy * dt;
 
-      // tree collision
       for (const d of decorations) {
         if (d.hasCollision) {
           const dx = newX - d.x;
@@ -830,7 +911,6 @@
         e.y += e.vy * dt;
       });
 
-      // bananas now heal small amounts
       for (let i = bananas.length - 1; i >= 0; i--) {
         const b = bananas[i];
         const dx = b.x - player.x;
@@ -958,13 +1038,20 @@
     function draw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      const tileSize = 120;
+      // Smooth floor with gradient pattern (no grid)
+      const patternSize = 200;
       ctx.save();
-      ctx.translate(-camera.x % tileSize, -camera.y % tileSize);
-      ctx.fillStyle = '#16213e';
-      for (let x = -tileSize; x < canvas.width + tileSize; x += tileSize) {
-        for (let y = -tileSize; y < canvas.height + tileSize; y += tileSize) {
-          ctx.fillRect(x + 4, y + 4, tileSize - 8, tileSize - 8);
+      const offsetX = camera.x % patternSize;
+      const offsetY = camera.y % patternSize;
+
+      for (let x = -patternSize; x < canvas.width + patternSize; x += patternSize) {
+        for (let y = -patternSize; y < canvas.height + patternSize; y += patternSize) {
+          const grad = ctx.createRadialGradient(x - offsetX + patternSize/2, y - offsetY + patternSize/2, 10, 
+                                                  x - offsetX + patternSize/2, y - offsetY + patternSize/2, patternSize/2);
+          grad.addColorStop(0, '#1e2a3a');
+          grad.addColorStop(1, '#141d28');
+          ctx.fillStyle = grad;
+          ctx.fillRect(x - offsetX, y - offsetY, patternSize, patternSize);
         }
       }
       ctx.restore();
@@ -972,13 +1059,12 @@
       ctx.save();
       ctx.translate(-camera.x + camera.shakeX, -camera.y + camera.shakeY);
 
-      // decorations (3D trees with collision)
+      // decorations
       decorations.forEach(d => {
         ctx.save();
         ctx.translate(d.x, d.y);
 
         if (d.kind === 'tree') {
-          // trunk with shading
           const trunkGrad = ctx.createLinearGradient(-10, 0, 10, 0);
           trunkGrad.addColorStop(0, '#3d2817');
           trunkGrad.addColorStop(0.5, '#5c3a21');
@@ -986,7 +1072,6 @@
           ctx.fillStyle = trunkGrad;
           ctx.fillRect(-10, -15, 20, 35);
 
-          // foliage with depth
           const foliageGrad = ctx.createRadialGradient(-5, -30, 5, 0, -25, d.size * 0.6);
           foliageGrad.addColorStop(0, '#4a7c2e');
           foliageGrad.addColorStop(0.7, d.color);
@@ -1002,7 +1087,6 @@
           ctx.arc(18, -15, d.size * 0.35, 0, Math.PI * 2);
           ctx.fill();
 
-          // shadow at base
           ctx.fillStyle = 'rgba(0,0,0,0.3)';
           ctx.beginPath();
           ctx.ellipse(0, 20, 15, 5, 0, 0, Math.PI * 2);
@@ -1201,13 +1285,38 @@
         ctx.restore();
       });
 
-      // lasers
+      // beautiful lasers with glow
       lasers.forEach(l => {
-        const alpha = Math.max(0, l.life / 0.3);
+        const alpha = Math.max(0, l.life / l.maxLife);
+        const hue = l.hue;
+        
+        ctx.save();
+        ctx.globalAlpha = alpha * 0.3;
+        ctx.strokeStyle = `hsl(${hue}, 100%, 70%)`;
+        ctx.lineWidth = 12;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(l.x1, l.y1);
+        ctx.lineTo(l.x2, l.y2);
+        ctx.stroke();
+        ctx.restore();
+
+        ctx.save();
+        ctx.globalAlpha = alpha * 0.6;
+        ctx.strokeStyle = `hsl(${hue}, 100%, 80%)`;
+        ctx.lineWidth = 6;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(l.x1, l.y1);
+        ctx.lineTo(l.x2, l.y2);
+        ctx.stroke();
+        ctx.restore();
+
         ctx.save();
         ctx.globalAlpha = alpha;
-        ctx.strokeStyle = '#ff55ff';
-        ctx.lineWidth = 4;
+        ctx.strokeStyle = `hsl(${hue}, 100%, 95%)`;
+        ctx.lineWidth = 2;
+        ctx.lineCap = 'round';
         ctx.beginPath();
         ctx.moveTo(l.x1, l.y1);
         ctx.lineTo(l.x2, l.y2);
@@ -1264,7 +1373,7 @@
         ctx.restore();
       });
 
-      // player (slime)
+      // player
       ctx.save();
       ctx.translate(player.x, player.y);
 
