@@ -3,222 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Papaw's Poole Mill Restaurant in Sebree, KY. Home cooked meals, friendly people, and a wide variety of menu items from burgers to seafood. Dine-in and takeaway available.">
     <title>Poole Mill Restaurant | Sebree, KY</title>
-    <style>
-        /* --- CSS STYLES --- */
-        :root {
-            --primary-color: #8B4513; /* Saddle Brown */
-            --secondary-color: #F5DEB3; /* Wheat */
-            --text-dark: #333;
-            --text-light: #fff;
-            --accent-green: #2E8B57;
-        }
-
-        body {
-            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            line-height: 1.6;
-            color: var(--text-dark);
-            background-color: #fdfdfd;
-        }
-
-        /* Navigation */
-        header {
-            background-color: #fff;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-        }
-
-        nav {
-            max-width: 1100px;
-            margin: 0 auto;
-            padding: 1rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .logo {
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: var(--primary-color);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .nav-links a {
-            text-decoration: none;
-            color: var(--text-dark);
-            margin-left: 20px;
-            font-weight: 500;
-        }
-
-        .nav-links a:hover {
-            color: var(--primary-color);
-        }
-
-        .btn-call {
-            background-color: var(--primary-color);
-            color: white !important;
-            padding: 10px 20px;
-            border-radius: 5px;
-            font-weight: bold;
-        }
-
-        /* Hero Section */
-        .hero {
-            background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('https://images.unsplash.com/photo-1555396273-367ea4eb4db5?q=80&w=1000&auto=format&fit=crop');
-            background-size: cover;
-            background-position: center;
-            height: 60vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            color: white;
-            padding: 0 20px;
-        }
-
-        .hero h1 {
-            font-size: 3rem;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
-        }
-
-        .hero p {
-            font-size: 1.2rem;
-            margin-bottom: 20px;
-        }
-
-        /* Info Banner */
-        .info-bar {
-            background-color: var(--accent-green);
-            color: white;
-            text-align: center;
-            padding: 15px;
-            font-weight: bold;
-        }
-
-        /* Content Sections */
-        .container {
-            max-width: 1100px;
-            margin: 40px auto;
-            padding: 0 20px;
-        }
-
-        h2 {
-            text-align: center;
-            color: var(--primary-color);
-            margin-bottom: 40px;
-            font-size: 2rem;
-            text-transform: uppercase;
-            border-bottom: 2px solid var(--secondary-color);
-            display: inline-block;
-            padding-bottom: 10px;
-        }
-
-        .section-header {
-            text-align: center;
-            width: 100%;
-        }
-
-        /* Menu Grid */
-        .menu-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
-            gap: 40px;
-        }
-
-        .menu-category {
-            background: white;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-            border-top: 5px solid var(--primary-color);
-        }
-
-        .menu-category h3 {
-            color: var(--primary-color);
-            margin-top: 0;
-            border-bottom: 1px solid #eee;
-            padding-bottom: 10px;
-            font-size: 1.5rem;
-        }
-
-        .menu-note {
-            font-size: 0.9rem;
-            color: #666;
-            font-style: italic;
-            margin-bottom: 20px;
-            display: block;
-        }
-
-        .menu-item {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 15px;
-            border-bottom: 1px dotted #ccc;
-            padding-bottom: 5px;
-        }
-
-        .menu-item:last-child {
-            border-bottom: none;
-            margin-bottom: 0;
-        }
-
-        .menu-name {
-            font-weight: bold;
-            color: #333;
-        }
-
-        .menu-desc {
-            display: block;
-            font-size: 0.85rem;
-            color: #777;
-            font-weight: normal;
-        }
-
-        .menu-price {
-            color: var(--primary-color);
-            font-weight: bold;
-            min-width: 60px;
-            text-align: right;
-        }
-
-        /* Reviews */
-        .review {
-            background-color: #f9f9f9;
-            padding: 30px;
-            border-radius: 10px;
-            font-style: italic;
-            text-align: center;
-            margin: 20px 0;
-            border-left: 5px solid var(--accent-green);
-        }
-        .stars { color: gold; }
-
-        /* Footer */
-        footer {
-            background-color: #222;
-            color: white;
-            text-align: center;
-            padding: 40px 20px;
-            margin-top: 50px;
-        }
-
-        footer a { color: var(--secondary-color); }
-
-        /* Mobile Adjustments */
-        @media (max-width: 768px) {
-            .hero h1 { font-size: 2rem; }
-            .nav-links { display: none; }
-            .logo { flex-grow: 1; text-align: center; }
-            .menu-grid { grid-template-columns: 1fr; }
-        }
-    </style>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
@@ -234,26 +21,27 @@
         </nav>
     </header>
 
-    <section class="hero">
-        <div>
-            <h1>Papaw's Poole Mill Restaurant</h1>
-            <p>Home Cooked Meals & Friendly People</p>
-            <p><strong>Sebree, Kentucky</strong></p>
-            <a href="#menu" style="background: white; color: #333; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; margin-top: 20px; display: inline-block;">View Full Menu</a>
+    <main>
+        <section class="hero">
+            <div>
+                <h1>Papaw's Poole Mill Restaurant</h1>
+                <p>Home Cooked Meals & Friendly People</p>
+                <p><strong>Sebree, Kentucky</strong></p>
+                <a href="#menu" style="background: white; color: #333; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; margin-top: 20px; display: inline-block;">View Full Menu</a>
+            </div>
+        </section>
+
+        <div class="info-bar">
+            Open Daily · Closes 8 PM • Dine-in & Takeaway
         </div>
-    </section>
 
-    <div class="info-bar">
-        Open Daily · Closes 8 PM • Dine-in & Takeaway
-    </div>
-
-    <div class="container" id="menu">
+        <div class="container" id="menu">
         <div class="section-header">
             <h2>Our Menu</h2>
         </div>
-        
+
         <div class="menu-grid">
-            
+
             <div class="menu-category">
                 <h3>Burgers & Sandwiches</h3>
                 <div class="menu-item">
@@ -306,7 +94,7 @@
             <div class="menu-category">
                 <h3>Dinners</h3>
                 <span class="menu-note">Choice of French Fries or Tator Tots & Texas Toast</span>
-                
+
                 <div class="menu-item">
                     <div><span class="menu-name">21 Pc. Breaded Shrimp</span></div>
                     <span class="menu-price">$8.99</span>
@@ -336,7 +124,7 @@
             <div class="menu-category" style="background-color: #f0f8ff; border-top-color: #4682B4;">
                 <h3 style="color: #4682B4;">Friday & Saturday Seafood</h3>
                 <span class="menu-note">Hand breaded Southern Style. Served with Choice of Potato, Cole Slaw/Mac Salad + White Beans & Hushpuppies.</span>
-                
+
                 <div class="menu-item">
                     <div><span class="menu-name">2 Catfish Fillets</span></div>
                     <span class="menu-price">$9.99</span>
@@ -404,7 +192,7 @@
                 <div class="menu-item"><div><span class="menu-name">Grilled Cheese Sandwich</span></div></div>
                 <div class="menu-item"><div><span class="menu-name">Chicken Nuggets</span></div></div>
                 <div class="menu-item"><div><span class="menu-name">PB & J Sandwich</span></div></div>
-                
+
                 <br>
                 <h3>Beverages & Desserts</h3>
                 <div class="menu-item"><div><span class="menu-name">Soft Drinks / Tea</span></div><span class="menu-price">$2.29</span></div>
@@ -416,21 +204,22 @@
         </div>
     </div>
 
-    <div class="container" id="reviews">
-        <div class="section-header">
-            <h2>What Locals Say</h2>
+        <div class="container" id="reviews">
+            <div class="section-header">
+                <h2>What Locals Say</h2>
+            </div>
+            <div class="review">
+                <p class="stars">★★★★★</p>
+                <p>"This place is AMAZING!! My server was the sweetest little thang ever! Best restaurant I’ve had in a WHILE! If I could give yall 10 stars I sure would!!"</p>
+                <p><strong>- Yazmin Oglesby</strong></p>
+            </div>
+            <div class="review">
+                <p class="stars">★★★★★</p>
+                <p>"Good food, and service. The staff is friendly and the portions are generous."</p>
+                <p><strong>- Chris (Local Guide)</strong></p>
+            </div>
         </div>
-        <div class="review">
-            <p class="stars">★★★★★</p>
-            <p>"This place is AMAZING!! My server was the sweetest little thang ever! Best restaurant I’ve had in a WHILE! If I could give yall 10 stars I sure would!!"</p>
-            <p><strong>- Yazmin Oglesby</strong></p>
-        </div>
-        <div class="review">
-            <p class="stars">★★★★★</p>
-            <p>"Good food, and service. The staff is friendly and the portions are generous."</p>
-            <p><strong>- Chris (Local Guide)</strong></p>
-        </div>
-    </div>
+    </main>
 
     <footer>
         <h3>Poole Mill Restaurant</h3>
