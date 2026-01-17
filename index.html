@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Poole Mill Restaurant | Sebree, KY</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
     <style>
         /* --- CSS STYLES --- */
         :root {
@@ -15,12 +18,16 @@
         }
 
         body {
-            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            font-family: 'Open Sans', sans-serif;
             margin: 0;
             padding: 0;
             line-height: 1.6;
             color: var(--text-dark);
-            background-color: #fdfdfd;
+            background-color: #f8f9fa;
+        }
+
+        h1, h2, h3, .logo, .btn-call {
+            font-family: 'Montserrat', sans-serif;
         }
 
         /* Navigation */
@@ -63,9 +70,16 @@
         .btn-call {
             background-color: var(--primary-color);
             color: white !important;
-            padding: 10px 20px;
+            padding: 12px 25px;
             border-radius: 5px;
             font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .btn-call:hover {
+            background-color: #6d360e;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
         }
 
         /* Hero Section */
@@ -105,8 +119,8 @@
         /* Content Sections */
         .container {
             max-width: 1100px;
-            margin: 40px auto;
-            padding: 0 20px;
+            margin: 60px auto;
+            padding: 0 25px;
         }
 
         h2 {
@@ -146,6 +160,34 @@
             border-bottom: 1px solid #eee;
             padding-bottom: 10px;
             font-size: 1.5rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .menu-category h3::after {
+            content: '+';
+            font-weight: bold;
+            font-size: 1.5rem;
+        }
+
+        .menu-category.active h3::after {
+            content: '-';
+        }
+
+        .menu-category-content {
+            display: none;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .menu-category.active .menu-category-content {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .menu-note {
@@ -212,10 +254,53 @@
         footer a { color: var(--secondary-color); }
 
         /* Mobile Adjustments */
+        .hamburger {
+            display: none;
+            cursor: pointer;
+            flex-direction: column;
+        }
+
+        .hamburger span {
+            height: 3px;
+            width: 25px;
+            background-color: var(--primary-color);
+            margin-bottom: 4px;
+            border-radius: 2px;
+        }
+
         @media (max-width: 768px) {
             .hero h1 { font-size: 2rem; }
-            .nav-links { display: none; }
-            .logo { flex-grow: 1; text-align: center; }
+
+            .hamburger { display: flex; }
+
+            .nav-links {
+                display: none;
+                width: 100%;
+                position: absolute;
+                top: 70px;
+                left: 0;
+                background: white;
+                flex-direction: column;
+                box-shadow: 0 5px 10px rgba(0,0,0,0.1);
+                padding: 20px 0;
+            }
+
+            .nav-links.active {
+                display: flex;
+            }
+
+            .nav-links a {
+                margin: 10px 0;
+                text-align: center;
+                display: block;
+            }
+
+            .nav-links .btn-call {
+                display: inline-block;
+                margin-top: 10px;
+            }
+
+            .logo { flex-grow: 1; }
             .menu-grid { grid-template-columns: 1fr; }
         }
     </style>
@@ -225,6 +310,11 @@
     <header>
         <nav>
             <div class="logo">Poole Mill</div>
+            <div class="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
             <div class="nav-links">
                 <a href="#about">About</a>
                 <a href="#menu">Menu</a>
@@ -251,166 +341,179 @@
         <div class="section-header">
             <h2>Our Menu</h2>
         </div>
-        
+
         <div class="menu-grid">
-            
+
             <div class="menu-category">
                 <h3>Burgers & Sandwiches</h3>
-                <div class="menu-item">
-                    <div>
-                        <span class="menu-name">Papaw's Big Burger</span>
-                        <span class="menu-desc">1/3 pound patty grilled on a toasted 5" bun. Topped w/ cheese & dressed your way with mayo.</span>
+                <div class="menu-category-content">
+                    <div class="menu-item">
+                        <div>
+                            <span class="menu-name">Papaw's Big Burger</span>
+                            <span class="menu-desc">1/3 pound patty grilled on a toasted 5" bun. Topped w/ cheese & dressed your way with mayo.</span>
+                        </div>
+                        <span class="menu-price">$4.99</span>
                     </div>
-                    <span class="menu-price">$4.99</span>
-                </div>
-                <div class="menu-item">
-                    <div>
-                        <span class="menu-name">Papaw's Flat Burger</span>
-                        <span class="menu-desc">1/4 pound patty on a 5" bun topped w/ cheese.</span>
+                    <div class="menu-item">
+                        <div>
+                            <span class="menu-name">Papaw's Flat Burger</span>
+                            <span class="menu-desc">1/4 pound patty on a 5" bun topped w/ cheese.</span>
+                        </div>
+                        <span class="menu-price">$3.99</span>
                     </div>
-                    <span class="menu-price">$3.99</span>
-                </div>
-                <div class="menu-item">
-                    <div>
-                        <span class="menu-name">Philly Steak Sandwich</span>
-                        <span class="menu-desc">Beef steak with melted Mozzarella, Green Peppers & Onions on 8" Hoagie.</span>
+                    <div class="menu-item">
+                        <div>
+                            <span class="menu-name">Philly Steak Sandwich</span>
+                            <span class="menu-desc">Beef steak with melted Mozzarella, Green Peppers & Onions on 8" Hoagie.</span>
+                        </div>
+                        <span class="menu-price">$7.59</span>
                     </div>
-                    <span class="menu-price">$7.59</span>
-                </div>
-                <div class="menu-item">
-                    <div><span class="menu-name">Club Sandwich</span><span class="menu-desc">Triple decker with Ham, Bacon, Cheese, Lettuce, Tomato & Mayo.</span></div>
-                    <span class="menu-price">$6.99</span>
-                </div>
-                <div class="menu-item">
-                    <div><span class="menu-name">Breaded Pork Tenderloin</span></div>
-                    <span class="menu-price">$6.39</span>
-                </div>
-                <div class="menu-item">
-                    <div><span class="menu-name">Hot Ham & Cheese</span></div>
-                    <span class="menu-price">$6.59</span>
-                </div>
-                <div class="menu-item">
-                    <div><span class="menu-name">B.L.T. Sandwich</span><span class="menu-desc">Hickory Smoked Bacon on Texas Toast.</span></div>
-                    <span class="menu-price">$5.99</span>
-                </div>
-                <div class="menu-item">
-                    <div><span class="menu-name">8" Stromboli</span><span class="menu-desc">Sausage, Pepperoni, Green Peppers, Onions w/ Mozzarella.</span></div>
-                    <span class="menu-price">$7.59</span>
-                </div>
-                 <div class="menu-item">
-                    <div><span class="menu-name">Chicken Salad Sandwich</span></div>
-                    <span class="menu-price">$5.99</span>
+                    <div class="menu-item">
+                        <div><span class="menu-name">Club Sandwich</span><span class="menu-desc">Triple decker with Ham, Bacon, Cheese, Lettuce, Tomato & Mayo.</span></div>
+                        <span class="menu-price">$6.99</span>
+                    </div>
+                    <div class="menu-item">
+                        <div><span class="menu-name">Breaded Pork Tenderloin</span></div>
+                        <span class="menu-price">$6.39</span>
+                    </div>
+                    <div class="menu-item">
+                        <div><span class="menu-name">Hot Ham & Cheese</span></div>
+                        <span class="menu-price">$6.59</span>
+                    </div>
+                    <div class="menu-item">
+                        <div><span class="menu-name">B.L.T. Sandwich</span><span class="menu-desc">Hickory Smoked Bacon on Texas Toast.</span></div>
+                        <span class="menu-price">$5.99</span>
+                    </div>
+                    <div class="menu-item">
+                        <div><span class="menu-name">8" Stromboli</span><span class="menu-desc">Sausage, Pepperoni, Green Peppers, Onions w/ Mozzarella.</span></div>
+                        <span class="menu-price">$7.59</span>
+                    </div>
+                     <div class="menu-item">
+                        <div><span class="menu-name">Chicken Salad Sandwich</span></div>
+                        <span class="menu-price">$8.99</span>
+                    </div>
                 </div>
             </div>
 
             <div class="menu-category">
                 <h3>Dinners</h3>
-                <span class="menu-note">Choice of French Fries or Tator Tots & Texas Toast</span>
-                
-                <div class="menu-item">
-                    <div><span class="menu-name">21 Pc. Breaded Shrimp</span></div>
-                    <span class="menu-price">$8.99</span>
-                </div>
-                <div class="menu-item">
-                    <div><span class="menu-name">Chicken Tenders</span></div>
-                    <span class="menu-price">$8.99</span>
-                </div>
-                <div class="menu-item">
-                    <div><span class="menu-name">Butterfly Shrimp</span></div>
-                    <span class="menu-price">$8.99</span>
-                </div>
-                <div class="menu-item">
-                    <div><span class="menu-name">8 oz. Chopped Steak</span></div>
-                    <span class="menu-price">$8.99</span>
-                </div>
-                <div class="menu-item">
-                    <div><span class="menu-name">Chicken Livers</span></div>
-                    <span class="menu-price">$8.59</span>
-                </div>
-                <div class="menu-item">
-                    <div><span class="menu-name">Gizzards</span></div>
-                    <span class="menu-price">$8.59</span>
+                <div class="menu-category-content">
+                    <span class="menu-note">Choice of French Fries or Tator Tots & Texas Toast</span>
+
+                    <div class="menu-item">
+                        <div><span class="menu-name">21 Pc. Breaded Shrimp</span></div>
+                        <span class="menu-price">$8.99</span>
+                    </div>
+                    <div class="menu-item">
+                        <div><span class="menu-name">Chicken Tenders</span></div>
+                        <span class="menu-price">$8.99</span>
+                    </div>
+                    <div class="menu-item">
+                        <div><span class="menu-name">Butterfly Shrimp</span></div>
+                        <span class="menu-price">$8.99</span>
+                    </div>
+                    <div class="menu-item">
+                        <div><span class="menu-name">8 oz. Chopped Steak</span></div>
+                        <span class="menu-price">$8.99</span>
+                    </div>
+                    <div class="menu-item">
+                        <div><span class="menu-name">Chicken Livers</span></div>
+                        <span class="menu-price">$8.59</span>
+                    </div>
+                    <div class="menu-item">
+                        <div><span class="menu-name">Gizzards</span></div>
+                        <span class="menu-price">$8.59</span>
+                    </div>
                 </div>
             </div>
 
             <div class="menu-category" style="background-color: #f0f8ff; border-top-color: #4682B4;">
                 <h3 style="color: #4682B4;">Friday & Saturday Seafood</h3>
-                <span class="menu-note">Hand breaded Southern Style. Served with Choice of Potato, Cole Slaw/Mac Salad + White Beans & Hushpuppies.</span>
-                
-                <div class="menu-item">
-                    <div><span class="menu-name">2 Catfish Fillets</span></div>
-                    <span class="menu-price">$9.99</span>
-                </div>
-                <div class="menu-item">
-                    <div><span class="menu-name">1 Catfish Fillet</span></div>
-                    <span class="menu-price">$8.99</span>
-                </div>
-                <div class="menu-item">
-                    <div><span class="menu-name">Breaded Catfish Sandwich</span></div>
-                    <span class="menu-price">$5.99</span>
-                </div>
-                <div class="menu-item">
-                    <div><span class="menu-name">Add Sweet Potato</span></div>
-                    <span class="menu-price">+$1.00</span>
+                <div class="menu-category-content">
+                    <span class="menu-note">Hand breaded Southern Style. Served with Choice of Potato, Cole Slaw/Mac Salad + White Beans & Hushpuppies.</span>
+
+                    <div class="menu-item">
+                        <div><span class="menu-name">2 Catfish Fillets</span></div>
+                        <span class="menu-price">$9.99</span>
+                    </div>
+                    <div class="menu-item">
+                        <div><span class="menu-name">1 Catfish Fillet</span></div>
+                        <span class="menu-price">$8.99</span>
+                    </div>
+                    <div class="menu-item">
+                        <div><span class="menu-name">Breaded Catfish Sandwich</span></div>
+                        <span class="menu-price">$5.99</span>
+                    </div>
+                    <div class="menu-item">
+                        <div><span class="menu-name">Add Sweet Potato</span></div>
+                        <span class="menu-price">+$1.00</span>
+                    </div>
                 </div>
             </div>
 
             <div class="menu-category">
                 <h3>Sides & Appetizers</h3>
-                <div class="menu-item">
-                    <div><span class="menu-name">French Fries / Tator Tots</span></div>
-                    <span class="menu-price">$2.19</span>
-                </div>
-                <div class="menu-item">
-                    <div><span class="menu-name">Onion Rings</span></div>
-                    <span class="menu-price">$3.99</span>
-                </div>
-                <div class="menu-item">
-                    <div><span class="menu-name">Breaded Cheese Curds</span></div>
-                    <span class="menu-price">$4.99</span>
-                </div>
-                <div class="menu-item">
-                    <div><span class="menu-name">Mozzarella Cheese Sticks</span></div>
-                    <span class="menu-price">$4.99</span>
-                </div>
-                <div class="menu-item">
-                    <div><span class="menu-name">Fried Mushrooms</span></div>
-                    <span class="menu-price">$4.99</span>
-                </div>
-                <div class="menu-item">
-                    <div><span class="menu-name">Bowl of Chili</span></div>
-                    <span class="menu-price">$4.99</span>
-                </div>
-                <br>
-                <h3>Salads</h3>
-                <div class="menu-item">
-                    <div><span class="menu-name">Chef Salad</span><span class="menu-desc">Ham, Bacon, Cheese, Egg, Croutons.</span></div>
-                    <span class="menu-price">$8.99</span>
-                </div>
-                <div class="menu-item">
-                    <div><span class="menu-name">Taco Salad</span></div>
-                    <span class="menu-price">$8.99</span>
-                </div>
-                <div class="menu-item">
-                    <div><span class="menu-name">Chicken Salad</span></div>
-                    <span class="menu-price">$8.99</span>
+                <div class="menu-category-content">
+                    <div class="menu-item">
+                        <div><span class="menu-name">French Fries / Tator Tots</span></div>
+                        <span class="menu-price">$2.19</span>
+                    </div>
+                    <div class="menu-item">
+                        <div><span class="menu-name">Onion Rings</span></div>
+                        <span class="menu-price">$3.99</span>
+                    </div>
+                    <div class="menu-item">
+                        <div><span class="menu-name">Breaded Cheese Curds</span></div>
+                        <span class="menu-price">$4.99</span>
+                    </div>
+                    <div class="menu-item">
+                        <div><span class="menu-name">Mozzarella Cheese Sticks</span></div>
+                        <span class="menu-price">$4.99</span>
+                    </div>
+                    <div class="menu-item">
+                        <div><span class="menu-name">Fried Mushrooms</span></div>
+                        <span class="menu-price">$4.99</span>
+                    </div>
+                    <div class="menu-item">
+                        <div><span class="menu-name">Bowl of Chili</span></div>
+                        <span class="menu-price">$4.99</span>
+                    </div>
+                    <br>
+                    <h3>Salads</h3>
+                    <div class="menu-item">
+                        <div><span class="menu-name">Chef Salad</span><span class="menu-desc">Ham, Bacon, Cheese, Egg, Croutons.</span></div>
+                        <span class="menu-price">$8.99</span>
+                    </div>
+                    <div class="menu-item">
+                        <div><span class="menu-name">Taco Salad</span></div>
+                        <span class="menu-price">$8.99</span>
+                    </div>
+                    <div class="menu-item">
+                        <div><span class="menu-name">Chicken Salad</span></div>
+                        <span class="menu-price">.99</span>
+                    </div>
                 </div>
             </div>
 
             <div class="menu-category">
                 <h3>Children's Menu ($5.99)</h3>
-                <span class="menu-note">Kids 10 & Under. Served with Fries & Drink.</span>
-                <div class="menu-item"><div><span class="menu-name">Cheese Burger</span></div></div>
-                <div class="menu-item"><div><span class="menu-name">Grilled Cheese Sandwich</span></div></div>
-                <div class="menu-item"><div><span class="menu-name">Chicken Nuggets</span></div></div>
-                <div class="menu-item"><div><span class="menu-name">PB & J Sandwich</span></div></div>
-                
-                <br>
+                <div class="menu-category-content">
+                    <span class="menu-note">Kids 10 & Under. Served with Fries & Drink.</span>
+                    <div class="menu-item"><div><span class="menu-name">Cheese Burger</span></div></div>
+                    <div class="menu-item"><div><span class="menu-name">Grilled Cheese Sandwich</span></div></div>
+                    <div class="menu-item"><div><span class="menu-name">Chicken Nuggets</span></div></div>
+                    <div class="menu-item"><div><span class="menu-name">PB & J Sandwich</span></div></div>
+                </div>
+            </div>
+
+            <div class="menu-category">
                 <h3>Beverages & Desserts</h3>
-                <div class="menu-item"><div><span class="menu-name">Soft Drinks / Tea</span></div><span class="menu-price">$2.29</span></div>
-                <div class="menu-item"><div><span class="menu-name">Coffee</span></div><span class="menu-price">$1.89</span></div>
-                <div class="menu-item"><div><span class="menu-name">Slice of Pie</span></div><span class="menu-price">Ask</span></div>
-                <div class="menu-item"><div><span class="menu-name">Cobbler of the Day</span></div><span class="menu-price">Ask</span></div>
+                <div class="menu-category-content">
+                    <div class="menu-item"><div><span class="menu-name">Soft Drinks / Tea</span></div><span class="menu-price">$2.29</span></div>
+                    <div class="menu-item"><div><span class="menu-name">Coffee</span></div><span class="menu-price">$1.89</span></div>
+                    <div class="menu-item"><div><span class="menu-name">Slice of Pie</span></div><span class="menu-price">Ask</span></div>
+                    <div class="menu-item"><div><span class="menu-name">Cobbler of the Day</span></div><span class="menu-price">Ask</span></div>
+                </div>
             </div>
 
         </div>
@@ -440,5 +543,34 @@
         <p style="font-size: 0.8rem; color: #888;">© 2026 Poole Mill Restaurant. All rights reserved.</p>
     </footer>
 
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Mobile Menu Toggle
+            const hamburger = document.querySelector('.hamburger');
+            const navLinks = document.querySelector('.nav-links');
+
+            if (hamburger) {
+                hamburger.addEventListener('click', () => {
+                    navLinks.classList.toggle('active');
+                });
+            }
+
+            // Close menu when a link is clicked
+            document.querySelectorAll('.nav-links a').forEach(link => {
+                link.addEventListener('click', () => {
+                    navLinks.classList.remove('active');
+                });
+            });
+
+            // Accordion Logic
+            const categories = document.querySelectorAll('.menu-category h3');
+            categories.forEach(header => {
+                header.addEventListener('click', () => {
+                    const category = header.parentElement;
+                    category.classList.toggle('active');
+                });
+            });
+        });
+    </script>
 </body>
 </html>

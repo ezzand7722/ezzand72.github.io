@@ -1,12 +1,9 @@
-<!DOCTYPE html>
+content = """<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Poole Mill Restaurant | Sebree, KY</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
     <style>
         /* --- CSS STYLES --- */
         :root {
@@ -18,16 +15,12 @@
         }
 
         body {
-            font-family: 'Open Sans', sans-serif;
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
             margin: 0;
             padding: 0;
             line-height: 1.6;
             color: var(--text-dark);
-            background-color: #f8f9fa;
-        }
-
-        h1, h2, h3, .logo, .btn-call {
-            font-family: 'Montserrat', sans-serif;
+            background-color: #fdfdfd;
         }
 
         /* Navigation */
@@ -70,16 +63,9 @@
         .btn-call {
             background-color: var(--primary-color);
             color: white !important;
-            padding: 12px 25px;
+            padding: 10px 20px;
             border-radius: 5px;
             font-weight: bold;
-            transition: all 0.3s ease;
-        }
-
-        .btn-call:hover {
-            background-color: #6d360e;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
         }
 
         /* Hero Section */
@@ -119,8 +105,8 @@
         /* Content Sections */
         .container {
             max-width: 1100px;
-            margin: 60px auto;
-            padding: 0 25px;
+            margin: 40px auto;
+            padding: 0 20px;
         }
 
         h2 {
@@ -352,45 +338,45 @@
                             <span class="menu-name">Papaw's Big Burger</span>
                             <span class="menu-desc">1/3 pound patty grilled on a toasted 5" bun. Topped w/ cheese & dressed your way with mayo.</span>
                         </div>
-                        <span class="menu-price">$4.99</span>
+                        <span class="menu-price">.99</span>
                     </div>
                     <div class="menu-item">
                         <div>
                             <span class="menu-name">Papaw's Flat Burger</span>
                             <span class="menu-desc">1/4 pound patty on a 5" bun topped w/ cheese.</span>
                         </div>
-                        <span class="menu-price">$3.99</span>
+                        <span class="menu-price">.99</span>
                     </div>
                     <div class="menu-item">
                         <div>
                             <span class="menu-name">Philly Steak Sandwich</span>
                             <span class="menu-desc">Beef steak with melted Mozzarella, Green Peppers & Onions on 8" Hoagie.</span>
                         </div>
-                        <span class="menu-price">$7.59</span>
+                        <span class="menu-price">.59</span>
                     </div>
                     <div class="menu-item">
                         <div><span class="menu-name">Club Sandwich</span><span class="menu-desc">Triple decker with Ham, Bacon, Cheese, Lettuce, Tomato & Mayo.</span></div>
-                        <span class="menu-price">$6.99</span>
+                        <span class="menu-price">.99</span>
                     </div>
                     <div class="menu-item">
                         <div><span class="menu-name">Breaded Pork Tenderloin</span></div>
-                        <span class="menu-price">$6.39</span>
+                        <span class="menu-price">.39</span>
                     </div>
                     <div class="menu-item">
                         <div><span class="menu-name">Hot Ham & Cheese</span></div>
-                        <span class="menu-price">$6.59</span>
+                        <span class="menu-price">.59</span>
                     </div>
                     <div class="menu-item">
                         <div><span class="menu-name">B.L.T. Sandwich</span><span class="menu-desc">Hickory Smoked Bacon on Texas Toast.</span></div>
-                        <span class="menu-price">$5.99</span>
+                        <span class="menu-price">.99</span>
                     </div>
                     <div class="menu-item">
                         <div><span class="menu-name">8" Stromboli</span><span class="menu-desc">Sausage, Pepperoni, Green Peppers, Onions w/ Mozzarella.</span></div>
-                        <span class="menu-price">$7.59</span>
+                        <span class="menu-price">.59</span>
                     </div>
                      <div class="menu-item">
                         <div><span class="menu-name">Chicken Salad Sandwich</span></div>
-                        <span class="menu-price">$8.99</span>
+                        <span class="menu-price">.99</span>
                     </div>
                 </div>
             </div>
@@ -402,27 +388,27 @@
 
                     <div class="menu-item">
                         <div><span class="menu-name">21 Pc. Breaded Shrimp</span></div>
-                        <span class="menu-price">$8.99</span>
+                        <span class="menu-price">.99</span>
                     </div>
                     <div class="menu-item">
                         <div><span class="menu-name">Chicken Tenders</span></div>
-                        <span class="menu-price">$8.99</span>
+                        <span class="menu-price">.99</span>
                     </div>
                     <div class="menu-item">
                         <div><span class="menu-name">Butterfly Shrimp</span></div>
-                        <span class="menu-price">$8.99</span>
+                        <span class="menu-price">.99</span>
                     </div>
                     <div class="menu-item">
                         <div><span class="menu-name">8 oz. Chopped Steak</span></div>
-                        <span class="menu-price">$8.99</span>
+                        <span class="menu-price">.99</span>
                     </div>
                     <div class="menu-item">
                         <div><span class="menu-name">Chicken Livers</span></div>
-                        <span class="menu-price">$8.59</span>
+                        <span class="menu-price">.59</span>
                     </div>
                     <div class="menu-item">
                         <div><span class="menu-name">Gizzards</span></div>
-                        <span class="menu-price">$8.59</span>
+                        <span class="menu-price">.59</span>
                     </div>
                 </div>
             </div>
@@ -434,19 +420,19 @@
 
                     <div class="menu-item">
                         <div><span class="menu-name">2 Catfish Fillets</span></div>
-                        <span class="menu-price">$9.99</span>
+                        <span class="menu-price">.99</span>
                     </div>
                     <div class="menu-item">
                         <div><span class="menu-name">1 Catfish Fillet</span></div>
-                        <span class="menu-price">$8.99</span>
+                        <span class="menu-price">.99</span>
                     </div>
                     <div class="menu-item">
                         <div><span class="menu-name">Breaded Catfish Sandwich</span></div>
-                        <span class="menu-price">$5.99</span>
+                        <span class="menu-price">.99</span>
                     </div>
                     <div class="menu-item">
                         <div><span class="menu-name">Add Sweet Potato</span></div>
-                        <span class="menu-price">+$1.00</span>
+                        <span class="menu-price">+.00</span>
                     </div>
                 </div>
             </div>
@@ -456,37 +442,37 @@
                 <div class="menu-category-content">
                     <div class="menu-item">
                         <div><span class="menu-name">French Fries / Tator Tots</span></div>
-                        <span class="menu-price">$2.19</span>
+                        <span class="menu-price">.19</span>
                     </div>
                     <div class="menu-item">
                         <div><span class="menu-name">Onion Rings</span></div>
-                        <span class="menu-price">$3.99</span>
+                        <span class="menu-price">.99</span>
                     </div>
                     <div class="menu-item">
                         <div><span class="menu-name">Breaded Cheese Curds</span></div>
-                        <span class="menu-price">$4.99</span>
+                        <span class="menu-price">.99</span>
                     </div>
                     <div class="menu-item">
                         <div><span class="menu-name">Mozzarella Cheese Sticks</span></div>
-                        <span class="menu-price">$4.99</span>
+                        <span class="menu-price">.99</span>
                     </div>
                     <div class="menu-item">
                         <div><span class="menu-name">Fried Mushrooms</span></div>
-                        <span class="menu-price">$4.99</span>
+                        <span class="menu-price">.99</span>
                     </div>
                     <div class="menu-item">
                         <div><span class="menu-name">Bowl of Chili</span></div>
-                        <span class="menu-price">$4.99</span>
+                        <span class="menu-price">.99</span>
                     </div>
                     <br>
                     <h3>Salads</h3>
                     <div class="menu-item">
                         <div><span class="menu-name">Chef Salad</span><span class="menu-desc">Ham, Bacon, Cheese, Egg, Croutons.</span></div>
-                        <span class="menu-price">$8.99</span>
+                        <span class="menu-price">.99</span>
                     </div>
                     <div class="menu-item">
                         <div><span class="menu-name">Taco Salad</span></div>
-                        <span class="menu-price">$8.99</span>
+                        <span class="menu-price">.99</span>
                     </div>
                     <div class="menu-item">
                         <div><span class="menu-name">Chicken Salad</span></div>
@@ -496,7 +482,7 @@
             </div>
 
             <div class="menu-category">
-                <h3>Children's Menu ($5.99)</h3>
+                <h3>Children's Menu (.99)</h3>
                 <div class="menu-category-content">
                     <span class="menu-note">Kids 10 & Under. Served with Fries & Drink.</span>
                     <div class="menu-item"><div><span class="menu-name">Cheese Burger</span></div></div>
@@ -509,8 +495,8 @@
             <div class="menu-category">
                 <h3>Beverages & Desserts</h3>
                 <div class="menu-category-content">
-                    <div class="menu-item"><div><span class="menu-name">Soft Drinks / Tea</span></div><span class="menu-price">$2.29</span></div>
-                    <div class="menu-item"><div><span class="menu-name">Coffee</span></div><span class="menu-price">$1.89</span></div>
+                    <div class="menu-item"><div><span class="menu-name">Soft Drinks / Tea</span></div><span class="menu-price">.29</span></div>
+                    <div class="menu-item"><div><span class="menu-name">Coffee</span></div><span class="menu-price">.89</span></div>
                     <div class="menu-item"><div><span class="menu-name">Slice of Pie</span></div><span class="menu-price">Ask</span></div>
                     <div class="menu-item"><div><span class="menu-name">Cobbler of the Day</span></div><span class="menu-price">Ask</span></div>
                 </div>
@@ -573,4 +559,6 @@
         });
     </script>
 </body>
-</html>
+</html>"""
+with open('index.html', 'w') as f:
+    f.write(content)
