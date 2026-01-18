@@ -1,576 +1,151 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Poole Mill Restaurant | Sebree, KY</title>
+    <title>Quranify - قرآني</title>
+    <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
-    <style>
-        /* --- CSS STYLES --- */
-        :root {
-            --primary-color: #8B4513; /* Saddle Brown */
-            --secondary-color: #F5DEB3; /* Wheat */
-            --text-dark: #333;
-            --text-light: #fff;
-            --accent-green: #2E8B57;
-        }
-
-        body {
-            font-family: 'Open Sans', sans-serif;
-            margin: 0;
-            padding: 0;
-            line-height: 1.6;
-            color: var(--text-dark);
-            background-color: #f8f9fa;
-        }
-
-        h1, h2, h3, .logo, .btn-call {
-            font-family: 'Montserrat', sans-serif;
-        }
-
-        /* Navigation */
-        header {
-            background-color: #fff;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-        }
-
-        nav {
-            max-width: 1100px;
-            margin: 0 auto;
-            padding: 1rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .logo {
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: var(--primary-color);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .nav-links a {
-            text-decoration: none;
-            color: var(--text-dark);
-            margin-left: 20px;
-            font-weight: 500;
-        }
-
-        .nav-links a:hover {
-            color: var(--primary-color);
-        }
-
-        .btn-call {
-            background-color: var(--primary-color);
-            color: white !important;
-            padding: 12px 25px;
-            border-radius: 5px;
-            font-weight: bold;
-            transition: all 0.3s ease;
-        }
-
-        .btn-call:hover {
-            background-color: #6d360e;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-        }
-
-        /* Hero Section */
-        .hero {
-            background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('https://images.unsplash.com/photo-1555396273-367ea4eb4db5?q=80&w=1000&auto=format&fit=crop');
-            background-size: cover;
-            background-position: center;
-            height: 60vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            color: white;
-            padding: 0 20px;
-        }
-
-        .hero h1 {
-            font-size: 3rem;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
-        }
-
-        .hero p {
-            font-size: 1.2rem;
-            margin-bottom: 20px;
-        }
-
-        /* Info Banner */
-        .info-bar {
-            background-color: var(--accent-green);
-            color: white;
-            text-align: center;
-            padding: 15px;
-            font-weight: bold;
-        }
-
-        /* Content Sections */
-        .container {
-            max-width: 1100px;
-            margin: 60px auto;
-            padding: 0 25px;
-        }
-
-        h2 {
-            text-align: center;
-            color: var(--primary-color);
-            margin-bottom: 40px;
-            font-size: 2rem;
-            text-transform: uppercase;
-            border-bottom: 2px solid var(--secondary-color);
-            display: inline-block;
-            padding-bottom: 10px;
-        }
-
-        .section-header {
-            text-align: center;
-            width: 100%;
-        }
-
-        /* Menu Grid */
-        .menu-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
-            gap: 40px;
-        }
-
-        .menu-category {
-            background: white;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-            border-top: 5px solid var(--primary-color);
-        }
-
-        .menu-category h3 {
-            color: var(--primary-color);
-            margin-top: 0;
-            border-bottom: 1px solid #eee;
-            padding-bottom: 10px;
-            font-size: 1.5rem;
-            cursor: pointer;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .menu-category h3::after {
-            content: '+';
-            font-weight: bold;
-            font-size: 1.5rem;
-        }
-
-        .menu-category.active h3::after {
-            content: '-';
-        }
-
-        .menu-category-content {
-            display: none;
-            animation: fadeIn 0.3s ease-in-out;
-        }
-
-        .menu-category.active .menu-category-content {
-            display: block;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .menu-note {
-            font-size: 0.9rem;
-            color: #666;
-            font-style: italic;
-            margin-bottom: 20px;
-            display: block;
-        }
-
-        .menu-item {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 15px;
-            border-bottom: 1px dotted #ccc;
-            padding-bottom: 5px;
-        }
-
-        .menu-item:last-child {
-            border-bottom: none;
-            margin-bottom: 0;
-        }
-
-        .menu-name {
-            font-weight: bold;
-            color: #333;
-        }
-
-        .menu-desc {
-            display: block;
-            font-size: 0.85rem;
-            color: #777;
-            font-weight: normal;
-        }
-
-        .menu-price {
-            color: var(--primary-color);
-            font-weight: bold;
-            min-width: 60px;
-            text-align: right;
-        }
-
-        /* Reviews */
-        .review {
-            background-color: #f9f9f9;
-            padding: 30px;
-            border-radius: 10px;
-            font-style: italic;
-            text-align: center;
-            margin: 20px 0;
-            border-left: 5px solid var(--accent-green);
-        }
-        .stars { color: gold; }
-
-        /* Footer */
-        footer {
-            background-color: #222;
-            color: white;
-            text-align: center;
-            padding: 40px 20px;
-            margin-top: 50px;
-        }
-
-        footer a { color: var(--secondary-color); }
-
-        /* Mobile Adjustments */
-        .hamburger {
-            display: none;
-            cursor: pointer;
-            flex-direction: column;
-        }
-
-        .hamburger span {
-            height: 3px;
-            width: 25px;
-            background-color: var(--primary-color);
-            margin-bottom: 4px;
-            border-radius: 2px;
-        }
-
-        @media (max-width: 768px) {
-            .hero h1 { font-size: 2rem; }
-
-            .hamburger { display: flex; }
-
-            .nav-links {
-                display: none;
-                width: 100%;
-                position: absolute;
-                top: 70px;
-                left: 0;
-                background: white;
-                flex-direction: column;
-                box-shadow: 0 5px 10px rgba(0,0,0,0.1);
-                padding: 20px 0;
-            }
-
-            .nav-links.active {
-                display: flex;
-            }
-
-            .nav-links a {
-                margin: 10px 0;
-                text-align: center;
-                display: block;
-            }
-
-            .nav-links .btn-call {
-                display: inline-block;
-                margin-top: 10px;
-            }
-
-            .logo { flex-grow: 1; }
-            .menu-grid { grid-template-columns: 1fr; }
-        }
-    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;700&display=swap" rel="stylesheet">
+    <!-- Using a CDN for icons (Phosphor or FontAwesome). Phosphor is cleaner. -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
 </head>
 <body>
-
-    <header>
-        <nav>
-            <div class="logo">Poole Mill</div>
-            <div class="hamburger">
-                <span></span>
-                <span></span>
-                <span></span>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <i class="ph-fill ph-book-open-text"></i>
+                <span>قرآني</span>
             </div>
-            <div class="nav-links">
-                <a href="#about">About</a>
-                <a href="#menu">Menu</a>
-                <a href="#reviews">Reviews</a>
-                <a href="tel:+12706399020" class="btn-call">Call Order</a>
+            <nav>
+                <ul>
+                    <li class="active" onclick="navigateTo('home')"><i class="ph-fill ph-house"></i> <span>الرئيسية</span></li>
+                    <li onclick="navigateTo('search')"><i class="ph-fill ph-magnifying-glass"></i> <span>بحث</span></li>
+                    <li onclick="navigateTo('library')"><i class="ph-fill ph-books"></i> <span>مكتبتي</span></li>
+                </ul>
+            </nav>
+            <div class="divider"></div>
+            <div class="actions">
+                <button class="action-btn" onclick="triggerUpload()">
+                    <i class="ph-fill ph-plus-circle"></i>
+                    <span>إضافة تلاوة</span>
+                </button>
+                <button class="action-btn">
+                    <i class="ph-fill ph-heart"></i>
+                    <span>تلاوات مفضلة</span>
+                </button>
             </div>
-        </nav>
-    </header>
+            <div class="playlists">
+                <!-- User playlists go here -->
+            </div>
+        </aside>
 
-    <section class="hero">
-        <div>
-            <h1>Papaw's Poole Mill Restaurant</h1>
-            <p>Home Cooked Meals & Friendly People</p>
-            <p><strong>Sebree, Kentucky</strong></p>
-            <a href="#menu" style="background: white; color: #333; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; margin-top: 20px; display: inline-block;">View Full Menu</a>
-        </div>
-    </section>
+        <!-- Main Content -->
+        <main class="main-content" id="main-view">
+            <!-- Top Bar -->
+            <header class="top-bar">
+                <div class="nav-arrows">
+                    <button onclick="history.forward()"><i class="ph ph-caret-left"></i></button>
+                    <button onclick="history.back()"><i class="ph ph-caret-right"></i></button>
+                </div>
+                <div class="user-menu">
+                    <button class="user-pill">
+                        <i class="ph-fill ph-user-circle"></i>
+                        <span>المستخدم</span>
+                    </button>
+                </div>
+            </header>
 
-    <div class="info-bar">
-        Open Daily · Closes 8 PM • Dine-in & Takeaway
+            <!-- Home View -->
+            <div id="home-view" class="view active">
+                <h2 class="section-title">مساء الخير</h2>
+                <div class="cards-grid" id="recitations-grid">
+                    <!-- Cards injected by JS -->
+                </div>
+
+                <h2 class="section-title">تلاوات مميزة</h2>
+                <div class="cards-grid" id="featured-grid">
+                    <!-- Cards injected by JS -->
+                </div>
+            </div>
+
+            <!-- Library View -->
+            <div id="library-view" class="view" style="display: none;">
+                <h2 class="section-title">مكتبتك</h2>
+                <div class="list-header">
+                    <span>#</span>
+                    <span>العنوان</span>
+                    <span>التاريخ</span>
+                    <span><i class="ph ph-clock"></i></span>
+                </div>
+                <div class="song-list" id="library-list">
+                    <!-- Library Items -->
+                </div>
+            </div>
+
+             <!-- Search View (Placeholder) -->
+            <div id="search-view" class="view" style="display: none;">
+                <h2 class="section-title">بحث</h2>
+                <input type="text" placeholder="ماذا تريد أن تسمع؟" class="search-input">
+            </div>
+
+             <!-- Mushaf Mode (Overlay) -->
+            <div id="mushaf-view" class="mushaf-overlay" style="display: none;">
+                 <button class="close-mushaf" onclick="toggleMushafMode()"><i class="ph ph-x"></i></button>
+                 <div class="quran-text-container" id="quran-display">
+                     <!-- Synced text goes here -->
+                     <p class="verse" data-time="0">بسم الله الرحمن الرحيم</p>
+                 </div>
+            </div>
+        </main>
+
+        <!-- Player Bar -->
+        <footer class="player-bar">
+            <div class="now-playing">
+                <img src="https://via.placeholder.com/60" alt="Cover" id="current-cover">
+                <div class="track-info">
+                    <h4 id="current-title">اختر تلاوة</h4>
+                    <p id="current-reciter">...</p>
+                </div>
+                <button class="like-btn"><i class="ph ph-heart"></i></button>
+            </div>
+
+            <div class="player-controls">
+                <div class="control-buttons">
+                    <button class="control-btn" onclick="toggleShuffle()"><i class="ph ph-shuffle"></i></button>
+                    <button class="control-btn" onclick="prevTrack()"><i class="ph-fill ph-skip-back"></i></button>
+                    <button class="control-btn play-pause-btn" onclick="togglePlay()">
+                        <i class="ph-fill ph-play-circle" id="play-icon"></i>
+                    </button>
+                    <button class="control-btn" onclick="nextTrack()"><i class="ph-fill ph-skip-forward"></i></button>
+                    <button class="control-btn" onclick="toggleRepeat()"><i class="ph ph-repeat"></i></button>
+                </div>
+                <div class="progress-container">
+                    <span id="current-time">0:00</span>
+                    <input type="range" class="progress-bar" id="seek-bar" value="0" min="0" max="100">
+                    <span id="total-duration">0:00</span>
+                </div>
+            </div>
+
+            <div class="volume-controls">
+                <button class="control-btn" onclick="toggleMushafMode()" title="عرض المصحف">
+                    <i class="ph-fill ph-book-bookmark"></i>
+                </button>
+                <i class="ph ph-speaker-high"></i>
+                <input type="range" class="volume-bar" id="volume-bar" value="100" min="0" max="100">
+            </div>
+        </footer>
     </div>
 
-    <div class="container" id="menu">
-        <div class="section-header">
-            <h2>Our Menu</h2>
-        </div>
+    <!-- Hidden File Input -->
+    <input type="file" id="file-upload" accept="audio/*" style="display: none;" multiple>
 
-        <div class="menu-grid">
+    <!-- Audio Element -->
+    <audio id="audio-player"></audio>
 
-            <div class="menu-category">
-                <h3>Burgers & Sandwiches</h3>
-                <div class="menu-category-content">
-                    <div class="menu-item">
-                        <div>
-                            <span class="menu-name">Papaw's Big Burger</span>
-                            <span class="menu-desc">1/3 pound patty grilled on a toasted 5" bun. Topped w/ cheese & dressed your way with mayo.</span>
-                        </div>
-                        <span class="menu-price">$4.99</span>
-                    </div>
-                    <div class="menu-item">
-                        <div>
-                            <span class="menu-name">Papaw's Flat Burger</span>
-                            <span class="menu-desc">1/4 pound patty on a 5" bun topped w/ cheese.</span>
-                        </div>
-                        <span class="menu-price">$3.99</span>
-                    </div>
-                    <div class="menu-item">
-                        <div>
-                            <span class="menu-name">Philly Steak Sandwich</span>
-                            <span class="menu-desc">Beef steak with melted Mozzarella, Green Peppers & Onions on 8" Hoagie.</span>
-                        </div>
-                        <span class="menu-price">$7.59</span>
-                    </div>
-                    <div class="menu-item">
-                        <div><span class="menu-name">Club Sandwich</span><span class="menu-desc">Triple decker with Ham, Bacon, Cheese, Lettuce, Tomato & Mayo.</span></div>
-                        <span class="menu-price">$6.99</span>
-                    </div>
-                    <div class="menu-item">
-                        <div><span class="menu-name">Breaded Pork Tenderloin</span></div>
-                        <span class="menu-price">$6.39</span>
-                    </div>
-                    <div class="menu-item">
-                        <div><span class="menu-name">Hot Ham & Cheese</span></div>
-                        <span class="menu-price">$6.59</span>
-                    </div>
-                    <div class="menu-item">
-                        <div><span class="menu-name">B.L.T. Sandwich</span><span class="menu-desc">Hickory Smoked Bacon on Texas Toast.</span></div>
-                        <span class="menu-price">$5.99</span>
-                    </div>
-                    <div class="menu-item">
-                        <div><span class="menu-name">8" Stromboli</span><span class="menu-desc">Sausage, Pepperoni, Green Peppers, Onions w/ Mozzarella.</span></div>
-                        <span class="menu-price">$7.59</span>
-                    </div>
-                     <div class="menu-item">
-                        <div><span class="menu-name">Chicken Salad Sandwich</span></div>
-                        <span class="menu-price">$8.99</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="menu-category">
-                <h3>Dinners</h3>
-                <div class="menu-category-content">
-                    <span class="menu-note">Choice of French Fries or Tator Tots & Texas Toast</span>
-
-                    <div class="menu-item">
-                        <div><span class="menu-name">21 Pc. Breaded Shrimp</span></div>
-                        <span class="menu-price">$8.99</span>
-                    </div>
-                    <div class="menu-item">
-                        <div><span class="menu-name">Chicken Tenders</span></div>
-                        <span class="menu-price">$8.99</span>
-                    </div>
-                    <div class="menu-item">
-                        <div><span class="menu-name">Butterfly Shrimp</span></div>
-                        <span class="menu-price">$8.99</span>
-                    </div>
-                    <div class="menu-item">
-                        <div><span class="menu-name">8 oz. Chopped Steak</span></div>
-                        <span class="menu-price">$8.99</span>
-                    </div>
-                    <div class="menu-item">
-                        <div><span class="menu-name">Chicken Livers</span></div>
-                        <span class="menu-price">$8.59</span>
-                    </div>
-                    <div class="menu-item">
-                        <div><span class="menu-name">Gizzards</span></div>
-                        <span class="menu-price">$8.59</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="menu-category" style="background-color: #f0f8ff; border-top-color: #4682B4;">
-                <h3 style="color: #4682B4;">Friday & Saturday Seafood</h3>
-                <div class="menu-category-content">
-                    <span class="menu-note">Hand breaded Southern Style. Served with Choice of Potato, Cole Slaw/Mac Salad + White Beans & Hushpuppies.</span>
-
-                    <div class="menu-item">
-                        <div><span class="menu-name">2 Catfish Fillets</span></div>
-                        <span class="menu-price">$9.99</span>
-                    </div>
-                    <div class="menu-item">
-                        <div><span class="menu-name">1 Catfish Fillet</span></div>
-                        <span class="menu-price">$8.99</span>
-                    </div>
-                    <div class="menu-item">
-                        <div><span class="menu-name">Breaded Catfish Sandwich</span></div>
-                        <span class="menu-price">$5.99</span>
-                    </div>
-                    <div class="menu-item">
-                        <div><span class="menu-name">Add Sweet Potato</span></div>
-                        <span class="menu-price">+$1.00</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="menu-category">
-                <h3>Sides & Appetizers</h3>
-                <div class="menu-category-content">
-                    <div class="menu-item">
-                        <div><span class="menu-name">French Fries / Tator Tots</span></div>
-                        <span class="menu-price">$2.19</span>
-                    </div>
-                    <div class="menu-item">
-                        <div><span class="menu-name">Onion Rings</span></div>
-                        <span class="menu-price">$3.99</span>
-                    </div>
-                    <div class="menu-item">
-                        <div><span class="menu-name">Breaded Cheese Curds</span></div>
-                        <span class="menu-price">$4.99</span>
-                    </div>
-                    <div class="menu-item">
-                        <div><span class="menu-name">Mozzarella Cheese Sticks</span></div>
-                        <span class="menu-price">$4.99</span>
-                    </div>
-                    <div class="menu-item">
-                        <div><span class="menu-name">Fried Mushrooms</span></div>
-                        <span class="menu-price">$4.99</span>
-                    </div>
-                    <div class="menu-item">
-                        <div><span class="menu-name">Bowl of Chili</span></div>
-                        <span class="menu-price">$4.99</span>
-                    </div>
-                    <br>
-                    <h3>Salads</h3>
-                    <div class="menu-item">
-                        <div><span class="menu-name">Chef Salad</span><span class="menu-desc">Ham, Bacon, Cheese, Egg, Croutons.</span></div>
-                        <span class="menu-price">$8.99</span>
-                    </div>
-                    <div class="menu-item">
-                        <div><span class="menu-name">Taco Salad</span></div>
-                        <span class="menu-price">$8.99</span>
-                    </div>
-                    <div class="menu-item">
-                        <div><span class="menu-name">Chicken Salad</span></div>
-                        <span class="menu-price">.99</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="menu-category">
-                <h3>Children's Menu ($5.99)</h3>
-                <div class="menu-category-content">
-                    <span class="menu-note">Kids 10 & Under. Served with Fries & Drink.</span>
-                    <div class="menu-item"><div><span class="menu-name">Cheese Burger</span></div></div>
-                    <div class="menu-item"><div><span class="menu-name">Grilled Cheese Sandwich</span></div></div>
-                    <div class="menu-item"><div><span class="menu-name">Chicken Nuggets</span></div></div>
-                    <div class="menu-item"><div><span class="menu-name">PB & J Sandwich</span></div></div>
-                </div>
-            </div>
-
-            <div class="menu-category">
-                <h3>Beverages & Desserts</h3>
-                <div class="menu-category-content">
-                    <div class="menu-item"><div><span class="menu-name">Soft Drinks / Tea</span></div><span class="menu-price">$2.29</span></div>
-                    <div class="menu-item"><div><span class="menu-name">Coffee</span></div><span class="menu-price">$1.89</span></div>
-                    <div class="menu-item"><div><span class="menu-name">Slice of Pie</span></div><span class="menu-price">Ask</span></div>
-                    <div class="menu-item"><div><span class="menu-name">Cobbler of the Day</span></div><span class="menu-price">Ask</span></div>
-                </div>
-            </div>
-
-        </div>
-    </div>
-
-    <div class="container" id="reviews">
-        <div class="section-header">
-            <h2>What Locals Say</h2>
-        </div>
-        <div class="review">
-            <p class="stars">★★★★★</p>
-            <p>"This place is AMAZING!! My server was the sweetest little thang ever! Best restaurant I’ve had in a WHILE! If I could give yall 10 stars I sure would!!"</p>
-            <p><strong>- Yazmin Oglesby</strong></p>
-        </div>
-        <div class="review">
-            <p class="stars">★★★★★</p>
-            <p>"Good food, and service. The staff is friendly and the portions are generous."</p>
-            <p><strong>- Chris (Local Guide)</strong></p>
-        </div>
-    </div>
-
-    <footer>
-        <h3>Poole Mill Restaurant</h3>
-        <p>9625 US-41 ALT, Sebree, KY 42455</p>
-        <p><a href="tel:+12706399020">(270) 639-9020</a></p>
-        <br>
-        <p style="font-size: 0.8rem; color: #888;">© 2026 Poole Mill Restaurant. All rights reserved.</p>
-    </footer>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // Mobile Menu Toggle
-            const hamburger = document.querySelector('.hamburger');
-            const navLinks = document.querySelector('.nav-links');
-
-            if (hamburger) {
-                hamburger.addEventListener('click', () => {
-                    navLinks.classList.toggle('active');
-                });
-            }
-
-            // Close menu when a link is clicked
-            document.querySelectorAll('.nav-links a').forEach(link => {
-                link.addEventListener('click', () => {
-                    navLinks.classList.remove('active');
-                });
-            });
-
-            // Accordion Logic
-            const categories = document.querySelectorAll('.menu-category h3');
-            categories.forEach(header => {
-                header.addEventListener('click', () => {
-                    const category = header.parentElement;
-                    category.classList.toggle('active');
-                });
-            });
-        });
-    </script>
+    <script src="data.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
