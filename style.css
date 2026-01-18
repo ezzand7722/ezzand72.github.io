@@ -471,16 +471,91 @@ nav li i {
     background-color: #888;
 }
 
+/* Transitions & Animations */
+.card, .action-btn, .control-btn, .sidebar, .play-overlay, .verse, .list-item {
+    transition: all 0.3s ease;
+}
+
+.mobile-menu-btn {
+    display: none;
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+    margin-left: 10px;
+}
+
 /* Mobile Responsiveness */
 @media (max-width: 768px) {
     .app-container {
         grid-template-columns: 1fr;
-        grid-template-rows: 1fr 120px;
+        grid-template-rows: 1fr 140px; /* Increased for mobile player */
     }
-    .sidebar { display: none; } /* Hide sidebar on mobile for now or make it a drawer */
-    .main-content { grid-column: 1 / 2; }
-    .player-bar { grid-column: 1 / 2; grid-row: 2 / 3; flex-direction: column; padding: 10px; }
-    .now-playing { width: 100%; margin-bottom: 10px; }
-    .player-controls { width: 100%; }
-    .volume-controls { display: none; }
+
+    .sidebar {
+        display: flex; /* Override previous display:none if it was there, now we use transform */
+        position: fixed;
+        right: 0;
+        top: 0;
+        bottom: 140px; /* Above player bar */
+        width: 250px;
+        z-index: 1000;
+        transform: translateX(100%); /* Hidden (RTL means positive is Right) */
+        box-shadow: -2px 0 10px rgba(0,0,0,0.5);
+    }
+
+    .sidebar.open {
+        transform: translateX(0);
+    }
+
+    .mobile-menu-btn {
+        display: block;
+    }
+
+    .main-content {
+        grid-column: 1 / 2;
+        padding: 10px;
+    }
+
+    /* Overlay for mobile sidebar */
+    .sidebar-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.5);
+        z-index: 999;
+    }
+    .sidebar-overlay.active {
+        display: block;
+    }
+
+    .player-bar {
+        grid-column: 1 / 2;
+        grid-row: 2 / 3;
+        flex-direction: column;
+        padding: 10px;
+        justify-content: center;
+        gap: 10px;
+    }
+
+    .now-playing {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .player-controls {
+        width: 100%;
+    }
+
+    .volume-controls {
+        display: none;
+    }
+
+    .list-item, .list-header {
+        grid-template-columns: 40px 1fr 50px; /* Simplified grid for mobile */
+    }
+    .list-item span:nth-child(3), .list-header span:nth-child(3) {
+        display: none; /* Hide date on mobile */
+    }
 }

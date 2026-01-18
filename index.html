@@ -13,8 +13,11 @@
 </head>
 <body>
     <div class="app-container">
+        <!-- Mobile Sidebar Overlay -->
+        <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+
         <!-- Sidebar -->
-        <aside class="sidebar">
+        <aside class="sidebar" id="app-sidebar">
             <div class="logo">
                 <i class="ph-fill ph-book-open-text"></i>
                 <span>قرآني</span>
@@ -32,7 +35,7 @@
                     <i class="ph-fill ph-plus-circle"></i>
                     <span>إضافة تلاوة</span>
                 </button>
-                <button class="action-btn">
+                <button class="action-btn" onclick="navigateTo('favorites')">
                     <i class="ph-fill ph-heart"></i>
                     <span>تلاوات مفضلة</span>
                 </button>
@@ -47,6 +50,7 @@
             <!-- Top Bar -->
             <header class="top-bar">
                 <div class="nav-arrows">
+                    <button class="mobile-menu-btn" onclick="toggleSidebar()"><i class="ph ph-list"></i></button>
                     <button onclick="history.forward()"><i class="ph ph-caret-left"></i></button>
                     <button onclick="history.back()"><i class="ph ph-caret-right"></i></button>
                 </div>
@@ -85,10 +89,25 @@
                 </div>
             </div>
 
-             <!-- Search View (Placeholder) -->
+            <!-- Search View -->
             <div id="search-view" class="view" style="display: none;">
                 <h2 class="section-title">بحث</h2>
-                <input type="text" placeholder="ماذا تريد أن تسمع؟" class="search-input">
+                <input type="text" id="search-input" placeholder="ماذا تريد أن تسمع؟" class="search-input">
+                <div class="cards-grid" id="search-results"></div>
+            </div>
+
+            <!-- Favorites View -->
+            <div id="favorites-view" class="view" style="display: none;">
+                <h2 class="section-title">تلاوات مفضلة</h2>
+                <div class="list-header">
+                    <span>#</span>
+                    <span>العنوان</span>
+                    <span>التاريخ</span>
+                    <span><i class="ph ph-clock"></i></span>
+                </div>
+                <div class="song-list" id="favorites-list">
+                    <!-- Favorites Items -->
+                </div>
             </div>
 
              <!-- Mushaf Mode (Overlay) -->
@@ -121,6 +140,7 @@
                     </button>
                     <button class="control-btn" onclick="nextTrack()"><i class="ph-fill ph-skip-forward"></i></button>
                     <button class="control-btn" onclick="toggleRepeat()"><i class="ph ph-repeat"></i></button>
+                    <button class="control-btn speed-btn" onclick="toggleSpeed()" style="font-size: 0.8rem; font-weight: bold; width: 32px;">1x</button>
                 </div>
                 <div class="progress-container">
                     <span id="current-time">0:00</span>

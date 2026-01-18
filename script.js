@@ -4,6 +4,9 @@ let currentTrackIndex = -1;
 let currentPlaylist = [];
 let audio = document.getElementById('audio-player');
 let userLibrary = [];
+let favorites = new Set(JSON.parse(localStorage.getItem('quran_favorites')) || []);
+let playbackSpeeds = [1, 1.25, 1.5, 2];
+let currentSpeedIndex = 0;
 
 // DOM Elements
 const playBtn = document.querySelector('.play-pause-btn');
@@ -23,6 +26,7 @@ const quranDisplay = document.getElementById('quran-display');
 document.addEventListener('DOMContentLoaded', () => {
     loadFeatured();
     loadLibrary();
+    loadFavorites();
     setupEventListeners();
 });
 
@@ -42,10 +46,45 @@ function setupEventListeners() {
 
     volumeBar.addEventListener('input', (e) => {
         audio.volume = e.target.value / 100;
+        localStorage.setItem('quran_volume', audio.volume);
+    });
+
+    // Restore Volume
+    const savedVolume = localStorage.getItem('quran_volume');
+    if (savedVolume !== null) {
+        audio.volume = parseFloat(savedVolume);
+        volumeBar.value = audio.volume * 100;
+    }
+
+    // Keyboard Shortcuts
+    document.addEventListener('keydown', (e) => {
+        if (e.target.tagName === 'INPUT') return; // Don't trigger when typing in search
+
+        switch(e.code) {
+            case 'Space':
+                e.preventDefault();
+                togglePlay();
+                break;
+            case 'ArrowRight':
+                audio.currentTime += 5;
+                break;
+            case 'ArrowLeft':
+                audio.currentTime -= 5;
+                break;
+            case 'KeyM':
+                audio.muted = !audio.muted;
+                break;
+        }
     });
 
     // File Upload
     document.getElementById('file-upload').addEventListener('change', handleFileUpload);
+
+    // Search
+    const searchInput = document.getElementById('search-input');
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => performSearch(e.target.value));
+    }
 }
 
 // Navigation
@@ -54,7 +93,128 @@ function navigateTo(viewId) {
     document.getElementById(viewId + '-view').style.display = 'block';
 
     document.querySelectorAll('nav li').forEach(li => li.classList.remove('active'));
-    // Simple active state toggle based on click context usually, but here manual for now
+
+    // Close sidebar on mobile when navigating
+    if (window.innerWidth <= 768) {
+        document.getElementById('app-sidebar').classList.remove('open');
+        document.querySelector('.sidebar-overlay').classList.remove('active');
+    }
+}
+
+function toggleSidebar() {
+    const sidebar = document.getElementById('app-sidebar');
+    const overlay = document.querySelector('.sidebar-overlay');
+    sidebar.classList.toggle('open');
+    overlay.classList.toggle('active');
+}
+
+// Search Logic
+function performSearch(query) {
+    const resultsContainer = document.getElementById('search-results');
+    resultsContainer.innerHTML = '';
+
+    if (!query) return;
+
+    const lowerQuery = query.toLowerCase();
+    const allTracks = [...featuredRecitations, ...userLibrary];
+
+    const results = allTracks.filter(track =>
+        track.title.toLowerCase().includes(lowerQuery) ||
+        track.reciter.toLowerCase().includes(lowerQuery)
+    );
+
+    if (results.length > 0) {
+        resultsContainer.innerHTML = results.map(track => createCard(track)).join('');
+    } else {
+        resultsContainer.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #b3b3b3;">لا توجد نتائج</p>';
+    }
+}
+
+// Favorites Logic
+function toggleLikeCurrent() {
+    if (!audio.src) return;
+
+    // Find current track ID
+    // We need to know which track is playing.
+    // Ideally we store currentTrackId in state, but for now we can infer from currentPlaylist/Index
+    if (currentPlaylist.length > 0 && currentTrackIndex >= 0) {
+        const track = currentPlaylist[currentTrackIndex];
+        if (favorites.has(track.id)) {
+            favorites.delete(track.id);
+        } else {
+            favorites.add(track.id);
+        }
+        localStorage.setItem('quran_favorites', JSON.stringify([...favorites]));
+        updateLikeButton();
+        loadFavorites(); // Refresh view
+    }
+}
+
+function updateLikeButton() {
+    const likeIcon = document.getElementById('like-icon');
+    if (currentPlaylist.length > 0 && currentTrackIndex >= 0) {
+        const track = currentPlaylist[currentTrackIndex];
+        if (favorites.has(track.id)) {
+            likeIcon.className = "ph-fill ph-heart";
+            likeIcon.style.color = "#1db954";
+        } else {
+            likeIcon.className = "ph ph-heart";
+            likeIcon.style.color = "white";
+        }
+    }
+}
+
+function loadFavorites() {
+    const list = document.getElementById('favorites-list');
+    if (!list) return;
+    list.innerHTML = '';
+
+    const favoriteTracks = [...featuredRecitations, ...userLibrary].filter(t => favorites.has(t.id));
+
+    favoriteTracks.forEach((track, index) => {
+        const item = document.createElement('div');
+        item.className = 'list-item';
+        item.onclick = () => playTrack(track.id); // Re-use playTrack which handles finding it
+
+        // ... (Similar DOM creation to Library, can refactor but copy-paste is safer for now)
+         const numSpan = document.createElement('span');
+        numSpan.textContent = index + 1;
+        item.appendChild(numSpan);
+
+        const infoDiv = document.createElement('div');
+        infoDiv.style.cssText = "display: flex; align-items: center; gap: 10px;";
+
+        const img = document.createElement('img');
+        img.src = track.cover;
+        img.width = 40;
+        img.style.borderRadius = "4px";
+        infoDiv.appendChild(img);
+
+        const textDiv = document.createElement('div');
+
+        const titleDiv = document.createElement('div');
+        titleDiv.style.color = "white";
+        titleDiv.textContent = track.title;
+        textDiv.appendChild(titleDiv);
+
+        const reciterDiv = document.createElement('div');
+        reciterDiv.style.fontSize = "0.8rem";
+        reciterDiv.textContent = track.reciter;
+        textDiv.appendChild(reciterDiv);
+
+        infoDiv.appendChild(textDiv);
+        item.appendChild(infoDiv);
+
+        const dateSpan = document.createElement('span');
+        dateSpan.textContent = new Date().toLocaleDateString('ar-EG');
+        item.appendChild(dateSpan);
+
+        const timeSpan = document.createElement('span');
+        timeSpan.textContent = "3:45"; // Mock duration
+        item.appendChild(timeSpan);
+
+        list.appendChild(item);
+    });
 }
 
 // Load Content
@@ -103,6 +263,7 @@ function loadTrackDetails(track) {
     titleEl.textContent = track.title;
     reciterEl.textContent = track.reciter;
     coverImg.src = track.cover;
+    updateLikeButton();
 }
 
 function togglePlay() {
@@ -278,6 +439,15 @@ function toggleRepeat() {
     const btn = document.querySelector('button[onclick="toggleRepeat()"]');
     if (btn) btn.classList.toggle('active');
     if (audio) audio.loop = !audio.loop;
+}
+
+function toggleSpeed() {
+    currentSpeedIndex = (currentSpeedIndex + 1) % playbackSpeeds.length;
+    const speed = playbackSpeeds[currentSpeedIndex];
+    audio.playbackRate = speed;
+
+    const btn = document.querySelector('.speed-btn');
+    if (btn) btn.textContent = speed + 'x';
 }
 
 function playLibraryTrack(id) {
