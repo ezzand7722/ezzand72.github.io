@@ -106,8 +106,16 @@ function navigateTo(viewId) {
     document.querySelectorAll('.view').forEach(v => v.style.display = 'none');
     document.getElementById(viewId + '-view').style.display = 'block';
 
+    // Update sidebar active state
     document.querySelectorAll('nav li').forEach(li => li.classList.remove('active'));
-    // Simple active state toggle based on click context usually, but here manual for now
+    
+    // Update mobile nav active state
+    document.querySelectorAll('.mobile-nav-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.getAttribute('onclick')?.includes(viewId)) {
+            btn.classList.add('active');
+        }
+    });
 
     if (viewId === 'favourites') {
         renderFavourites();
