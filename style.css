@@ -575,122 +575,6 @@ nav li i {
     background-color: #888;
 }
 
-/* Mobile Responsiveness */
-@media (max-width: 768px) {
-    .app-container {
-        grid-template-columns: 1fr;
-        grid-template-rows: 1fr auto;
-    }
-    .sidebar { display: none; } /* Hide sidebar on mobile for now or make it a drawer */
-    .main-content { grid-column: 1 / 2; }
-    
-    .player-bar { 
-        grid-column: 1 / 2; 
-        grid-row: 2 / 3; 
-        flex-direction: column; 
-        padding: 10px 16px 20px; 
-        gap: 8px;
-    }
-    
-    .now-playing { 
-        width: 100%; 
-        margin-bottom: 0;
-        justify-content: space-between;
-    }
-    
-    .now-playing .track-info {
-        flex: 1;
-        min-width: 0;
-    }
-    
-    .now-playing .track-info h4,
-    .now-playing .track-info p {
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-    
-    /* Make like/favorite button more visible on mobile */
-    .now-playing .like-btn {
-        font-size: 1.3rem;
-        padding: 8px;
-        margin-right: 0;
-    }
-    
-    .now-playing .like-btn i {
-        font-size: 1.4rem;
-    }
-    
-    .player-controls { 
-        width: 100%; 
-    }
-    
-    .control-buttons {
-        gap: 15px;
-        margin-bottom: 8px;
-    }
-    
-    .progress-container {
-        gap: 8px;
-    }
-    
-    /* Show volume controls on mobile but reorganize */
-    .volume-controls { 
-        display: flex;
-        width: 100%;
-        justify-content: center;
-        gap: 20px;
-        padding-top: 5px;
-    }
-    
-    /* Hide the volume slider on mobile but keep the buttons */
-    .volume-controls .volume-bar {
-        display: none;
-    }
-    
-    .volume-controls .ph-speaker-high {
-        display: none;
-    }
-    
-    /* Make the Quran/Mushaf button more visible on mobile */
-    .volume-controls .control-btn {
-        font-size: 1.3rem;
-    }
-    
-    .volume-controls .control-btn i {
-        font-size: 1.5rem;
-    }
-
-    /* Show mobile navigation */
-    .mobile-nav {
-        display: flex;
-    }
-    
-    /* Mobile Mushaf/Quran display adjustments */
-    .mushaf-overlay {
-        padding: 15px;
-        padding-top: 60px;
-    }
-    
-    .close-mushaf {
-        top: 10px;
-        left: 10px;
-        font-size: 1.5rem;
-        padding: 10px;
-    }
-    
-    .quran-text-container {
-        max-height: 100%;
-        width: 100%;
-    }
-    
-    .verse {
-        font-size: 1.4rem;
-        line-height: 2;
-        margin-bottom: 15px;
-    }
-}
-
 /* Mobile Bottom Navigation */
 .mobile-nav {
     display: none; /* Hidden on desktop */
@@ -734,13 +618,213 @@ nav li i {
     color: var(--text-white);
 }
 
-/* Adjust body/container for mobile nav */
+/* Mobile Responsiveness */
 @media (max-width: 768px) {
     body {
-        padding-bottom: 60px; /* Space for mobile nav */
+        overflow: auto;
+        height: auto;
+        min-height: 100vh;
+        padding-bottom: 0;
     }
     
     .app-container {
-        height: calc(100vh - 60px); /* Account for mobile nav */
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+        height: auto;
+        padding: 0;
+        gap: 0;
+    }
+    
+    .sidebar { 
+        display: none; 
+    }
+    
+    .main-content { 
+        flex: 1;
+        border-radius: 0;
+        padding: 10px 15px;
+        padding-bottom: 10px;
+        overflow-y: auto;
+    }
+    
+    .top-bar {
+        margin-bottom: 15px;
+        padding: 5px 0;
+    }
+    
+    .player-bar { 
+        position: fixed;
+        bottom: 60px; /* Above the mobile nav */
+        left: 0;
+        right: 0;
+        flex-direction: column; 
+        padding: 12px 16px;
+        padding-bottom: max(12px, env(safe-area-inset-bottom));
+        gap: 10px;
+        border-radius: 0;
+        z-index: 99;
+        background-color: #181818;
+        border-top: 1px solid #282828;
+    }
+    
+    .now-playing { 
+        width: 100%; 
+        margin-bottom: 0;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .now-playing .track-info {
+        flex: 1;
+        min-width: 0;
+    }
+    
+    .now-playing .track-info h4 {
+        font-size: 0.85rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .now-playing .track-info p {
+        font-size: 0.7rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    /* Make like/favorite button more visible on mobile */
+    .now-playing .like-btn {
+        font-size: 1.2rem;
+        padding: 8px;
+        margin-right: 0;
+        flex-shrink: 0;
+    }
+    
+    .now-playing .like-btn i {
+        font-size: 1.3rem;
+    }
+    
+    .player-controls { 
+        width: 100%; 
+    }
+    
+    .control-buttons {
+        gap: 12px;
+        margin-bottom: 8px;
+        flex-wrap: nowrap;
+    }
+    
+    .control-btn {
+        padding: 5px;
+        min-width: 32px;
+        min-height: 32px;
+    }
+    
+    .control-btn i {
+        font-size: 1.1rem !important;
+    }
+    
+    .play-pause-btn i {
+        font-size: 2.2rem !important;
+    }
+    
+    .progress-container {
+        gap: 8px;
+    }
+    
+    /* Show volume controls section with Quran button on mobile */
+    .volume-controls { 
+        display: flex !important;
+        width: 100%;
+        justify-content: center;
+        gap: 25px;
+        padding-top: 5px;
+    }
+    
+    /* Hide the volume slider and speaker icon on mobile */
+    .volume-controls .volume-bar,
+    .volume-controls > i.ph-speaker-high,
+    .volume-controls > .ph-speaker-high {
+        display: none !important;
+    }
+    
+    /* Make the Quran/Mushaf button more visible on mobile */
+    .volume-controls .control-btn {
+        font-size: 1.2rem;
+        padding: 8px 15px;
+        background: rgba(255,255,255,0.1);
+        border-radius: 20px;
+    }
+    
+    .volume-controls .control-btn i {
+        font-size: 1.4rem !important;
+    }
+
+    /* Show mobile navigation */
+    .mobile-nav {
+        display: flex;
+    }
+    
+    /* Add padding to main content to account for fixed player bar */
+    .main-content {
+        padding-bottom: 220px; /* Space for player bar + mobile nav */
+    }
+    
+    /* Mobile Mushaf/Quran display adjustments */
+    .mushaf-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        padding: 15px;
+        padding-top: 60px;
+        z-index: 200;
+    }
+    
+    .close-mushaf {
+        top: 10px;
+        left: 10px;
+        font-size: 1.5rem;
+        padding: 10px;
+        z-index: 201;
+    }
+    
+    .quran-text-container {
+        max-height: 100%;
+        width: 100%;
+    }
+    
+    .verse {
+        font-size: 1.4rem;
+        line-height: 2;
+        margin-bottom: 15px;
+    }
+    
+    /* Cards and lists */
+    .section-title {
+        font-size: 1.2rem;
+        margin-bottom: 15px;
+        margin-top: 15px;
+    }
+    
+    .surah-row {
+        padding: 10px 8px;
+    }
+    
+    .surah-row-num {
+        min-width: 35px;
+        height: 28px;
+        font-size: 0.85rem;
+    }
+    
+    .surah-row-title {
+        font-size: 0.95rem;
+    }
+    
+    .surah-row-sub {
+        font-size: 0.75rem;
     }
 }
