@@ -121,18 +121,18 @@
                     <h4 id="current-title">اختر تلاوة</h4>
                     <p id="current-reciter">...</p>
                 </div>
-                <button class="like-btn"><i class="ph ph-heart"></i></button>
+                <button class="like-btn" title="إضافة للمفضلة"><i class="ph ph-heart"></i></button>
             </div>
 
             <div class="player-controls">
                 <div class="control-buttons">
-                    <button class="control-btn" onclick="toggleShuffle()"><i class="ph ph-shuffle"></i></button>
-                    <button class="control-btn" onclick="prevTrack()"><i class="ph-fill ph-skip-back"></i></button>
-                    <button class="control-btn play-pause-btn" onclick="togglePlay()">
+                    <button class="control-btn" onclick="toggleRepeat()" title="تكرار"><i class="ph ph-repeat"></i></button>
+                    <button class="control-btn" onclick="prevTrack()" title="السابق"><i class="ph-fill ph-skip-back"></i></button>
+                    <button class="control-btn play-pause-btn" onclick="togglePlay()" title="تشغيل/إيقاف">
                         <i class="ph-fill ph-play-circle" id="play-icon"></i>
                     </button>
-                    <button class="control-btn" onclick="nextTrack()"><i class="ph-fill ph-skip-forward"></i></button>
-                    <button class="control-btn" onclick="toggleRepeat()"><i class="ph ph-repeat"></i></button>
+                    <button class="control-btn" onclick="nextTrack()" title="التالي"><i class="ph-fill ph-skip-forward"></i></button>
+                    <button class="control-btn" onclick="toggleShuffle()" title="عشوائي"><i class="ph ph-shuffle"></i></button>
                 </div>
                 <div class="progress-container">
                     <span id="current-time">0:00</span>
@@ -149,6 +149,26 @@
                 <input type="range" class="volume-bar" id="volume-bar" value="100" min="0" max="100">
             </div>
         </footer>
+
+        <!-- Mobile Bottom Navigation -->
+        <nav class="mobile-nav">
+            <button class="mobile-nav-btn active" onclick="navigateTo('home')">
+                <i class="ph-fill ph-house"></i>
+                <span>الرئيسية</span>
+            </button>
+            <button class="mobile-nav-btn" onclick="navigateTo('search')">
+                <i class="ph-fill ph-magnifying-glass"></i>
+                <span>بحث</span>
+            </button>
+            <button class="mobile-nav-btn" onclick="navigateTo('library')">
+                <i class="ph-fill ph-books"></i>
+                <span>مكتبتي</span>
+            </button>
+            <button class="mobile-nav-btn" onclick="navigateTo('favourites')">
+                <i class="ph-fill ph-heart"></i>
+                <span>المفضلة</span>
+            </button>
+        </nav>
     </div>
 
     <!-- Hidden File Input -->
