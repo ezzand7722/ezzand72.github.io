@@ -579,12 +579,168 @@ nav li i {
 @media (max-width: 768px) {
     .app-container {
         grid-template-columns: 1fr;
-        grid-template-rows: 1fr 120px;
+        grid-template-rows: 1fr auto;
     }
     .sidebar { display: none; } /* Hide sidebar on mobile for now or make it a drawer */
     .main-content { grid-column: 1 / 2; }
-    .player-bar { grid-column: 1 / 2; grid-row: 2 / 3; flex-direction: column; padding: 10px; }
-    .now-playing { width: 100%; margin-bottom: 10px; }
-    .player-controls { width: 100%; }
-    .volume-controls { display: none; }
+    
+    .player-bar { 
+        grid-column: 1 / 2; 
+        grid-row: 2 / 3; 
+        flex-direction: column; 
+        padding: 10px 16px 20px; 
+        gap: 8px;
+    }
+    
+    .now-playing { 
+        width: 100%; 
+        margin-bottom: 0;
+        justify-content: space-between;
+    }
+    
+    .now-playing .track-info {
+        flex: 1;
+        min-width: 0;
+    }
+    
+    .now-playing .track-info h4,
+    .now-playing .track-info p {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    /* Make like/favorite button more visible on mobile */
+    .now-playing .like-btn {
+        font-size: 1.3rem;
+        padding: 8px;
+        margin-right: 0;
+    }
+    
+    .now-playing .like-btn i {
+        font-size: 1.4rem;
+    }
+    
+    .player-controls { 
+        width: 100%; 
+    }
+    
+    .control-buttons {
+        gap: 15px;
+        margin-bottom: 8px;
+    }
+    
+    .progress-container {
+        gap: 8px;
+    }
+    
+    /* Show volume controls on mobile but reorganize */
+    .volume-controls { 
+        display: flex;
+        width: 100%;
+        justify-content: center;
+        gap: 20px;
+        padding-top: 5px;
+    }
+    
+    /* Hide the volume slider on mobile but keep the buttons */
+    .volume-controls .volume-bar {
+        display: none;
+    }
+    
+    .volume-controls .ph-speaker-high {
+        display: none;
+    }
+    
+    /* Make the Quran/Mushaf button more visible on mobile */
+    .volume-controls .control-btn {
+        font-size: 1.3rem;
+    }
+    
+    .volume-controls .control-btn i {
+        font-size: 1.5rem;
+    }
+
+    /* Show mobile navigation */
+    .mobile-nav {
+        display: flex;
+    }
+    
+    /* Mobile Mushaf/Quran display adjustments */
+    .mushaf-overlay {
+        padding: 15px;
+        padding-top: 60px;
+    }
+    
+    .close-mushaf {
+        top: 10px;
+        left: 10px;
+        font-size: 1.5rem;
+        padding: 10px;
+    }
+    
+    .quran-text-container {
+        max-height: 100%;
+        width: 100%;
+    }
+    
+    .verse {
+        font-size: 1.4rem;
+        line-height: 2;
+        margin-bottom: 15px;
+    }
+}
+
+/* Mobile Bottom Navigation */
+.mobile-nav {
+    display: none; /* Hidden on desktop */
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: var(--bg-dark-gray);
+    border-top: 1px solid var(--bg-light-gray);
+    padding: 8px 0;
+    padding-bottom: max(8px, env(safe-area-inset-bottom));
+    z-index: 100;
+    justify-content: space-around;
+    align-items: center;
+}
+
+.mobile-nav-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    background: none;
+    border: none;
+    color: var(--text-gray);
+    font-family: var(--font-family);
+    font-size: 0.65rem;
+    cursor: pointer;
+    padding: 4px 12px;
+    transition: color 0.2s;
+}
+
+.mobile-nav-btn i {
+    font-size: 1.4rem;
+}
+
+.mobile-nav-btn.active {
+    color: var(--text-white);
+}
+
+.mobile-nav-btn:hover {
+    color: var(--text-white);
+}
+
+/* Adjust body/container for mobile nav */
+@media (max-width: 768px) {
+    body {
+        padding-bottom: 60px; /* Space for mobile nav */
+    }
+    
+    .app-container {
+        height: calc(100vh - 60px); /* Account for mobile nav */
+    }
 }
