@@ -1389,3 +1389,26 @@ nav li i {
         font-size: 1.5rem;
     }
 }
+
+/* Live Transcript Box */
+#live-transcript {
+    width: 100%;
+    margin-top: 20px;
+    padding: 15px;
+    background-color: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: var(--text-white);
+    font-size: 1.1rem;
+    text-align: center;
+    min-height: 60px;
+    direction: rtl;
+    line-height: 1.6;
+    transition: all 0.2s ease;
+}
+
+#live-transcript:empty::before {
+    content: "استمع...";
+    color: var(--text-gray);
+    opacity: 0.7;
+}
