@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,6 +12,7 @@
     <!-- Using a CDN for icons (Phosphor or FontAwesome). Phosphor is cleaner. -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
 </head>
+
 <body>
     <div class="app-container">
         <!-- Sidebar -->
@@ -21,7 +23,8 @@
             </div>
             <nav>
                 <ul>
-                    <li class="active" onclick="navigateTo('home')"><i class="ph-fill ph-house"></i> <span>الرئيسية</span></li>
+                    <li class="active" onclick="navigateTo('home')"><i class="ph-fill ph-house"></i>
+                        <span>الرئيسية</span></li>
                     <li onclick="navigateTo('search')"><i class="ph-fill ph-magnifying-glass"></i> <span>بحث</span></li>
                     <li onclick="navigateTo('library')"><i class="ph-fill ph-books"></i> <span>مكتبتي</span></li>
                 </ul>
@@ -32,7 +35,7 @@
                     <i class="ph-fill ph-plus-circle"></i>
                     <span>إضافة تلاوة</span>
                 </button>
-                <button class="action-btn">
+                <button class="action-btn" onclick="navigateTo('favourites')">
                     <i class="ph-fill ph-heart"></i>
                     <span>تلاوات مفضلة</span>
                 </button>
@@ -50,6 +53,9 @@
                     <button onclick="history.forward()"><i class="ph ph-caret-left"></i></button>
                     <button onclick="history.back()"><i class="ph ph-caret-right"></i></button>
                 </div>
+                <div class="reciter-picker">
+                    <select id="reciter-select" class="reciter-select"></select>
+                </div>
                 <div class="user-menu">
                     <button class="user-pill">
                         <i class="ph-fill ph-user-circle"></i>
@@ -61,12 +67,12 @@
             <!-- Home View -->
             <div id="home-view" class="view active">
                 <h2 class="section-title">مساء الخير</h2>
-                <div class="cards-grid" id="recitations-grid">
+                <div class="surah-list" id="recitations-grid">
                     <!-- Cards injected by JS -->
                 </div>
 
                 <h2 class="section-title">تلاوات مميزة</h2>
-                <div class="cards-grid" id="featured-grid">
+                <div class="surah-list" id="featured-grid">
                     <!-- Cards injected by JS -->
                 </div>
             </div>
@@ -85,47 +91,76 @@
                 </div>
             </div>
 
-             <!-- Search View (Placeholder) -->
+            <div id="favourites-view" class="view" style="display: none;">
+                <h2 class="section-title">تلاوات مفضلة</h2>
+                <div class="surah-list" id="favourites-grid">
+                    <!-- Favourite Cards injected by JS -->
+                </div>
+            </div>
+
+            <!-- Search View (Placeholder) -->
             <div id="search-view" class="view" style="display: none;">
                 <h2 class="section-title">بحث</h2>
                 <input type="text" placeholder="ماذا تريد أن تسمع؟" class="search-input">
+                <div class="surah-list" id="search-results">
+                    <!-- Search results injected by JS -->
+                </div>
             </div>
 
-             <!-- Mushaf Mode (Overlay) -->
+            <!-- Mushaf Mode (Overlay) -->
             <div id="mushaf-view" class="mushaf-overlay" style="display: none;">
-                 <button class="close-mushaf" onclick="toggleMushafMode()"><i class="ph ph-x"></i></button>
-                 <div class="quran-text-container" id="quran-display">
-                     <!-- Synced text goes here -->
-                     <p class="verse" data-time="0">بسم الله الرحمن الرحيم</p>
-                 </div>
+                <button class="close-mushaf" onclick="toggleMushafMode()"><i class="ph ph-x"></i></button>
+                <div class="quran-text-container" id="quran-display">
+                    <!-- Synced text goes here -->
+                    <p class="verse" data-time="0">بسم الله الرحمن الرحيم</p>
+                </div>
             </div>
         </main>
 
         <!-- Player Bar -->
         <footer class="player-bar">
             <div class="now-playing">
-                <img src="https://via.placeholder.com/60" alt="Cover" id="current-cover">
                 <div class="track-info">
                     <h4 id="current-title">اختر تلاوة</h4>
                     <p id="current-reciter">...</p>
                 </div>
-                <button class="like-btn"><i class="ph ph-heart"></i></button>
+                <button class="like-btn" title="إضافة للمفضلة"><i class="ph ph-heart"></i></button>
             </div>
 
             <div class="player-controls">
                 <div class="control-buttons">
-                    <button class="control-btn" onclick="toggleShuffle()"><i class="ph ph-shuffle"></i></button>
-                    <button class="control-btn" onclick="prevTrack()"><i class="ph-fill ph-skip-back"></i></button>
-                    <button class="control-btn play-pause-btn" onclick="togglePlay()">
+                    <button class="control-btn" onclick="toggleRepeat()" title="تكرار" id="repeat-btn"><i
+                            class="ph ph-repeat"></i></button>
+                    <button class="control-btn" onclick="skipBackward(10)" title="10 ثواني للخلف"><i
+                            class="ph ph-rewind"></i></button>
+                    <button class="control-btn" onclick="prevTrack()" title="السابق"><i
+                            class="ph-fill ph-skip-back"></i></button>
+                    <button class="control-btn play-pause-btn" onclick="togglePlay()" title="تشغيل/إيقاف">
                         <i class="ph-fill ph-play-circle" id="play-icon"></i>
                     </button>
-                    <button class="control-btn" onclick="nextTrack()"><i class="ph-fill ph-skip-forward"></i></button>
-                    <button class="control-btn" onclick="toggleRepeat()"><i class="ph ph-repeat"></i></button>
+                    <button class="control-btn" onclick="nextTrack()" title="التالي"><i
+                            class="ph-fill ph-skip-forward"></i></button>
+                    <button class="control-btn" onclick="skipForward(10)" title="10 ثواني للأمام"><i
+                            class="ph ph-fast-forward"></i></button>
+                    <button class="control-btn" onclick="toggleShuffle()" title="عشوائي"><i
+                            class="ph ph-shuffle"></i></button>
                 </div>
                 <div class="progress-container">
                     <span id="current-time">0:00</span>
                     <input type="range" class="progress-bar" id="seek-bar" value="0" min="0" max="100">
                     <span id="total-duration">0:00</span>
+                </div>
+                <!-- Ayah Range Selection for Memorization -->
+                <div class="ayah-range-controls" id="ayah-range-controls">
+                    <label>تكرار الآيات:</label>
+                    <input type="number" id="ayah-start" min="1" placeholder="من" title="من آية">
+                    <span>-</span>
+                    <input type="number" id="ayah-end" min="1" placeholder="إلى" title="إلى آية">
+                    <button class="control-btn" onclick="setAyahRange()" title="تفعيل التكرار"><i
+                            class="ph ph-check"></i></button>
+                    <button class="control-btn" onclick="clearAyahRange()" title="إلغاء التكرار"><i
+                            class="ph ph-x"></i></button>
+                    <span id="ayah-range-status"></span>
                 </div>
             </div>
 
@@ -139,13 +174,35 @@
         </footer>
     </div>
 
+    <!-- Mobile Bottom Navigation (outside app-container for fixed positioning) -->
+    <nav class="mobile-nav">
+        <button class="mobile-nav-btn active" onclick="navigateTo('home')">
+            <i class="ph-fill ph-house"></i>
+            <span>الرئيسية</span>
+        </button>
+        <button class="mobile-nav-btn" onclick="navigateTo('search')">
+            <i class="ph-fill ph-magnifying-glass"></i>
+            <span>بحث</span>
+        </button>
+        <button class="mobile-nav-btn" onclick="navigateTo('library')">
+            <i class="ph-fill ph-books"></i>
+            <span>مكتبتي</span>
+        </button>
+        <button class="mobile-nav-btn" onclick="navigateTo('favourites')">
+            <i class="ph-fill ph-heart"></i>
+            <span>المفضلة</span>
+        </button>
+    </nav>
+
     <!-- Hidden File Input -->
     <input type="file" id="file-upload" accept="audio/*" style="display: none;" multiple>
 
     <!-- Audio Element -->
     <audio id="audio-player"></audio>
 
+    <script src="husein_azzam_timings_data.js"></script>
     <script src="data.js"></script>
     <script src="script.js"></script>
 </body>
+
 </html>
