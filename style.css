@@ -942,3 +942,435 @@ nav li i {
         font-size: 0.75rem;
     }
 }
+
+/* ============================================ */
+/* Reading Practice Mode Styles */
+/* ============================================ */
+
+.reading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.92);
+    backdrop-filter: blur(12px);
+    z-index: 25;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 40px;
+}
+
+.close-reading {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: white;
+    font-size: 1.8rem;
+    cursor: pointer;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s, transform 0.2s;
+}
+
+.close-reading:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.05);
+}
+
+.reading-container {
+    max-width: 900px;
+    width: 100%;
+    max-height: 90%;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.reading-header h2 {
+    font-size: 2rem;
+    color: var(--text-white);
+    margin-bottom: 8px;
+    text-align: center;
+}
+
+.reading-instructions {
+    color: var(--text-gray);
+    text-align: center;
+    font-size: 0.95rem;
+    line-height: 1.6;
+}
+
+.reading-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 20px;
+    border-radius: 12px;
+}
+
+.surah-selector {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    justify-content: center;
+}
+
+.surah-selector label {
+    color: var(--text-white);
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+.reading-surah-select {
+    background-color: var(--bg-light-gray);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-white);
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-family: var(--font-family);
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    min-width: 200px;
+    transition: border-color 0.2s;
+}
+
+.reading-surah-select:focus {
+    outline: none;
+    border-color: var(--primary-gold);
+}
+
+.ayah-selector {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    justify-content: center;
+}
+
+.ayah-selector label {
+    color: var(--text-white);
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+.ayah-input {
+    background-color: var(--bg-light-gray);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-white);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-family: var(--font-family);
+    font-weight: 600;
+    font-size: 1rem;
+    width: 80px;
+    text-align: center;
+    transition: border-color 0.2s;
+}
+
+.ayah-input:focus {
+    outline: none;
+    border-color: var(--primary-gold);
+}
+
+.jump-btn {
+    background: rgba(212, 175, 55, 0.2);
+    border: 1px solid var(--primary-gold);
+    color: var(--primary-gold);
+    border-radius: 8px;
+    padding: 10px 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.jump-btn:hover {
+    background: rgba(212, 175, 55, 0.3);
+    transform: translateY(-1px);
+}
+
+.jump-btn i {
+    font-size: 1.2rem;
+}
+
+.reading-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Microphone Button */
+.mic-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: linear-gradient(135deg, var(--primary-green) 0%, #159e42 100%);
+    border: none;
+    color: white;
+    border-radius: 50px;
+    padding: 14px 28px;
+    font-family: var(--font-family);
+    font-weight: 700;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: all 0.3s;
+    box-shadow: 0 4px 15px rgba(29, 185, 84, 0.3);
+}
+
+.mic-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(29, 185, 84, 0.4);
+}
+
+.mic-btn.listening {
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5555 100%);
+    animation: pulse-mic 1.5s infinite;
+}
+
+.mic-btn.processing {
+    background: linear-gradient(135deg, #f9ca24 0%, #f6b93b 100%);
+    cursor: not-allowed;
+}
+
+.mic-btn i {
+    font-size: 1.5rem;
+}
+
+@keyframes pulse-mic {
+
+    0%,
+    100% {
+        box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
+    }
+
+    50% {
+        box-shadow: 0 4px 25px rgba(255, 107, 107, 0.8);
+    }
+}
+
+.reset-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: var(--text-white);
+    border-radius: 50px;
+    padding: 12px 24px;
+    font-family: var(--font-family);
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.reset-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateY(-1px);
+}
+
+.reset-btn i {
+    font-size: 1.2rem;
+}
+
+/* Reading Progress */
+.reading-progress {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 16px 20px;
+    border-radius: 12px;
+}
+
+.progress-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    font-size: 0.95rem;
+    color: var(--text-gray);
+}
+
+.progress-bar-reading {
+    width: 100%;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary-green) 0%, var(--primary-gold) 100%);
+    border-radius: 10px;
+    width: 0%;
+    transition: width 0.5s ease;
+}
+
+/* Reading Text Container */
+.reading-text-container {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 30px;
+    max-height: 400px;
+    overflow-y: auto;
+    text-align: center;
+}
+
+.reading-verse {
+    font-size: 1.8rem;
+    line-height: 2.5;
+    color: var(--text-gray);
+    transition: all 0.4s ease;
+    margin-bottom: 15px;
+    padding: 12px 16px;
+    border-radius: 10px;
+    cursor: default;
+}
+
+.reading-verse.verse-active {
+    color: var(--text-white);
+    background: rgba(212, 175, 55, 0.15);
+    border: 2px solid var(--primary-gold);
+    transform: scale(1.02);
+    box-shadow: 0 0 20px rgba(212, 175, 55, 0.2);
+}
+
+.reading-verse.verse-correct {
+    color: #51cf66;
+    background: rgba(81, 207, 102, 0.15);
+    border: 2px solid #51cf66;
+    animation: correct-flash 0.6s ease;
+}
+
+.reading-verse.verse-incorrect {
+    color: #ff6b6b;
+    background: rgba(255, 107, 107, 0.15);
+    border: 2px solid #ff6b6b;
+    animation: shake 0.5s ease;
+}
+
+@keyframes correct-flash {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.7;
+        transform: scale(1.05);
+    }
+}
+
+@keyframes shake {
+
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+
+    10%,
+    30%,
+    50%,
+    70%,
+    90% {
+        transform: translateX(-8px);
+    }
+
+    20%,
+    40%,
+    60%,
+    80% {
+        transform: translateX(8px);
+    }
+}
+
+/* Mobile Responsive for Reading Mode */
+@media (max-width: 768px) {
+    .reading-overlay {
+        padding: 20px 15px;
+    }
+
+    .reading-container {
+        max-height: 85%;
+    }
+
+    .reading-header h2 {
+        font-size: 1.5rem;
+    }
+
+    .reading-instructions {
+        font-size: 0.85rem;
+    }
+
+    .reading-controls {
+        padding: 15px;
+        gap: 12px;
+    }
+
+    .surah-selector {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .reading-surah-select {
+        width: 100%;
+        min-width: unset;
+    }
+
+    .ayah-selector {
+        flex-direction: row;
+        gap: 8px;
+        width: 100%;
+    }
+
+    .ayah-selector label {
+        font-size: 0.9rem;
+    }
+
+    .ayah-input {
+        flex: 1;
+        min-width: 60px;
+    }
+
+    .reading-actions {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .mic-btn,
+    .reset-btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .reading-text-container {
+        padding: 20px 15px;
+        max-height: 300px;
+    }
+
+    .reading-verse {
+        font-size: 1.4rem;
+        line-height: 2.2;
+        padding: 10px 12px;
+    }
+
+    .close-reading {
+        top: 15px;
+        left: 15px;
+        width: 38px;
+        height: 38px;
+        font-size: 1.5rem;
+    }
+}

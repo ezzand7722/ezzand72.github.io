@@ -24,7 +24,8 @@
             <nav>
                 <ul>
                     <li class="active" onclick="navigateTo('home')"><i class="ph-fill ph-house"></i>
-                        <span>الرئيسية</span></li>
+                        <span>الرئيسية</span>
+                    </li>
                     <li onclick="navigateTo('search')"><i class="ph-fill ph-magnifying-glass"></i> <span>بحث</span></li>
                     <li onclick="navigateTo('library')"><i class="ph-fill ph-books"></i> <span>مكتبتي</span></li>
                 </ul>
@@ -38,6 +39,10 @@
                 <button class="action-btn" onclick="navigateTo('favourites')">
                     <i class="ph-fill ph-heart"></i>
                     <span>تلاوات مفضلة</span>
+                </button>
+                <button class="action-btn" onclick="toggleReadingMode()">
+                    <i class="ph-fill ph-microphone"></i>
+                    <span>تدرب على القراءة</span>
                 </button>
             </div>
             <div class="playlists">
@@ -113,6 +118,61 @@
                 <div class="quran-text-container" id="quran-display">
                     <!-- Synced text goes here -->
                     <p class="verse" data-time="0">بسم الله الرحمن الرحيم</p>
+                </div>
+            </div>
+
+            <!-- Reading Practice Mode (Overlay) -->
+            <div id="reading-practice-view" class="reading-overlay" style="display: none;">
+                <button class="close-reading" onclick="toggleReadingMode()"><i class="ph ph-x"></i></button>
+
+                <div class="reading-container">
+                    <div class="reading-header">
+                        <h2>تدرب على القراءة</h2>
+                        <p class="reading-instructions">اختر سورة وابدأ القراءة. سيتم تمييز الآيات الصحيحة باللون الأخضر
+                            والخاطئة باللون الأحمر.</p>
+                    </div>
+
+                    <div class="reading-controls">
+                        <div class="surah-selector">
+                            <label>اختر السورة:</label>
+                            <select id="reading-surah-select" class="reading-surah-select">
+                                <!-- Populated by JS -->
+                            </select>
+                        </div>
+
+                        <div class="ayah-selector">
+                            <label>الآية:</label>
+                            <input type="number" id="start-ayah-input" class="ayah-input" min="1" value="1">
+                            <button class="jump-btn" onclick="jumpToAyah()" title="الانتقال للآية">
+                                <i class="ph ph-arrow-right"></i>
+                            </button>
+                        </div>
+
+                        <div class="reading-actions">
+                            <button class="mic-btn" id="mic-btn" onclick="toggleMicrophone()" title="ابدأ القراءة">
+                                <i class="ph-fill ph-microphone" id="mic-icon"></i>
+                                <span id="mic-status">اضغط للبدء</span>
+                            </button>
+                            <button class="reset-btn" onclick="resetReadingProgress()" title="إعادة التعيين">
+                                <i class="ph ph-arrow-clockwise"></i>
+                                <span>إعادة</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="reading-progress">
+                        <div class="progress-info">
+                            <span id="reading-verse-count">0 / 0</span>
+                            <span id="reading-accuracy">الدقة: 0%</span>
+                        </div>
+                        <div class="progress-bar-reading">
+                            <div class="progress-fill" id="reading-progress-fill"></div>
+                        </div>
+                    </div>
+
+                    <div class="reading-text-container" id="reading-display">
+                        <p class="reading-verse">اختر سورة للبدء...</p>
+                    </div>
                 </div>
             </div>
         </main>

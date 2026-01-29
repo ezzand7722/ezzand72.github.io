@@ -52,14 +52,10 @@ const STORAGE_KEYS = {
 };
 
 // Custom local reciter audio/timings data (for reciters like Hussein Azzam without mp3quran.net support)
-// Uses embedded timing data from husein_azzam_timings_data.js to avoid CORS issues when running from file://
+// Hussain Azzam now fetches timestamps dynamically from Supabase storage
 const customReciterAudio = {
     'husein_azzam': {
-        19: {  // Surah Maryam
-            audioFile: 'husein-azzam-maryam.mp3',
-            // Reference embedded timing data (loaded from separate JS file)
-            getTimingsData: () => typeof huseinAzzamMaryamTimings !== 'undefined' ? huseinAzzamMaryamTimings : null
-        }
+        // Dynamic - handled by fetchHussainAzzamTimings()
     }
 };
 
@@ -203,6 +199,8 @@ function loadTrackDetails(track) {
 // Helper function to check if reciter has any content available
 function hasReciterContent(reciter) {
     if (reciter.baseUrl) return true;
+    // Hussain Azzam fetches content dynamically from Supabase
+    if (reciter.id === 'husein_azzam') return true;
     // Check if reciter has custom local audio for any surah
     const customData = customReciterAudio[reciter.id];
     return customData && Object.keys(customData).length > 0;
@@ -342,6 +340,11 @@ function getTrackAudioSrc(track) {
 
     const selectedReciter = getSelectedReciter();
     if (!track || !selectedReciter || typeof track.surahNumber !== 'number') return '';
+
+    // Handle Hussain Azzam dynamically - audio from Supabase storage
+    if (selectedReciter.id === 'husein_azzam') {
+        return `https://globdesovygfvvyuzrvy.supabase.co/storage/v1/object/public/timestamps/hussain_azzam_${track.surahNumber}.mp3`;
+    }
 
     // Check for custom local audio for reciters without baseUrl
     const customData = customReciterAudio[selectedReciter.id];
@@ -586,9 +589,96 @@ async function fetchSurahUthmaniVerses(chapterNumber) {
 // Cache for custom local timings
 const customTimingsCache = new Map();
 
+// Fetch Hussain Azzam timestamps from Supabase storage
+async function fetchHussainAzzamTimings(chapterNumber) {
+    const key = `husein_azzam:${chapterNumber}`;
+    if (customTimingsCache.has(key)) return customTimingsCache.get(key);
+
+    const url = `https://globdesovygfvvyuzrvy.supabase.co/storage/v1/object/public/timestamps/hussain_azzam_${chapterNumber}.json?t=${new Date().getTime()}`;
+
+    // Construct audio URL and offset
+    const audioFile = `https://globdesovygfvvyuzrvy.supabase.co/storage/v1/object/public/timestamps/hussain_azzam_${chapterNumber}.mp3`;
+    let audioStartOffset = 0;
+
+    try {
+        const res = await fetch(url);
+        if (!res.ok) {
+            console.log('[fetchHussainAzzamTimings] Timestamps not found for Surah', chapterNumber, '- falling back to audio only');
+            // Return audio without sync if timestamps missing
+            const result = {
+                timings: [],
+                audioUrl: audioFile,
+                syncAvailable: false,
+                notAvailable: false,
+                isLocal: true,
+                audioStartOffset
+            };
+            customTimingsCache.set(key, result);
+            return result;
+        }
+
+        const timingsData = await res.json();
+
+        if (timingsData && typeof timingsData.offset === 'number') {
+            audioStartOffset = timingsData.offset;
+        }
+
+        if (!timingsData || !Array.isArray(timingsData)) {
+            console.error('[fetchHussainAzzamTimings] Invalid timing data for surah', chapterNumber);
+            // Fallback to audio only
+            const result = {
+                timings: [],
+                audioUrl: audioFile,
+                syncAvailable: false,
+                notAvailable: false,
+                isLocal: true,
+                audioStartOffset
+            };
+            customTimingsCache.set(key, result);
+            return result;
+        }
+
+        // Convert the timing format to our standard format
+        const timings = timingsData.map(t => ({
+            verse: t.ayah,
+            start: t.start_time,
+            end: t.end_time
+        })).filter(t => typeof t.verse === 'number' && t.verse >= 1 && t.start !== null && t.end !== null);
+
+        const result = {
+            timings,
+            audioUrl: audioFile,
+            syncAvailable: true,
+            isLocal: true,
+            audioStartOffset
+        };
+
+        customTimingsCache.set(key, result);
+        console.log('[fetchHussainAzzamTimings] loaded timings for surah', chapterNumber, ':', timings.length, 'verses');
+        return result;
+    } catch (e) {
+        console.error('[fetchHussainAzzamTimings] error fetching timings:', e);
+        // Fallback to audio only on error
+        const result = {
+            timings: [],
+            audioUrl: audioFile,
+            syncAvailable: false,
+            notAvailable: false,
+            audioStartOffset
+        };
+        customTimingsCache.set(key, result);
+        return result;
+    }
+}
+
 async function fetchCustomLocalTimings(reciterId, chapterNumber) {
     const key = `${reciterId}:${chapterNumber}`;
     if (customTimingsCache.has(key)) return customTimingsCache.get(key);
+
+    // Special handling for Hussain Azzam - fetch from Supabase
+    if (reciterId === 'husein_azzam') {
+        return fetchHussainAzzamTimings(chapterNumber);
+    }
 
     const reciterData = customReciterAudio[reciterId];
     if (!reciterData || !reciterData[chapterNumber]) {
@@ -749,9 +839,19 @@ async function renderSurahText(track) {
         const timings = timingsResult.timings || [];
         const syncedAudioUrl = timingsResult.audioUrl;
         const syncAvailable = timingsResult.syncAvailable;
+        const notAvailable = timingsResult.notAvailable || false;
 
         // Store timings globally for ayah range looping
         currentTimings = timings;
+
+        // Check if this reciter's recitation is not available for this surah
+        if (notAvailable) {
+            quranDisplay.innerHTML = '<p class="verse" style="text-align: center; color: #ff6b6b;">التلاوة غير متوفرة لهذه السورة</p>';
+            // Stop audio playback for unavailable recitations
+            audio.pause();
+            audio.src = '';
+            return;
+        }
 
         if (!Array.isArray(verses) || verses.length === 0) {
             quranDisplay.innerHTML = '<p class="verse">تعذر تحميل نص السورة.</p>';
@@ -764,6 +864,20 @@ async function renderSurahText(track) {
             const wasPlaying = !audio.paused;
             audio.src = syncedAudioUrl;
             if (wasPlaying) audio.play();
+        }
+
+        // Apply audio start offset if specified (e.g., for Hussain Azzam Surah 14)
+        const audioStartOffset = timingsResult.audioStartOffset || 0;
+        if (audioStartOffset > 0 && timingsResult.isLocal) {
+            audio.addEventListener('loadedmetadata', () => {
+                if (audio.currentTime < audioStartOffset) {
+                    audio.currentTime = audioStartOffset;
+                }
+            }, { once: true });
+            // Also set immediately in case metadata is already loaded
+            if (audio.readyState >= 1 && audio.currentTime < audioStartOffset) {
+                audio.currentTime = audioStartOffset;
+            }
         }
         // Otherwise, keep the current audio (mp3quran.net or local custom audio)
 
@@ -1065,4 +1179,464 @@ function renderFavourites() {
     }
 
     favouritesGrid.innerHTML = tracks.map(track => createCard(track)).join('');
+}
+
+// ============================================
+// Reading Practice Mode
+// ============================================
+
+// Reading State
+let recognition = null;
+let isReadingModeOpen = false;
+let isListening = false;
+let readingVerses = [];
+let currentVerseIndex = 0;
+let correctCount = 0;
+let totalAttempts = 0;
+let selectedReadingSurah = null;
+
+// DOM Elements for Reading Mode
+const readingOverlay = document.getElementById('reading-practice-view');
+const readingSurahSelect = document.getElementById('reading-surah-select');
+const readingDisplay = document.getElementById('reading-display');
+const micBtn = document.getElementById('mic-btn');
+const micIcon = document.getElementById('mic-icon');
+const micStatus = document.getElementById('mic-status');
+const readingVerseCount = document.getElementById('reading-verse-count');
+const readingAccuracy = document.getElementById('reading-accuracy');
+const readingProgressFill = document.getElementById('reading-progress-fill');
+
+// Initialize Speech Recognition
+function initSpeechRecognition() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+        console.error('Speech Recognition not supported in this browser');
+        return null;
+    }
+
+    const rec = new SpeechRecognition();
+    rec.lang = 'ar-SA'; // Arabic (Saudi Arabia)
+    rec.continuous = false;
+    rec.interimResults = false;
+    rec.maxAlternatives = 3;
+
+    rec.onstart = () => {
+        console.log('[Speech Recognition] Started');
+        isListening = true;
+        updateMicButton();
+    };
+
+    rec.onresult = (event) => {
+        console.log('[Speech Recognition] Result received');
+        const results = event.results[0];
+        const transcript = results[0].transcript;
+        console.log('[Speech Recognition] Transcript:', transcript);
+
+        // Check all alternatives for better matching
+        const alternatives = [];
+        for (let i = 0; i < results.length; i++) {
+            alternatives.push(results[i].transcript);
+        }
+
+        processReadingResult(alternatives);
+    };
+
+    rec.onerror = (event) => {
+        console.error('[Speech Recognition] Error:', event.error);
+        isListening = false;
+        updateMicButton();
+
+        if (event.error === 'not-allowed') {
+            alert('يرجى السماح بصلاحية استخدام الميكروفون للمتابعة.');
+        } else if (event.error === 'no-speech') {
+            // User didn't speak, just reset
+            console.log('[Speech Recognition] No speech detected');
+        }
+    };
+
+    rec.onend = () => {
+        console.log('[Speech Recognition] Ended');
+        isListening = false;
+        updateMicButton();
+    };
+
+    return rec;
+}
+
+// Toggle Reading Mode
+function toggleReadingMode() {
+    isReadingModeOpen = !isReadingModeOpen;
+
+    if (isReadingModeOpen) {
+        readingOverlay.style.display = 'flex';
+        setupReadingMode();
+    } else {
+        readingOverlay.style.display = 'none';
+        stopListening();
+    }
+}
+
+// Setup Reading Mode
+function setupReadingMode() {
+    // Populate Surah selector if empty
+    if (readingSurahSelect && readingSurahSelect.innerHTML === '') {
+        readingSurahSelect.innerHTML = featuredSurahs.map((surah, index) => {
+            return `<option value="${index}">${surah.title}</option>`;
+        }).join('');
+    }
+
+    // Add event listener for Surah selection (only if not already attached)
+    if (readingSurahSelect && !readingSurahSelect.dataset.listenerAttached) {
+        readingSurahSelect.addEventListener('change', () => {
+            const selectedIndex = parseInt(readingSurahSelect.value);
+            console.log('[Reading Mode] Surah changed to index:', selectedIndex);
+            loadReadingSurah(selectedIndex);
+        });
+        readingSurahSelect.dataset.listenerAttached = 'true';
+        console.log('[Reading Mode] Surah selection listener attached');
+    }
+
+    // Add event listener for Ayah input (Enter key to jump)
+    const ayahInput = document.getElementById('start-ayah-input');
+    if (ayahInput && !ayahInput.dataset.listenerAttached) {
+        ayahInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                jumpToAyah();
+            }
+        });
+        ayahInput.dataset.listenerAttached = 'true';
+    }
+
+    // Initialize speech recognition
+    if (!recognition) {
+        recognition = initSpeechRecognition();
+        if (!recognition) {
+            alert('عذراً، متصفحك لا يدعم التعرف على الصوت. يرجى استخدام Google Chrome.');
+            toggleReadingMode();
+            return;
+        }
+    }
+
+    // Load first surah if available and no verses loaded yet
+    if (readingSurahSelect && readingSurahSelect.value !== '' && readingVerses.length === 0) {
+        loadReadingSurah(parseInt(readingSurahSelect.value));
+    }
+}
+
+// Load Surah for Reading
+async function loadReadingSurah(surahIndex) {
+    if (surahIndex < 0 || surahIndex >= featuredSurahs.length) return;
+
+    selectedReadingSurah = featuredSurahs[surahIndex];
+    const chapterNumber = selectedReadingSurah.surahNumber;
+
+    readingDisplay.innerHTML = '<p class="reading-verse">جاري تحميل السورة...</p>';
+
+    try {
+        const verses = await fetchSurahUthmaniVerses(chapterNumber);
+
+        if (!verses || verses.length === 0) {
+            readingDisplay.innerHTML = '<p class="reading-verse">تعذر تحميل السورة.</p>';
+            return;
+        }
+
+        readingVerses = verses.map(v => {
+            const ayahNum = (v?.verse_key && String(v.verse_key).includes(':'))
+                ? parseInt(String(v.verse_key).split(':')[1], 10)
+                : null;
+
+            return {
+                ayah: ayahNum,
+                text: v.text_uthmani || '',
+                textNormalized: normalizeArabicForMatching(v.text_uthmani || ''),
+                status: 'pending' // pending, correct, incorrect
+            };
+        }).filter(v => v.ayah && v.text);
+
+        // Update Ayah Input Max
+        const ayahInput = document.getElementById('start-ayah-input');
+        if (ayahInput) {
+            ayahInput.max = readingVerses.length;
+            ayahInput.value = 1;
+        }
+
+        currentVerseIndex = 0;
+        correctCount = 0;
+        totalAttempts = 0;
+
+        renderReadingVerses();
+        updateReadingProgress();
+
+        console.log('[Reading Mode] Loaded', readingVerses.length, 'verses for Surah', chapterNumber);
+    } catch (e) {
+        console.error('[Reading Mode] Error loading surah:', e);
+        readingDisplay.innerHTML = '<p class="reading-verse">حدث خطأ في التحميل.</p>';
+    }
+}
+
+// Render Reading Verses
+function renderReadingVerses() {
+    if (!readingDisplay || readingVerses.length === 0) return;
+
+    readingDisplay.innerHTML = readingVerses.map((verse, index) => {
+        let className = 'reading-verse';
+        if (index === currentVerseIndex) {
+            className += ' verse-active';
+        } else if (verse.status === 'correct') {
+            className += ' verse-correct';
+        } else if (verse.status === 'incorrect') {
+            className += ' verse-incorrect';
+        }
+
+        return `<p class="${className}" data-index="${index}">${verse.text}</p>`;
+    }).join('');
+}
+
+// Toggle Microphone
+function toggleMicrophone() {
+    if (!recognition) {
+        alert('عذراً، ميزة التعرف على الصوت غير متاحة.');
+        return;
+    }
+
+    if (readingVerses.length === 0) {
+        alert('يرجى اختيار سورة أولاً.');
+        return;
+    }
+
+    if (currentVerseIndex >= readingVerses.length) {
+        alert('لقد أنهيت السورة! يمكنك إعادة التعيين للبدء من جديد.');
+        return;
+    }
+
+    if (isListening) {
+        stopListening();
+    } else {
+        startListening();
+    }
+}
+
+// Start Listening
+function startListening() {
+    if (!recognition || isListening) return;
+
+    try {
+        recognition.start();
+        console.log('[Reading Mode] Started listening for verse', currentVerseIndex + 1);
+    } catch (e) {
+        console.error('[Reading Mode] Error starting recognition:', e);
+    }
+}
+
+// Stop Listening
+function stopListening() {
+    if (!recognition || !isListening) return;
+
+    try {
+        recognition.stop();
+    } catch (e) {
+        console.error('[Reading Mode] Error stopping recognition:', e);
+    }
+}
+
+// Update Mic Button
+function updateMicButton() {
+    if (!micBtn || !micIcon || !micStatus) return;
+
+    micBtn.classList.remove('listening', 'processing');
+
+    if (isListening) {
+        micBtn.classList.add('listening');
+        micStatus.textContent = 'جاري الاستماع...';
+        micIcon.className = 'ph-fill ph-microphone-slash';
+    } else {
+        micStatus.textContent = 'اضغط للبدء';
+        micIcon.className = 'ph-fill ph-microphone';
+    }
+}
+
+// Process Reading Result
+function processReadingResult(alternatives) {
+    if (currentVerseIndex >= readingVerses.length) return;
+
+    const currentVerse = readingVerses[currentVerseIndex];
+    const expectedText = currentVerse.textNormalized;
+
+    console.log('[Reading Mode] Expected:', expectedText);
+    console.log('[Reading Mode] Alternatives:', alternatives);
+
+    // Check all alternatives
+    let isCorrect = false;
+    for (const alt of alternatives) {
+        const spokenText = normalizeArabicForMatching(alt);
+        const similarity = calculateSimilarity(expectedText, spokenText);
+
+        console.log('[Reading Mode] Similarity:', similarity, 'for', spokenText);
+
+        // Threshold for matching (70% similarity)
+        if (similarity >= 0.7) {
+            isCorrect = true;
+            break;
+        }
+    }
+
+    totalAttempts++;
+
+    if (isCorrect) {
+        // Correct reading
+        correctCount++;
+        currentVerse.status = 'correct';
+
+        // Move to next verse after a short delay
+        setTimeout(() => {
+            if (currentVerseIndex < readingVerses.length - 1) {
+                currentVerseIndex++;
+                renderReadingVerses();
+                updateReadingProgress();
+            } else {
+                // Finished!
+                alert('مبارك! لقد أتممت السورة بنجاح!');
+                updateReadingProgress();
+            }
+        }, 1000);
+    } else {
+        // Incorrect reading
+        currentVerse.status = 'incorrect';
+
+        // Reset to pending after animation
+        setTimeout(() => {
+            currentVerse.status = 'pending';
+            renderReadingVerses();
+        }, 1500);
+    }
+
+    renderReadingVerses();
+    updateReadingProgress();
+}
+
+// Normalize Arabic Text for Matching
+function normalizeArabicForMatching(text) {
+    if (!text) return '';
+
+    return String(text)
+        // Remove all diacritics and tashkeel
+        .replace(/[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06ED]/g, '')
+        // Remove tatweel
+        .replace(/\u0640/g, '')
+        // Normalize Alef variations
+        .replace(/[إأآا]/g, 'ا')
+        // Normalize Ya
+        .replace(/ى/g, 'ي')
+        // Normalize other letters
+        .replace(/ؤ/g, 'و')
+        .replace(/ئ/g, 'ي')
+        .replace(/ة/g, 'ه')
+        // Remove extra whitespace
+        .replace(/\s+/g, ' ')
+        .trim()
+        .toLowerCase();
+}
+
+// Calculate Similarity (Simple Levenshtein-based)
+function calculateSimilarity(str1, str2) {
+    // Simple token-based similarity
+    const tokens1 = str1.split(' ').filter(t => t.length > 0);
+    const tokens2 = str2.split(' ').filter(t => t.length > 0);
+
+    if (tokens1.length === 0 && tokens2.length === 0) return 1;
+    if (tokens1.length === 0 || tokens2.length === 0) return 0;
+
+    // Count matching tokens
+    let matches = 0;
+    for (const token of tokens1) {
+        if (tokens2.includes(token)) {
+            matches++;
+        }
+    }
+
+    // Similarity = matches / average length
+    const avgLength = (tokens1.length + tokens2.length) / 2;
+    return matches / avgLength;
+}
+
+// Update Reading Progress
+function updateReadingProgress() {
+    if (!readingVerseCount || !readingAccuracy || !readingProgressFill) return;
+
+    const total = readingVerses.length;
+    const completed = readingVerses.filter(v => v.status === 'correct').length;
+    const accuracy = totalAttempts > 0 ? Math.round((correctCount / totalAttempts) * 100) : 0;
+
+    readingVerseCount.textContent = `${toArabicIndicDigits(completed)} / ${toArabicIndicDigits(total)}`;
+    readingAccuracy.textContent = `الدقة: ${toArabicIndicDigits(accuracy)}%`;
+
+    const progressPercent = total > 0 ? (completed / total) * 100 : 0;
+    readingProgressFill.style.width = `${progressPercent}%`;
+}
+
+// Reset Reading Progress
+function resetReadingProgress() {
+    currentVerseIndex = 0;
+    correctCount = 0;
+    totalAttempts = 0;
+
+    // Reset all verse statuses
+    readingVerses.forEach(v => v.status = 'pending');
+
+    renderReadingVerses();
+    updateReadingProgress();
+    stopListening();
+
+    console.log('[Reading Mode] Progress reset');
+}
+
+// Jump to Specific Ayah
+function jumpToAyah() {
+    const input = document.getElementById('start-ayah-input');
+    if (!input) return;
+
+    const ayahNumber = parseInt(input.value, 10);
+
+    if (!ayahNumber || ayahNumber < 1) {
+        alert('يرجى إدخال رقم آية صحيح.');
+        return;
+    }
+
+    if (readingVerses.length === 0) {
+        alert('يرجى اختيار سورة أولاً.');
+        return;
+    }
+
+    // Find the verse index
+    const verseIndex = readingVerses.findIndex(v => v.ayah === ayahNumber);
+
+    if (verseIndex === -1) {
+        alert(`الآية ${ayahNumber} غير موجودة في هذه السورة.`);
+        return;
+    }
+
+    // Reset progress and jump to the ayah
+    currentVerseIndex = verseIndex;
+    correctCount = 0;
+    totalAttempts = 0;
+
+    // Reset all verses after the selected one
+    for (let i = verseIndex; i < readingVerses.length; i++) {
+        readingVerses[i].status = 'pending';
+    }
+
+    renderReadingVerses();
+    updateReadingProgress();
+    stopListening();
+
+    // Scroll to the verse
+    setTimeout(() => {
+        const verseElement = document.querySelector(`[data-index="${verseIndex}"]`);
+        if (verseElement) {
+            verseElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }, 100);
+
+    console.log('[Reading Mode] Jumped to ayah', ayahNumber, 'at index', verseIndex);
 }
