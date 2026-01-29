@@ -1291,19 +1291,22 @@ function initSpeechRecognition() {
 
     rec.onend = () => {
         console.log('[Speech Recognition] Ended');
-        // If we are supposed to be listening (and it wasn't a deliberate stop), restart
-        // However, infinite restart loops can be bad. 
-        // Let's just update UI for now. If continuous=true, it shouldn't end unless we stop it or error.
-
-        // If it ended but we didn't ask it to (e.g. timeout), maybe restart?
+        // If we are supposed to be listening (and it wasn't a deliberate stop), restart with a delay
         if (isListening) {
-            console.log('[Speech Recognition] Connection dropped, restarting...');
-            try {
-                rec.start();
-                return;
-            } catch (e) {
-                console.log('Error restarting', e);
-            }
+            console.log('[Speech Recognition] Connection dropped, restarting in 100ms...');
+            setTimeout(() => {
+                if (isListening) {
+                    try {
+                        rec.start();
+                        console.log('[Speech Recognition] Restarted successfully');
+                    } catch (e) {
+                        console.log('Error restarting:', e);
+                        isListening = false;
+                        updateMicButton();
+                    }
+                }
+            }, 100);
+            return;
         }
 
         isListening = false;
@@ -1355,17 +1358,6 @@ function setupReadingMode() {
         // Also handle input event for clearer UX (optional, but 'change' covers selection)
         readingSurahInput.dataset.listenerAttached = 'true';
         console.log('[Reading Mode] Surah input listener attached');
-    }
-
-    // Add event listener for Ayah input (Enter key to jump)
-    const ayahInput = document.getElementById('start-ayah-input');
-    if (ayahInput && !ayahInput.dataset.listenerAttached) {
-        ayahInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                jumpToAyah();
-            }
-        });
-        ayahInput.dataset.listenerAttached = 'true';
     }
 
     // Initialize speech recognition
@@ -1429,13 +1421,6 @@ async function loadReadingSurah(surahIndex) {
             };
         }).filter(v => v.ayah && v.text);
 
-        // Update Ayah Input Max
-        const ayahInput = document.getElementById('start-ayah-input');
-        if (ayahInput) {
-            ayahInput.max = readingVerses.length;
-            ayahInput.value = 1;
-        }
-
         currentVerseIndex = 0;
         correctCount = 0;
         totalAttempts = 0;
@@ -1466,6 +1451,14 @@ function renderReadingVerses() {
 
         return `<p class="${className}" data-index="${index}">${verse.text}</p>`;
     }).join('');
+
+    // Auto-scroll to active verse
+    setTimeout(() => {
+        const activeVerse = readingDisplay.querySelector('.verse-active');
+        if (activeVerse) {
+            activeVerse.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }, 100);
 }
 
 // Toggle Microphone
@@ -1666,52 +1659,3 @@ function resetReadingProgress() {
     console.log('[Reading Mode] Progress reset');
 }
 
-// Jump to Specific Ayah
-function jumpToAyah() {
-    const input = document.getElementById('start-ayah-input');
-    if (!input) return;
-
-    const ayahNumber = parseInt(input.value, 10);
-
-    if (!ayahNumber || ayahNumber < 1) {
-        alert('يرجى إدخال رقم آية صحيح.');
-        return;
-    }
-
-    if (readingVerses.length === 0) {
-        alert('يرجى اختيار سورة أولاً.');
-        return;
-    }
-
-    // Find the verse index
-    const verseIndex = readingVerses.findIndex(v => v.ayah === ayahNumber);
-
-    if (verseIndex === -1) {
-        alert(`الآية ${ayahNumber} غير موجودة في هذه السورة.`);
-        return;
-    }
-
-    // Reset progress and jump to the ayah
-    currentVerseIndex = verseIndex;
-    correctCount = 0;
-    totalAttempts = 0;
-
-    // Reset all verses after the selected one
-    for (let i = verseIndex; i < readingVerses.length; i++) {
-        readingVerses[i].status = 'pending';
-    }
-
-    renderReadingVerses();
-    updateReadingProgress();
-    stopListening();
-
-    // Scroll to the verse
-    setTimeout(() => {
-        const verseElement = document.querySelector(`[data-index="${verseIndex}"]`);
-        if (verseElement) {
-            verseElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-    }, 100);
-
-    console.log('[Reading Mode] Jumped to ayah', ayahNumber, 'at index', verseIndex);
-}
