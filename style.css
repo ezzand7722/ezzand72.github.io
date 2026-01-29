@@ -1074,6 +1074,16 @@ nav li i {
     width: 80px;
     text-align: center;
     transition: border-color 0.2s;
+    -webkit-appearance: none;
+    -moz-appearance: textfield;
+    appearance: none;
+}
+
+/* Restore spinner for number input on hover/focus if desired, or keep hidden */
+.ayah-input::-webkit-outer-spin-button,
+.ayah-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
 }
 
 .ayah-input:focus {
