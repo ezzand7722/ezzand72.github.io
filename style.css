@@ -903,74 +903,50 @@ nav li i {
         padding: 10px !important;
         min-height: 50px !important;
     }
-}
 
-/* Live Transcript Box */
-#live-transcript {
-    width: 100%;
-    margin-top: 20px;
-    padding: 15px;
-    background-color: rgba(0, 0, 0, 0.4);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    color: var(--text-white);
-    font-size: 1.1rem;
-    text-align: center;
-    min-height: 60px;
-    direction: rtl;
-    line-height: 1.6;
-    transition: all 0.2s ease;
-}
+    /* Ayah Range Controls on Mobile */
+    .ayah-range-controls {
+        flex-wrap: wrap;
+        justify-content: center;
+        padding: 6px 10px;
+        gap: 6px;
+    }
 
-#live-transcript:empty::before {
-    content: "استمع...";
-    color: var(--text-gray);
-    opacity: 0.7;
-}
+    .ayah-range-controls label {
+        width: 100%;
+        text-align: center;
+        margin-bottom: 2px;
+    }
 
-/* Ayah Range Controls on Mobile */
-.ayah-range-controls {
-    flex-wrap: wrap;
-    justify-content: center;
-    padding: 6px 10px;
-    gap: 6px;
-}
+    .ayah-range-controls input[type="number"] {
+        width: 45px;
+        padding: 3px 4px;
+    }
 
-.ayah-range-controls label {
-    width: 100%;
-    text-align: center;
-    margin-bottom: 2px;
-}
+    /* Cards and lists */
+    .section-title {
+        font-size: 1.2rem;
+        margin-bottom: 15px;
+        margin-top: 15px;
+    }
 
-.ayah-range-controls input[type="number"] {
-    width: 45px;
-    padding: 3px 4px;
-}
+    .surah-row {
+        padding: 10px 8px;
+    }
 
-/* Cards and lists */
-.section-title {
-    font-size: 1.2rem;
-    margin-bottom: 15px;
-    margin-top: 15px;
-}
+    .surah-row-num {
+        min-width: 35px;
+        height: 28px;
+        font-size: 0.85rem;
+    }
 
-.surah-row {
-    padding: 10px 8px;
-}
+    .surah-row-title {
+        font-size: 0.95rem;
+    }
 
-.surah-row-num {
-    min-width: 35px;
-    height: 28px;
-    font-size: 0.85rem;
-}
-
-.surah-row-title {
-    font-size: 0.95rem;
-}
-
-.surah-row-sub {
-    font-size: 0.75rem;
-}
+    .surah-row-sub {
+        font-size: 0.75rem;
+    }
 }
 
 /* ============================================ */
