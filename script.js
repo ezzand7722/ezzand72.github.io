@@ -1226,6 +1226,8 @@ function initSpeechRecognition() {
         isListening = true;
         updateMicButton();
         if (micStatus) micStatus.textContent = 'جاري الاستماع...';
+        const transcriptEl = document.getElementById('live-transcript');
+        if (transcriptEl) transcriptEl.innerHTML = '<span style="color: #888;">جاري الاستماع...</span>';
     };
 
     rec.onresult = (event) => {
@@ -1244,8 +1246,18 @@ function initSpeechRecognition() {
         console.log('[Speech Recognition] Final:', finalTranscript);
 
         // Show interim text for feedback
+        const transcriptEl = document.getElementById('live-transcript');
+        if (transcriptEl) {
+            if (finalTranscript || interimTranscript) {
+                transcriptEl.innerHTML = `
+                    <span style="color: white; font-weight: bold;">${finalTranscript}</span>
+                    <span style="color: #aaa;">${interimTranscript}</span>
+                 `;
+            }
+        }
+
         if (micStatus && (interimTranscript || finalTranscript)) {
-            micStatus.textContent = interimTranscript || finalTranscript || 'جاري الاستماع...';
+            micStatus.textContent = 'جاري الاستماع...';
         }
 
         // Process final results
