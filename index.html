@@ -135,9 +135,11 @@
                     <div class="reading-controls">
                         <div class="surah-selector">
                             <label>اختر السورة:</label>
-                            <select id="reading-surah-select" class="reading-surah-select">
+                            <input type="text" id="reading-surah-input" class="reading-surah-input"
+                                list="reading-surah-list" placeholder="ابحث عن سورة...">
+                            <datalist id="reading-surah-list">
                                 <!-- Populated by JS -->
-                            </select>
+                            </datalist>
                         </div>
 
                         <div class="ayah-selector">

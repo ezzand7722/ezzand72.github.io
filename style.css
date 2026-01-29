@@ -1030,7 +1030,7 @@ nav li i {
     font-size: 1rem;
 }
 
-.reading-surah-select {
+.reading-surah-input {
     background-color: var(--bg-light-gray);
     border: 2px solid rgba(255, 255, 255, 0.1);
     color: var(--text-white);
@@ -1039,12 +1039,11 @@ nav li i {
     font-family: var(--font-family);
     font-weight: 600;
     font-size: 1rem;
-    cursor: pointer;
-    min-width: 200px;
+    width: 250px;
     transition: border-color 0.2s;
 }
 
-.reading-surah-select:focus {
+.reading-surah-input:focus {
     outline: none;
     border-color: var(--primary-gold);
 }
@@ -1334,7 +1333,7 @@ nav li i {
         gap: 8px;
     }
 
-    .reading-surah-select {
+    .reading-surah-input {
         width: 100%;
         min-width: unset;
     }

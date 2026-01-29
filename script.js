@@ -1279,22 +1279,33 @@ function toggleReadingMode() {
 
 // Setup Reading Mode
 function setupReadingMode() {
-    // Populate Surah selector if empty
-    if (readingSurahSelect && readingSurahSelect.innerHTML === '') {
-        readingSurahSelect.innerHTML = featuredSurahs.map((surah, index) => {
-            return `<option value="${index}">${surah.title}</option>`;
+    const readingSurahInput = document.getElementById('reading-surah-input');
+    const readingSurahList = document.getElementById('reading-surah-list');
+
+    // Populate Surah list if empty
+    if (readingSurahList && readingSurahList.innerHTML === '') {
+        readingSurahList.innerHTML = featuredSurahs.map((surah) => {
+            return `<option value="${surah.title}">`;
         }).join('');
     }
 
-    // Add event listener for Surah selection (only if not already attached)
-    if (readingSurahSelect && !readingSurahSelect.dataset.listenerAttached) {
-        readingSurahSelect.addEventListener('change', () => {
-            const selectedIndex = parseInt(readingSurahSelect.value);
-            console.log('[Reading Mode] Surah changed to index:', selectedIndex);
-            loadReadingSurah(selectedIndex);
+    // Add event listener for Surah input (change)
+    if (readingSurahInput && !readingSurahInput.dataset.listenerAttached) {
+        readingSurahInput.addEventListener('change', () => {
+            const selectedTitle = readingSurahInput.value;
+            const selectedIndex = featuredSurahs.findIndex(s => s.title === selectedTitle);
+
+            if (selectedIndex !== -1) {
+                console.log('[Reading Mode] Surah selected:', selectedTitle, 'index:', selectedIndex);
+                loadReadingSurah(selectedIndex);
+            } else {
+                console.log('[Reading Mode] Invalid Surah selection:', selectedTitle);
+            }
         });
-        readingSurahSelect.dataset.listenerAttached = 'true';
-        console.log('[Reading Mode] Surah selection listener attached');
+
+        // Also handle input event for clearer UX (optional, but 'change' covers selection)
+        readingSurahInput.dataset.listenerAttached = 'true';
+        console.log('[Reading Mode] Surah input listener attached');
     }
 
     // Add event listener for Ayah input (Enter key to jump)
@@ -1318,9 +1329,24 @@ function setupReadingMode() {
         }
     }
 
-    // Load first surah if available and no verses loaded yet
-    if (readingSurahSelect && readingSurahSelect.value !== '' && readingVerses.length === 0) {
-        loadReadingSurah(parseInt(readingSurahSelect.value));
+    // Load first surah if available and no verses loaded yet (and set input value)
+    if (readingSurahInput && readingVerses.length === 0 && featuredSurahs.length > 0) {
+        // Default to first surah
+        // readingSurahInput.value = featuredSurahs[0].title;
+        // loadReadingSurah(0); 
+        // Or keep empty to force choice? Let's keep behavior consistent: load first.
+
+        // Actually, let's load empty initially or placeholder?
+        // Let's load the first one for convenience but maybe clear the text?
+        // Better: Set value to first surah title and load it.
+        // readingSurahInput.value = featuredSurahs[0].title;
+        // loadReadingSurah(0);
+
+        // Wait, original code loaded logic was:
+        // if (select.value) load...
+
+        // Let's NOT auto-load to avoid confusion if input is empty.
+        // Or auto-load Surah Fatiha (index 0).
     }
 }
 
