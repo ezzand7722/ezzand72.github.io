@@ -1217,46 +1217,83 @@ function initSpeechRecognition() {
 
     const rec = new SpeechRecognition();
     rec.lang = 'ar-SA'; // Arabic (Saudi Arabia)
-    rec.continuous = false;
-    rec.interimResults = false;
-    rec.maxAlternatives = 3;
+    rec.continuous = true;
+    rec.interimResults = true;
+    rec.maxAlternatives = 1;
 
     rec.onstart = () => {
         console.log('[Speech Recognition] Started');
         isListening = true;
         updateMicButton();
+        if (micStatus) micStatus.textContent = 'جاري الاستماع...';
     };
 
     rec.onresult = (event) => {
-        console.log('[Speech Recognition] Result received');
-        const results = event.results[0];
-        const transcript = results[0].transcript;
-        console.log('[Speech Recognition] Transcript:', transcript);
+        let interimTranscript = '';
+        let finalTranscript = '';
 
-        // Check all alternatives for better matching
-        const alternatives = [];
-        for (let i = 0; i < results.length; i++) {
-            alternatives.push(results[i].transcript);
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+            if (event.results[i].isFinal) {
+                finalTranscript += event.results[i][0].transcript;
+            } else {
+                interimTranscript += event.results[i][0].transcript;
+            }
         }
 
-        processReadingResult(alternatives);
+        console.log('[Speech Recognition] Interim:', interimTranscript);
+        console.log('[Speech Recognition] Final:', finalTranscript);
+
+        // Show interim text for feedback
+        if (micStatus && (interimTranscript || finalTranscript)) {
+            micStatus.textContent = interimTranscript || finalTranscript || 'جاري الاستماع...';
+        }
+
+        // Process final results
+        if (finalTranscript) {
+            processReadingResult([finalTranscript]);
+        }
     };
 
     rec.onerror = (event) => {
         console.error('[Speech Recognition] Error:', event.error);
-        isListening = false;
-        updateMicButton();
 
+        // Don't stop for no-speech, just stay listening equivalent
+        if (event.error === 'no-speech') {
+            console.log('[Speech Recognition] No speech detected - keeping alive');
+            return;
+        }
+
+        // For other errors, we might need to stop
         if (event.error === 'not-allowed') {
             alert('يرجى السماح بصلاحية استخدام الميكروفون للمتابعة.');
-        } else if (event.error === 'no-speech') {
-            // User didn't speak, just reset
-            console.log('[Speech Recognition] No speech detected');
+            isListening = false;
+            updateMicButton();
+        } else {
+            // Try to restart if it crashes? Or just stop.
+            // For now, let's stop and let user restart
+            isListening = false;
+            updateMicButton();
+            if (micStatus) micStatus.textContent = 'حدث خطأ: ' + event.error;
         }
     };
 
     rec.onend = () => {
         console.log('[Speech Recognition] Ended');
+        // If we are supposed to be listening (and it wasn't a deliberate stop), restart
+        // However, infinite restart loops can be bad. 
+        // Let's just update UI for now. If continuous=true, it shouldn't end unless we stop it or error.
+
+        // If it ended but we didn't ask it to (e.g. timeout), maybe restart?
+        if (isListening) {
+            console.log('[Speech Recognition] Connection dropped, restarting...');
+            try {
+                rec.start();
+                return;
+            } catch (e) {
+                console.log('Error restarting', e);
+            }
+        }
+
         isListening = false;
         updateMicButton();
     };
