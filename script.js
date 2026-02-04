@@ -1536,17 +1536,35 @@ function processReadingResult(alternatives) {
 
     // Check all alternatives
     let isCorrect = false;
+    let bestSimilarity = 0;
+    let bestSpoken = '';
+
     for (const alt of alternatives) {
         const spokenText = normalizeArabicForMatching(alt);
         const similarity = calculateSimilarity(expectedText, spokenText);
 
         console.log('[Reading Mode] Similarity:', similarity, 'for', spokenText);
 
-        // Threshold for matching (70% similarity)
-        if (similarity >= 0.7) {
+        if (similarity > bestSimilarity) {
+            bestSimilarity = similarity;
+            bestSpoken = spokenText;
+        }
+
+        // Threshold for matching (30% similarity - more forgiving)
+        if (similarity >= 0.3) {
             isCorrect = true;
             break;
         }
+    }
+
+    // Show debug info in live transcript
+    const transcriptEl = document.getElementById('live-transcript');
+    if (transcriptEl) {
+        transcriptEl.innerHTML = `
+            <div style="font-size: 0.9em; color: #aaa; margin-bottom: 8px;">المتوقع: ${expectedText.substring(0, 50)}...</div>
+            <div style="font-size: 1em; color: white;">ما سمعته: ${bestSpoken || '(لم يتم التعرف)'}</div>
+            <div style="font-size: 0.8em; color: ${bestSimilarity >= 0.3 ? '#51cf66' : '#ff6b6b'};">التطابق: ${Math.round(bestSimilarity * 100)}%</div>
+        `;
     }
 
     totalAttempts++;
