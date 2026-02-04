@@ -1686,18 +1686,24 @@ function calculateWordSimilarity(str1, str2) {
 function normalizeArabicForMatching(text) {
     if (!text) return '';
 
-    return String(text)
-        // Remove all diacritics and tashkeel
-        .replace(/[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06ED]/g, '')
+    // First handle specific Quranic characters before stripping diacritics
+    let normalized = String(text)
+        .replace(/\u0670/g, 'ا')  // Superscript Alef (Dagger Alef) -> Alef
+        .replace(/ٱ/g, 'ا');      // Alef Wasla -> Alef
+
+    return normalized
+        // Remove all diacritics and tashkeel (excluding 0670 which is handled)
+        .replace(/[\u0610-\u061A\u064B-\u065F\u06D6-\u06ED]/g, '')
         // Remove tatweel
         .replace(/\u0640/g, '')
-        // Remove standalone hamza and normalize hamza variations
-        .replace(/[ءٱ]/g, '')  // Remove standalone hamza and alef wasla
-        .replace(/[أإآا]/g, 'ا')  // All alef forms to plain alef
+        // Remove standalone hamza
+        .replace(/ء/g, '')
+        // Normalize Alef variations
+        .replace(/[أإآ]/g, 'ا')
         // Normalize Ya variations
-        .replace(/[ىئي]/g, 'ي')  // Ya, alef maqsura, ya with hamza
+        .replace(/[ىئي]/g, 'ي')
         // Normalize Waw variations
-        .replace(/[ؤو]/g, 'و')  // Waw with hamza
+        .replace(/[ؤ]/g, 'و')
         // Normalize Ta marbuta
         .replace(/ة/g, 'ه')
         // Remove any remaining non-Arabic characters except spaces
