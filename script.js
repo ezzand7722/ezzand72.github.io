@@ -1222,11 +1222,27 @@ function initSpeechRecognition() {
     rec.interimResults = true;
     rec.maxAlternatives = 1;
 
+    // Helper to log to on-screen debug box
+    const logToScreen = (msg, color = 'gray') => {
+        const debugEl = document.getElementById('reading-debug-info');
+        if (debugEl) {
+            debugEl.innerHTML += `<div style="color: ${color}; font-size: 0.8em;">${msg}</div>`;
+            // Keep only last 5 lines
+            const lines = debugEl.innerHTML.split('</div>');
+            if (lines.length > 6) {
+                debugEl.innerHTML = lines.slice(lines.length - 6).join('</div>');
+            }
+        }
+    };
+
     rec.onstart = () => {
         console.log('[Speech Recognition] Started');
         isListening = true;
         updateMicButton();
         if (micStatus) micStatus.textContent = 'جاري الاستماع...';
+
+        logToScreen('Microphone started...', '#81C784');
+
         const transcriptEl = document.getElementById('live-transcript');
         if (transcriptEl) transcriptEl.innerHTML = '<span style="color: #888;">جاري الاستماع...</span>';
     };
@@ -1245,6 +1261,10 @@ function initSpeechRecognition() {
 
         console.log('[Speech Recognition] Interim:', interimTranscript);
         console.log('[Speech Recognition] Final:', finalTranscript);
+
+        if (finalTranscript || interimTranscript) {
+            logToScreen(`Heard: ${finalTranscript || interimTranscript}`, '#ddd');
+        }
 
         // Show interim text for feedback
         const transcriptEl = document.getElementById('live-transcript');
@@ -1269,10 +1289,12 @@ function initSpeechRecognition() {
 
     rec.onerror = (event) => {
         console.error('[Speech Recognition] Error:', event.error);
+        logToScreen(`Error: ${event.error}`, '#e57373');
 
         // Don't stop for no-speech, just stay listening equivalent
         if (event.error === 'no-speech') {
             console.log('[Speech Recognition] No speech detected - keeping alive');
+            logToScreen('No speech detected...', '#aaa');
             return;
         }
 
@@ -1282,8 +1304,6 @@ function initSpeechRecognition() {
             isListening = false;
             updateMicButton();
         } else {
-            // Try to restart if it crashes? Or just stop.
-            // For now, let's stop and let user restart
             isListening = false;
             updateMicButton();
             if (micStatus) micStatus.textContent = 'حدث خطأ: ' + event.error;
@@ -1292,6 +1312,8 @@ function initSpeechRecognition() {
 
     rec.onend = () => {
         console.log('[Speech Recognition] Ended');
+        logToScreen('Recognition ended. Restarting...', '#FFB74D');
+
         // If we are supposed to be listening (and it wasn't a deliberate stop), restart with a delay
         if (isListening) {
             console.log('[Speech Recognition] Connection dropped, restarting in 100ms...');
@@ -1300,6 +1322,7 @@ function initSpeechRecognition() {
                     try {
                         rec.start();
                         console.log('[Speech Recognition] Restarted successfully');
+                        logToScreen('Restarted.', '#81C784');
                     } catch (e) {
                         console.log('Error restarting:', e);
                         isListening = false;
