@@ -609,37 +609,9 @@ async function fetchSurahWithWords(chapterNumber) {
             hasMore = false;
         }
     }
-
     surahWordsCache.set(n, allVerses);
     return allVerses;
 }
-
-// Mapping from Latin transliteration components to Arabic letter names
-const translitToArabicMap = {
-    'alif': 'الف', 'lam': 'لام', 'meem': 'ميم', 'mim': 'ميم',
-    'ra': 'را', 'sad': 'صاد', 'kaf': 'كاف', 'ha': 'ها', 'haa': 'ها',
-    'ya': 'يا', 'yaa': 'يا', 'ayn': 'عين', "'ayn": 'عين',
-    'ta': 'طا', 'taa': 'طا', 'sin': 'سين', 'seen': 'سين',
-    'qaf': 'قاف', 'nun': 'نون', 'noon': 'نون',
-    'ha\'a': 'حا', 'haa\'a': 'حا'
-};
-
-// Convert transliteration like "alif-lam-meem" to Arabic phonetic "الف لام ميم"
-function translitToPhoneticArabic(translit) {
-    if (!translit) return null;
-
-    // Split by hyphens or spaces
-    const parts = translit.toLowerCase().split(/[-\s]+/);
-    const arabicParts = parts.map(p => translitToArabicMap[p]).filter(Boolean);
-
-    // Only return phonetic if ALL parts mapped (i.e., it's a letter-by-letter word)
-    if (arabicParts.length === parts.length && arabicParts.length > 1) {
-        return arabicParts.join(' ');
-    }
-    return null; // Regular word, not letter names
-}
-
-
 
 // Cache for custom local timings
 const customTimingsCache = new Map();
@@ -1493,16 +1465,10 @@ async function loadReadingSurah(surahIndex) {
                 .map(w => {
                     // Use text_uthmani (readable) instead of text (glyph)
                     const uthmaniText = w.text_uthmani || w.text || '';
-                    const translit = w.transliteration?.text || '';
-
-                    // Try to get phonetic Arabic from transliteration (for Muqatta'at)
-                    const phoneticArabic = translitToPhoneticArabic(translit);
 
                     return {
                         text: uthmaniText,  // Original Uthmani for display
                         normalized: normalizeArabicForMatching(uthmaniText),  // Normalized for matching
-                        transliteration: translit,  // e.g., "alif-lam-meem"
-                        phoneticArabic: phoneticArabic,  // e.g., "الف لام ميم" (if applicable)
                         status: 'pending'
                     };
                 });
@@ -1642,20 +1608,20 @@ function updateMicButton() {
 }
 
 const muqattaatMapping = {
-    'الم': ['الف لام ميم'],
-    'المص': ['الف لام ميم صاد'],
-    'الر': ['الف لام را'],
-    'المر': ['الف لام ميم را'],
-    'كهيعص': ['كاف ها يا عين صاد', 'كاف ها يا عين صاد'],
-    'طه': ['طا ها'],
-    'طسم': ['طا سين ميم'],
-    'طس': ['طا سين'],
-    'يس': ['يا سين'],
-    'ص': ['صاد'],
-    'حم': ['حا ميم'],
-    'عسق': ['عين سين قاف'],
-    'ق': ['قاف'],
-    'ن': ['نون']
+    "الم": "الف لام ميم",
+    "المص": "الف لام ميم صاد",
+    "الر": "الف لام را",
+    "المر": "الف لام ميم را",
+    "كهيعص": "كاف ها يا عين صاد",
+    "طه": "طه",
+    "طسم": "طاسين ميم",
+    "طس": "طاسين",
+    "يس": "ياسين",
+    "ص": "صاد",
+    "حم": "حا ميم",
+    "حم عسق": "حا ميم عين سين قاف",
+    "ق": "قاف",
+    "ن": "نون"
 };
 
 // Process Reading Result - Word by Word
@@ -1689,28 +1655,20 @@ function processReadingResult(alternatives) {
         // 1. Check Standard Match
         let matchResult = checkWordMatch(currentTarget.normalized, spokenNorm);
 
-        // 2. Check API-provided Phonetic Form (e.g., from transliteration "alif-lam-meem" -> "الف لام ميم")
-        if (!matchResult.isMatch && currentTarget.phoneticArabic) {
-            const phoneticNorm = normalizeArabicForMatching(currentTarget.phoneticArabic);
-            const phoneticMatch = checkWordMatch(phoneticNorm, spokenNorm);
-            if (phoneticMatch.isMatch || spokenNorm.includes(phoneticNorm) || phoneticNorm.includes(spokenNorm)) {
-                console.log(`[Reading Mode] Phonetic (API) Match: "${spokenWord}" matches "${currentTarget.phoneticArabic}"`);
-                matchResult = { isMatch: true, similarity: 0.95 };
-            }
-        }
-
-        // 3. Fallback: Check hardcoded Muqatta'at mapping
+        // 2. Check Muqatta'at (Preset Mapping)
         if (!matchResult.isMatch) {
-            const phoneticForms = muqattaatMapping[currentTarget.normalized] || muqattaatMapping[currentTarget.text];
-            if (phoneticForms) {
-                for (const form of phoneticForms) {
-                    const formNorm = normalizeArabicForMatching(form);
-                    const phoneticMatch = checkWordMatch(formNorm, spokenNorm);
-                    if (phoneticMatch.isMatch || spokenNorm.includes(formNorm) || formNorm.includes(spokenNorm)) {
-                        console.log(`[Reading Mode] Muqatta'at (hardcoded) Match: "${spokenWord}" matches expansion "${form}"`);
-                        matchResult = { isMatch: true, similarity: 0.95 };
-                        break;
-                    }
+            // Check original text or normalized text against mapping
+            // Note: mapping keys are likely normalized or standard Uthmani
+            const expansion = muqattaatMapping[currentTarget.text] || muqattaatMapping[currentTarget.normalized];
+
+            if (expansion) {
+                const expansionNorm = normalizeArabicForMatching(expansion);
+                // Check if spoken word matches expansion (or is contained in it)
+                const phoneticMatch = checkWordMatch(expansionNorm, spokenNorm);
+
+                if (phoneticMatch.isMatch || spokenNorm.includes(expansionNorm) || expansionNorm.includes(spokenNorm)) {
+                    console.log(`[Reading Mode] Muqatta'at (Preset) Match: "${spokenWord}" matches "${expansion}"`);
+                    matchResult = { isMatch: true, similarity: 0.95 };
                 }
             }
         }
