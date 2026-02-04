@@ -1691,14 +1691,17 @@ function normalizeArabicForMatching(text) {
         .replace(/[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06ED]/g, '')
         // Remove tatweel
         .replace(/\u0640/g, '')
-        // Normalize Alef variations
-        .replace(/[إأآا]/g, 'ا')
-        // Normalize Ya
-        .replace(/ى/g, 'ي')
-        // Normalize other letters
-        .replace(/ؤ/g, 'و')
-        .replace(/ئ/g, 'ي')
+        // Remove standalone hamza and normalize hamza variations
+        .replace(/[ءٱ]/g, '')  // Remove standalone hamza and alef wasla
+        .replace(/[أإآا]/g, 'ا')  // All alef forms to plain alef
+        // Normalize Ya variations
+        .replace(/[ىئي]/g, 'ي')  // Ya, alef maqsura, ya with hamza
+        // Normalize Waw variations
+        .replace(/[ؤو]/g, 'و')  // Waw with hamza
+        // Normalize Ta marbuta
         .replace(/ة/g, 'ه')
+        // Remove any remaining non-Arabic characters except spaces
+        .replace(/[^\u0620-\u064A\s]/g, '')
         // Remove extra whitespace
         .replace(/\s+/g, ' ')
         .trim()
