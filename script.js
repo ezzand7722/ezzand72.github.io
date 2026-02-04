@@ -1673,15 +1673,30 @@ function processReadingResult(alternatives) {
             }
         }
 
-        // 3. Fallback: Vowel Expansion Tolerance (User Request)
-        // Check if spoken word has an extra trailing vowel (Ya, Alif, Waw) that acts as a Harakat (Kasra, Fatha, Damma)
+        // 3. Fallback: Phonetic Structure Normalization (Solar Lam, Silent Alif/Waw, Madd)
         if (!matchResult.isMatch) {
+            const phoneticTarget = normalizePhonetic(currentTarget.text); // Use text to get 'ال'
+            const phoneticSpoken = normalizePhonetic(spokenWord);
+
+            const phoneticMatch = checkWordMatch(phoneticTarget, phoneticSpoken);
+            if (phoneticMatch.isMatch) {
+                console.log(`[Reading Mode] Phonetic Structure Match: "${spokenWord}" matches "${currentTarget.text}"`);
+                matchResult = { isMatch: true, similarity: 0.95 };
+            }
+        }
+
+        // 4. Fallback: Ending Tolerance (Tanween/Noon & Vowels)
+        // Check if spoken word has an extra trailing char (Noon, Ya, Alif, Waw)
+        if (!matchResult.isMatch) {
+            const spokenNorm = normalizeArabicForMatching(spokenWord);
             const lastChar = spokenNorm.slice(-1);
-            if (['ي', 'ا', 'و'].includes(lastChar)) {
-                const spokenWithoutVowel = spokenNorm.slice(0, -1);
-                const vowelMatch = checkWordMatch(currentTarget.normalized, spokenWithoutVowel);
-                if (vowelMatch.isMatch) {
-                    console.log(`[Reading Mode] Vowel Tolerance Match: "${spokenWord}" treated as "${spokenWithoutVowel}"`);
+
+            // Allow trailing 'n' (Tanween), 'y' (Kasra/Shaddah), 'a' (Fatha), 'w' (Damma)
+            if (['ن', 'ي', 'ا', 'و'].includes(lastChar)) {
+                const spokenWithoutTail = spokenNorm.slice(0, -1);
+                const tailMatch = checkWordMatch(currentTarget.normalized, spokenWithoutTail);
+                if (tailMatch.isMatch) {
+                    console.log(`[Reading Mode] Tail Tolerance Match (Tanween/Vowel): "${spokenWord}" treated as "${spokenWithoutTail}"`);
                     matchResult = { isMatch: true, similarity: 0.9 };
                 }
             }
@@ -1826,6 +1841,35 @@ function calculateWordSimilarity(str1, str2) {
     return matches / Math.max(len1, len2);
 }
 
+// Advanced Phonetic Normalization (User Request)
+function normalizePhonetic(text) {
+    let res = normalizeArabicForMatching(text); // Start with basic normalization
+
+    // 1. Solar Lam Rule: Remove 'l' if followed by solar letter (Ash-Shams -> Ashams)
+    // Solar letters: ت ث د ذ ر ز س ش ص ض ط ظ ل ن
+    if (res.startsWith('ال')) {
+        const solarChars = 'تثدذرزسشصضطظلن';
+        const thirdChar = res[2];
+        if (thirdChar && solarChars.includes(thirdChar)) {
+            res = 'ا' + res.substring(2); // Replace 'ال' with 'ا'
+        }
+    }
+
+    // 2. Silent Plural Alif: 'وا' at end -> 'و' (Amanu -> Aman)
+    if (res.endsWith('وا')) {
+        res = res.substring(0, res.length - 1);
+    }
+
+    // 3. Dedup Vowels (Madd): 'اا' -> 'ا' (Jaaaa -> Ja)
+    res = res.replace(/([اوي])\1+/g, '$1');
+
+    // 4. Silent Waw (Common Orthography): 'ulaika' -> 'laika'
+    // User notes AI hears 'al-la-ik' for 'ulaika'
+    res = res.replace(/^اولئك/, 'الئك');
+
+    return res;
+}
+
 // Normalize Arabic Text for Matching
 function normalizeArabicForMatching(text) {
     if (!text) return '';
@@ -1835,7 +1879,7 @@ function normalizeArabicForMatching(text) {
         .replace(/\u0670/g, 'ا')  // Superscript Alef (Dagger Alef) -> Alef
         .replace(/ٱ/g, 'ا');      // Alef Wasla -> Alef
 
-    // 2. Remove all diacritics and tashkeel
+    // 2. Remove all diacritics and tashkeel (Includes Tanween)
     normalized = normalized
         .replace(/[\u0610-\u061A\u064B-\u065F\u06D6-\u06ED]/g, '')
         .replace(/\u0640/g, '') // Remove tatweel
@@ -1846,14 +1890,13 @@ function normalizeArabicForMatching(text) {
         .replace(/[أإآ]/g, 'ا') // Normalize Alef variations
         .replace(/[ىئي]/g, 'ي') // Normalize Ya variations
         .replace(/[ؤ]/g, 'و')   // Normalize Waw variations
-        .replace(/ة/g, 'ه')     // Normalize Ta marbuta
+        .replace(/ة/g, 'ه')     // Normalize Ta marbuta (to Ha)
         .replace(/[^\u0620-\u064A\s]/g, '') // Remove non-Arabic
         .replace(/\s+/g, ' ')
         .trim()
         .toLowerCase();
 
     // 4. Fix specific words where standard dictation omits the Alef
-    // These specific replacements must run AFTER diacritics are removed
     return normalized
         .replace(/ذالك/g, 'ذلك')
         .replace(/هاذا/g, 'هذا')
