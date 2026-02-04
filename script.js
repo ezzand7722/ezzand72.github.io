@@ -1929,27 +1929,9 @@ function updateReadingProgress() {
     readingProgressFill.style.width = `${progressPercent}%`;
 }
 
-// Helper to update debug info
+// Helper to update debug info (DISABLED visual output per user)
 function updateDebugInfo(expected, spoken, details = "") {
-    const debugEl = document.getElementById('reading-debug-info');
-    if (debugEl) {
-        // Append entry
-        debugEl.innerHTML += `
-            <div style="border-top: 1px solid #444; margin-top: 4px; padding-top: 4px;">
-                <div><strong>Exp:</strong> ${expected}</div>
-                <div><strong>Spk:</strong> ${spoken}</div>
-                <div style="font-size: 0.8em; color: #aaa;">${details}</div>
-            </div>
-        `;
-        // Scroll to bottom
-        debugEl.scrollTop = debugEl.scrollHeight;
-
-        // Keep only last 5 entries to prevent overflow
-        const entries = debugEl.children;
-        if (entries.length > 5) {
-            debugEl.removeChild(entries[0]);
-        }
-    }
+    // console.log(`[Match Debug] Exp: ${expected} | Spk: ${spoken} | ${details}`);
 }
 
 // Reset Reading Progress
