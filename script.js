@@ -1701,19 +1701,20 @@ function calculateWordSimilarity(str1, str2) {
     if (!str1 || !str2) return 0;
     if (str1 === str2) return 1;
 
-    // Check if one contains the other - but ONLY if length difference is small
-    // This prevents "La" matching "WaLa" via inclusion
-    if (str1.includes(str2) || str2.includes(str1)) {
-        const lenDiff = Math.abs(str1.length - str2.length);
+    const len1 = str1.length;
+    const len2 = str2.length;
+    const minLen = Math.min(len1, len2);
+
+    // Check if one contains the other - but ONLY for longer words
+    // This strictness prevents "La" (2) matching "WaLa" (3) via simple inclusion
+    if (minLen > 3 && (str1.includes(str2) || str2.includes(str1))) {
+        const lenDiff = Math.abs(len1 - len2);
         if (lenDiff <= 1) return 0.9; // Almost exact
         return 0.6; // Penalty for extra characters even if included
     }
 
     // Character-level comparison
-    const len1 = str1.length;
-    const len2 = str2.length;
     let matches = 0;
-    const minLen = Math.min(len1, len2);
 
     for (let i = 0; i < minLen; i++) {
         if (str1[i] === str2[i]) matches++;
