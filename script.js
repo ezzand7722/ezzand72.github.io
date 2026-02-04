@@ -1563,13 +1563,6 @@ function processReadingResult(alternatives) {
     const currentVerse = readingVerses[currentVerseIndex];
     if (!currentVerse.words || currentWordIndex >= currentVerse.words.length) return;
 
-    const currentWord = currentVerse.words[currentWordIndex];
-    const expectedWordNorm = currentWord.normalized;
-    const expectedWordFull = currentWord.text;  // With harakat
-
-    console.log('[Reading Mode] Expected word:', expectedWordFull, '(normalized:', expectedWordNorm, ')');
-    console.log('[Reading Mode] Alternatives:', alternatives);
-
     // Get all spoken words from alternatives
     let spokenWords = [];
     for (const alt of alternatives) {
@@ -1579,55 +1572,83 @@ function processReadingResult(alternatives) {
 
     console.log('[Reading Mode] Spoken words:', spokenWords);
 
-    // Try to match words starting from current position
     let matchedCount = 0;
 
+    // Iterate through spoken words one by one
     for (const spokenWord of spokenWords) {
         if (currentWordIndex >= currentVerse.words.length) break;
 
-        const targetWord = currentVerse.words[currentWordIndex];
+        const currentTarget = currentVerse.words[currentWordIndex];
         const spokenNorm = normalizeArabicForMatching(spokenWord);
-        const similarity = calculateWordSimilarity(targetWord.normalized, spokenNorm);
 
-        console.log(`[Reading Mode] Comparing "${spokenWord}" with "${targetWord.text}": ${similarity}`);
+        // 1. Check against CURRENT word
+        let matchResult = checkWordMatch(currentTarget.normalized, spokenNorm);
 
-        // 40% threshold for word matching
-        if (similarity >= 0.4) {
-            targetWord.status = 'correct';
+        if (matchResult.isMatch) {
+            console.log(`[Reading Mode] MATCH Current: "${spokenWord}" matches "${currentTarget.text}"`);
+            currentTarget.status = 'correct';
             currentWordIndex++;
             matchedCount++;
             correctCount++;
-        } else {
-            // Wrong word - mark as incorrect and STOP
-            targetWord.status = 'incorrect';
-            totalAttempts++;
-
-            // Show what went wrong
-            const transcriptEl = document.getElementById('live-transcript');
-            if (transcriptEl) {
-                transcriptEl.innerHTML = `
-                    <div style="color: #ff6b6b; font-weight: bold;">❌ خطأ في الكلمة</div>
-                    <div style="margin-top: 8px;">المتوقع: <span style="color: #51cf66;">${targetWord.text}</span></div>
-                    <div>ما قلته: <span style="color: #ff6b6b;">${spokenWord}</span></div>
-                `;
-            }
-
-            renderReadingVerses();
-
-            // Reset incorrect status after delay
-            setTimeout(() => {
-                if (targetWord.status === 'incorrect') {
-                    targetWord.status = 'pending';
-                    renderReadingVerses();
-                }
-            }, 2000);
-            return;
+            continue; // Move to next spoken word
         }
+
+        // 2. Check for BACKTRACKING (check previous 3 words)
+        // If user says a word we recently passed, move pointer back to follow them
+        let backtracked = false;
+        const lookBackLimit = Math.min(3, currentWordIndex);
+
+        for (let b = 1; b <= lookBackLimit; b++) {
+            const prevIndex = currentWordIndex - b;
+            const prevWord = currentVerse.words[prevIndex];
+
+            let prevMatch = checkWordMatch(prevWord.normalized, spokenNorm);
+            if (prevMatch.isMatch) {
+                console.log(`[Reading Mode] BACKTRACK: User said "${spokenWord}" (index ${prevIndex}). Moving pointer to ${prevIndex + 1}`);
+
+                // User repeated a previous word. 
+                // We accept it, and set the pointer to the NEXT word after it.
+                // Reset status of words in between? No, keep them correct, just move the "current" pointer.
+                currentWordIndex = prevIndex + 1;
+                backtracked = true;
+                break;
+            }
+        }
+
+        if (backtracked) continue;
+
+        // 3. If no match (current or previous), it's a mistake on the CURRENT word
+        console.log(`[Reading Mode] MISMATCH: "${spokenWord}" vs "${currentTarget.text}" (${matchResult.similarity.toFixed(2)})`);
+
+        // Mark as incorrect and STOP processing further spoken words
+        currentTarget.status = 'incorrect';
+        totalAttempts++;
+
+        // Show what went wrong
+        const transcriptEl = document.getElementById('live-transcript');
+        if (transcriptEl) {
+            transcriptEl.innerHTML = `
+                <div style="color: #ff6b6b; font-weight: bold;">❌ خطأ في الكلمة</div>
+                <div style="margin-top: 8px;">المتوقع: <span style="color: #51cf66;">${currentTarget.text}</span></div>
+                <div>ما قلته: <span style="color: #ff6b6b;">${spokenWord}</span></div>
+            `;
+        }
+
+        renderReadingVerses();
+
+        // Reset incorrect status after delay
+        setTimeout(() => {
+            if (currentTarget.status === 'incorrect') {
+                currentTarget.status = 'pending';
+                renderReadingVerses();
+            }
+        }, 2000);
+        return; // STOP! verification failed
     }
 
     totalAttempts++;
 
-    // Update live transcript with progress
+    // Update live transcript with progress (if successful)
     const transcriptEl = document.getElementById('live-transcript');
     if (transcriptEl && matchedCount > 0) {
         const remaining = currentVerse.words.length - currentWordIndex;
@@ -1656,6 +1677,22 @@ function processReadingResult(alternatives) {
 
     renderReadingVerses();
     updateReadingProgress();
+}
+
+// Check word match with dynamic strictness
+function checkWordMatch(expectedNorm, spokenNorm) {
+    const similarity = calculateWordSimilarity(expectedNorm, spokenNorm);
+    const len = expectedNorm.length;
+
+    // Stricter thresholds for shorter words to avoid false positives
+    let threshold = 0.5; // Default (was 0.4)
+    if (len <= 2) threshold = 0.9;      // Very short (e.g. 'la'): Strict
+    else if (len <= 4) threshold = 0.7; // Short words: moderately strict
+
+    return {
+        isMatch: similarity >= threshold,
+        similarity: similarity
+    };
 }
 
 // Calculate word similarity (character-level)
