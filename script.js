@@ -1726,43 +1726,38 @@ function calculateWordSimilarity(str1, str2) {
 function normalizeArabicForMatching(text) {
     if (!text) return '';
 
-    // First handle specific Quranic characters before stripping diacritics
+    // 1. Handle specific Quranic characters
     let normalized = String(text)
         .replace(/\u0670/g, 'ا')  // Superscript Alef (Dagger Alef) -> Alef
         .replace(/ٱ/g, 'ا');      // Alef Wasla -> Alef
 
-    // Fix specific words where standard dictation omits the Alef
-    // "Dhalika" -> "Dhalika" (not Dhaalika)
+    // 2. Remove all diacritics and tashkeel
     normalized = normalized
+        .replace(/[\u0610-\u061A\u064B-\u065F\u06D6-\u06ED]/g, '')
+        .replace(/\u0640/g, '') // Remove tatweel
+        .replace(/ء/g, '');     // Remove standalone hamza
+
+    // 3. Normalize letter variations
+    normalized = normalized
+        .replace(/[أإآ]/g, 'ا') // Normalize Alef variations
+        .replace(/[ىئي]/g, 'ي') // Normalize Ya variations
+        .replace(/[ؤ]/g, 'و')   // Normalize Waw variations
+        .replace(/ة/g, 'ه')     // Normalize Ta marbuta
+        .replace(/[^\u0620-\u064A\s]/g, '') // Remove non-Arabic
+        .replace(/\s+/g, ' ')
+        .trim()
+        .toLowerCase();
+
+    // 4. Fix specific words where standard dictation omits the Alef
+    // These specific replacements must run AFTER diacritics are removed
+    return normalized
         .replace(/ذالك/g, 'ذلك')
         .replace(/هاذا/g, 'هذا')
         .replace(/لاكن/g, 'لكن')
         .replace(/الرحمان/g, 'الرحمن')
-        .replace(/اللله/g, 'الله') // Just in case
+        .replace(/اللله/g, 'الله')
         .replace(/اولائك/g, 'اولئك')
         .replace(/هائولاء/g, 'هؤلاء');
-
-    return normalized
-        // Remove all diacritics and tashkeel (excluding 0670 which is handled)
-        .replace(/[\u0610-\u061A\u064B-\u065F\u06D6-\u06ED]/g, '')
-        // Remove tatweel
-        .replace(/\u0640/g, '')
-        // Remove standalone hamza
-        .replace(/ء/g, '')
-        // Normalize Alef variations
-        .replace(/[أإآ]/g, 'ا')
-        // Normalize Ya variations
-        .replace(/[ىئي]/g, 'ي')
-        // Normalize Waw variations
-        .replace(/[ؤ]/g, 'و')
-        // Normalize Ta marbuta
-        .replace(/ة/g, 'ه')
-        // Remove any remaining non-Arabic characters except spaces
-        .replace(/[^\u0620-\u064A\s]/g, '')
-        // Remove extra whitespace
-        .replace(/\s+/g, ' ')
-        .trim()
-        .toLowerCase();
 }
 
 // Calculate Similarity (Simple Levenshtein-based)
