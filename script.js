@@ -1415,12 +1415,19 @@ async function loadReadingSurah(surahIndex) {
                 : null;
 
             const text = v.text_uthmani || '';
-            // Split into words - each word keeps its harakat
-            const words = text.split(/\s+/).filter(w => w.length > 0).map(word => ({
-                text: word,  // Original with harakat
-                normalized: normalizeArabicForMatching(word),  // Without harakat for loose matching
-                status: 'pending'  // pending, correct, incorrect
-            }));
+
+            // Quranic stop/pause signs (waqf marks) - these are NOT words to recite
+            const waqfSigns = /^[\u06D6-\u06ED\u0600-\u0605\u061B-\u061F\u066A-\u066D\u06DD\u06DE\u06E9۞۩ۣۖۗۘۙۚۛۜ۟۠ۡۢۤۥۦ۪ۭۧۨ]+$/;
+
+            // Split into words and filter out waqf signs
+            const words = text.split(/\s+/)
+                .filter(w => w.length > 0)
+                .filter(w => !waqfSigns.test(w))  // Remove standalone waqf signs
+                .map(word => ({
+                    text: word,  // Original with harakat
+                    normalized: normalizeArabicForMatching(word),  // Without harakat for loose matching
+                    status: 'pending'  // pending, correct, incorrect
+                }));
 
             return {
                 ayah: ayahNum,
