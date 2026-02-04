@@ -1556,6 +1556,23 @@ function updateMicButton() {
     }
 }
 
+const muqattaatMapping = {
+    'الم': ['الف لام ميم'],
+    'المص': ['الف لام ميم صاد'],
+    'الر': ['الف لام را'],
+    'المر': ['الف لام ميم را'],
+    'كهيعص': ['كاف ها يا عين صاد', 'كاف ها يا عين صاد'],
+    'طه': ['طا ها'],
+    'طسم': ['طا سين ميم'],
+    'طس': ['طا سين'],
+    'يس': ['يا سين'],
+    'ص': ['صاد'],
+    'حم': ['حا ميم'],
+    'عسق': ['عين سين قاف'],
+    'ق': ['قاف'],
+    'ن': ['نون']
+};
+
 // Process Reading Result - Word by Word
 function processReadingResult(alternatives) {
     if (currentVerseIndex >= readingVerses.length) return;
@@ -1581,8 +1598,28 @@ function processReadingResult(alternatives) {
         const currentTarget = currentVerse.words[currentWordIndex];
         const spokenNorm = normalizeArabicForMatching(spokenWord);
 
-        // 1. Check against CURRENT word
+        // Highlight debug info
+        updateDebugInfo(currentTarget.normalized, spokenNorm);
+
+        // 1. Check Standard Match
         let matchResult = checkWordMatch(currentTarget.normalized, spokenNorm);
+
+        // 2. Check Muqatta'at (Phonetic Expansion)
+        if (!matchResult.isMatch) {
+            const phoneticForms = muqattaatMapping[currentTarget.normalized] || muqattaatMapping[currentTarget.text];
+            if (phoneticForms) {
+                for (const form of phoneticForms) {
+                    const formNorm = normalizeArabicForMatching(form);
+                    // Check if spoken word matches expansion
+                    const phoneticMatch = checkWordMatch(formNorm, spokenNorm);
+                    if (phoneticMatch.isMatch || spokenNorm.includes(formNorm) || formNorm.includes(spokenNorm)) {
+                        console.log(`[Reading Mode] Muqatta'at Match: "${spokenWord}" matches expansion "${form}"`);
+                        matchResult = { isMatch: true, similarity: 0.95 };
+                        break;
+                    }
+                }
+            }
+        }
 
         if (matchResult.isMatch) {
             console.log(`[Reading Mode] MATCH Current: "${spokenWord}" matches "${currentTarget.text}"`);
