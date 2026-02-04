@@ -1686,8 +1686,8 @@ function checkWordMatch(expectedNorm, spokenNorm) {
 
     // Stricter thresholds for shorter words to avoid false positives
     let threshold = 0.5; // Default (was 0.4)
-    if (len <= 2) threshold = 0.9;      // Very short (e.g. 'la'): Strict
-    else if (len <= 4) threshold = 0.7; // Short words: moderately strict
+    if (len <= 2) threshold = 0.95;     // Very short: Extremely strict
+    else if (len <= 4) threshold = 0.8; // Short words: Strict (was 0.7)
 
     return {
         isMatch: similarity >= threshold,
@@ -1701,9 +1701,12 @@ function calculateWordSimilarity(str1, str2) {
     if (!str1 || !str2) return 0;
     if (str1 === str2) return 1;
 
-    // Check if one contains the other
+    // Check if one contains the other - but ONLY if length difference is small
+    // This prevents "La" matching "WaLa" via inclusion
     if (str1.includes(str2) || str2.includes(str1)) {
-        return 0.8;
+        const lenDiff = Math.abs(str1.length - str2.length);
+        if (lenDiff <= 1) return 0.9; // Almost exact
+        return 0.6; // Penalty for extra characters even if included
     }
 
     // Character-level comparison
@@ -1727,6 +1730,17 @@ function normalizeArabicForMatching(text) {
     let normalized = String(text)
         .replace(/\u0670/g, 'ا')  // Superscript Alef (Dagger Alef) -> Alef
         .replace(/ٱ/g, 'ا');      // Alef Wasla -> Alef
+
+    // Fix specific words where standard dictation omits the Alef
+    // "Dhalika" -> "Dhalika" (not Dhaalika)
+    normalized = normalized
+        .replace(/ذالك/g, 'ذلك')
+        .replace(/هاذا/g, 'هذا')
+        .replace(/لاكن/g, 'لكن')
+        .replace(/الرحمان/g, 'الرحمن')
+        .replace(/اللله/g, 'الله') // Just in case
+        .replace(/اولائك/g, 'اولئك')
+        .replace(/هائولاء/g, 'هؤلاء');
 
     return normalized
         // Remove all diacritics and tashkeel (excluding 0670 which is handled)
