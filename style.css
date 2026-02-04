@@ -1275,6 +1275,40 @@ nav li i {
     animation: shake 0.5s ease;
 }
 
+/* Word-level styling for reading practice */
+.reading-word {
+    display: inline;
+    transition: all 0.3s ease;
+    padding: 2px 4px;
+    border-radius: 4px;
+    margin: 0 2px;
+}
+
+.word-current {
+    background: rgba(212, 175, 55, 0.3);
+    color: var(--primary-gold);
+    font-weight: bold;
+    box-shadow: 0 0 8px rgba(212, 175, 55, 0.4);
+}
+
+.word-correct {
+    color: #51cf66 !important;
+    background: rgba(81, 207, 102, 0.2);
+}
+
+.word-incorrect {
+    color: #ff6b6b !important;
+    background: rgba(255, 107, 107, 0.2);
+    animation: shake 0.4s ease;
+}
+
+.verse-number {
+    font-size: 0.7em;
+    color: var(--text-gray);
+    opacity: 0.7;
+    margin-right: 8px;
+}
+
 @keyframes correct-flash {
 
     0%,
