@@ -1311,6 +1311,40 @@ nav li i {
     }
 }
 
+/* Word-level reading feedback */
+.reading-word {
+    display: inline;
+    transition: all 0.3s ease;
+    padding: 2px 4px;
+    border-radius: 4px;
+    margin: 0 2px;
+}
+
+.word-current {
+    background: rgba(212, 175, 55, 0.3);
+    color: var(--primary-gold);
+    font-weight: bold;
+    box-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
+}
+
+.word-correct {
+    color: #51cf66 !important;
+    background: rgba(81, 207, 102, 0.15);
+}
+
+.word-incorrect {
+    color: #ff6b6b !important;
+    background: rgba(255, 107, 107, 0.2);
+    animation: shake 0.5s ease;
+}
+
+.verse-number {
+    font-size: 0.7em;
+    color: var(--text-gray);
+    opacity: 0.6;
+    margin-right: 8px;
+}
+
 /* Mobile Responsive for Reading Mode */
 @media (max-width: 768px) {
     .reading-overlay {

@@ -1191,6 +1191,7 @@ let isReadingModeOpen = false;
 let isListening = false;
 let readingVerses = [];
 let currentVerseIndex = 0;
+let currentWordIndex = 0;
 let correctCount = 0;
 let totalAttempts = 0;
 let selectedReadingSurah = null;
@@ -1413,15 +1414,24 @@ async function loadReadingSurah(surahIndex) {
                 ? parseInt(String(v.verse_key).split(':')[1], 10)
                 : null;
 
+            const text = v.text_uthmani || '';
+            // Split into words - each word keeps its harakat
+            const words = text.split(/\s+/).filter(w => w.length > 0).map(word => ({
+                text: word,  // Original with harakat
+                normalized: normalizeArabicForMatching(word),  // Without harakat for loose matching
+                status: 'pending'  // pending, correct, incorrect
+            }));
+
             return {
                 ayah: ayahNum,
-                text: v.text_uthmani || '',
-                textNormalized: normalizeArabicForMatching(v.text_uthmani || ''),
-                status: 'pending' // pending, correct, incorrect
+                text: text,
+                words: words,
+                status: 'pending'
             };
-        }).filter(v => v.ayah && v.text);
+        }).filter(v => v.ayah && v.words.length > 0);
 
         currentVerseIndex = 0;
+        currentWordIndex = 0;
         correctCount = 0;
         totalAttempts = 0;
 
@@ -1439,17 +1449,32 @@ async function loadReadingSurah(surahIndex) {
 function renderReadingVerses() {
     if (!readingDisplay || readingVerses.length === 0) return;
 
-    readingDisplay.innerHTML = readingVerses.map((verse, index) => {
-        let className = 'reading-verse';
-        if (index === currentVerseIndex) {
-            className += ' verse-active';
+    readingDisplay.innerHTML = readingVerses.map((verse, vIndex) => {
+        let verseClass = 'reading-verse';
+        if (vIndex === currentVerseIndex) {
+            verseClass += ' verse-active';
         } else if (verse.status === 'correct') {
-            className += ' verse-correct';
-        } else if (verse.status === 'incorrect') {
-            className += ' verse-incorrect';
+            verseClass += ' verse-correct';
         }
 
-        return `<p class="${className}" data-index="${index}">${verse.text}</p>`;
+        // Render each word with its status
+        const wordsHtml = verse.words.map((word, wIndex) => {
+            let wordClass = 'reading-word';
+            if (vIndex === currentVerseIndex) {
+                if (word.status === 'correct') {
+                    wordClass += ' word-correct';
+                } else if (word.status === 'incorrect') {
+                    wordClass += ' word-incorrect';
+                } else if (wIndex === currentWordIndex) {
+                    wordClass += ' word-current';
+                }
+            } else if (verse.status === 'correct') {
+                wordClass += ' word-correct';
+            }
+            return `<span class="${wordClass}">${word.text}</span>`;
+        }).join(' ');
+
+        return `<p class="${verseClass}" data-index="${vIndex}">${wordsHtml} <span class="verse-number">(${verse.ayah})</span></p>`;
     }).join('');
 
     // Auto-scroll to active verse
@@ -1524,81 +1549,130 @@ function updateMicButton() {
     }
 }
 
-// Process Reading Result
+// Process Reading Result - Word by Word
 function processReadingResult(alternatives) {
     if (currentVerseIndex >= readingVerses.length) return;
 
     const currentVerse = readingVerses[currentVerseIndex];
-    const expectedText = currentVerse.textNormalized;
+    if (!currentVerse.words || currentWordIndex >= currentVerse.words.length) return;
 
-    console.log('[Reading Mode] Expected:', expectedText);
+    const currentWord = currentVerse.words[currentWordIndex];
+    const expectedWordNorm = currentWord.normalized;
+    const expectedWordFull = currentWord.text;  // With harakat
+
+    console.log('[Reading Mode] Expected word:', expectedWordFull, '(normalized:', expectedWordNorm, ')');
     console.log('[Reading Mode] Alternatives:', alternatives);
 
-    // Check all alternatives
-    let isCorrect = false;
-    let bestSimilarity = 0;
-    let bestSpoken = '';
-
+    // Get all spoken words from alternatives
+    let spokenWords = [];
     for (const alt of alternatives) {
-        const spokenText = normalizeArabicForMatching(alt);
-        const similarity = calculateSimilarity(expectedText, spokenText);
-
-        console.log('[Reading Mode] Similarity:', similarity, 'for', spokenText);
-
-        if (similarity > bestSimilarity) {
-            bestSimilarity = similarity;
-            bestSpoken = spokenText;
-        }
-
-        // Threshold for matching (30% similarity - more forgiving)
-        if (similarity >= 0.3) {
-            isCorrect = true;
-            break;
-        }
+        const words = alt.split(/\s+/).filter(w => w.length > 0);
+        spokenWords.push(...words);
     }
 
-    // Show debug info in live transcript
-    const transcriptEl = document.getElementById('live-transcript');
-    if (transcriptEl) {
-        transcriptEl.innerHTML = `
-            <div style="font-size: 0.9em; color: #aaa; margin-bottom: 8px;">المتوقع: ${expectedText.substring(0, 50)}...</div>
-            <div style="font-size: 1em; color: white;">ما سمعته: ${bestSpoken || '(لم يتم التعرف)'}</div>
-            <div style="font-size: 0.8em; color: ${bestSimilarity >= 0.3 ? '#51cf66' : '#ff6b6b'};">التطابق: ${Math.round(bestSimilarity * 100)}%</div>
-        `;
+    console.log('[Reading Mode] Spoken words:', spokenWords);
+
+    // Try to match words starting from current position
+    let matchedCount = 0;
+
+    for (const spokenWord of spokenWords) {
+        if (currentWordIndex >= currentVerse.words.length) break;
+
+        const targetWord = currentVerse.words[currentWordIndex];
+        const spokenNorm = normalizeArabicForMatching(spokenWord);
+        const similarity = calculateWordSimilarity(targetWord.normalized, spokenNorm);
+
+        console.log(`[Reading Mode] Comparing "${spokenWord}" with "${targetWord.text}": ${similarity}`);
+
+        // 40% threshold for word matching
+        if (similarity >= 0.4) {
+            targetWord.status = 'correct';
+            currentWordIndex++;
+            matchedCount++;
+            correctCount++;
+        } else {
+            // Wrong word - mark as incorrect and STOP
+            targetWord.status = 'incorrect';
+            totalAttempts++;
+
+            // Show what went wrong
+            const transcriptEl = document.getElementById('live-transcript');
+            if (transcriptEl) {
+                transcriptEl.innerHTML = `
+                    <div style="color: #ff6b6b; font-weight: bold;">❌ خطأ في الكلمة</div>
+                    <div style="margin-top: 8px;">المتوقع: <span style="color: #51cf66;">${targetWord.text}</span></div>
+                    <div>ما قلته: <span style="color: #ff6b6b;">${spokenWord}</span></div>
+                `;
+            }
+
+            renderReadingVerses();
+
+            // Reset incorrect status after delay
+            setTimeout(() => {
+                if (targetWord.status === 'incorrect') {
+                    targetWord.status = 'pending';
+                    renderReadingVerses();
+                }
+            }, 2000);
+            return;
+        }
     }
 
     totalAttempts++;
 
-    if (isCorrect) {
-        // Correct reading
-        correctCount++;
+    // Update live transcript with progress
+    const transcriptEl = document.getElementById('live-transcript');
+    if (transcriptEl && matchedCount > 0) {
+        const remaining = currentVerse.words.length - currentWordIndex;
+        transcriptEl.innerHTML = `
+            <div style="color: #51cf66;">✓ ${matchedCount} كلمة صحيحة</div>
+            <div style="margin-top: 5px; color: #aaa;">متبقي: ${remaining} كلمة</div>
+        `;
+    }
+
+    // Check if verse is complete
+    if (currentWordIndex >= currentVerse.words.length) {
         currentVerse.status = 'correct';
 
-        // Move to next verse after a short delay
         setTimeout(() => {
             if (currentVerseIndex < readingVerses.length - 1) {
                 currentVerseIndex++;
+                currentWordIndex = 0;
                 renderReadingVerses();
                 updateReadingProgress();
             } else {
-                // Finished!
                 alert('مبارك! لقد أتممت السورة بنجاح!');
                 updateReadingProgress();
             }
-        }, 1000);
-    } else {
-        // Incorrect reading
-        currentVerse.status = 'incorrect';
-
-        // Reset to pending after animation
-        setTimeout(() => {
-            currentVerse.status = 'pending';
-            renderReadingVerses();
-        }, 1500);
+        }, 800);
     }
 
     renderReadingVerses();
     updateReadingProgress();
+}
+
+// Calculate word similarity (character-level)
+function calculateWordSimilarity(str1, str2) {
+    if (!str1 && !str2) return 1;
+    if (!str1 || !str2) return 0;
+    if (str1 === str2) return 1;
+
+    // Check if one contains the other
+    if (str1.includes(str2) || str2.includes(str1)) {
+        return 0.8;
+    }
+
+    // Character-level comparison
+    const len1 = str1.length;
+    const len2 = str2.length;
+    let matches = 0;
+    const minLen = Math.min(len1, len2);
+
+    for (let i = 0; i < minLen; i++) {
+        if (str1[i] === str2[i]) matches++;
+    }
+
+    return matches / Math.max(len1, len2);
 }
 
 // Normalize Arabic Text for Matching
@@ -1664,11 +1738,17 @@ function updateReadingProgress() {
 // Reset Reading Progress
 function resetReadingProgress() {
     currentVerseIndex = 0;
+    currentWordIndex = 0;
     correctCount = 0;
     totalAttempts = 0;
 
-    // Reset all verse statuses
-    readingVerses.forEach(v => v.status = 'pending');
+    // Reset all verse and word statuses
+    readingVerses.forEach(v => {
+        v.status = 'pending';
+        if (v.words) {
+            v.words.forEach(w => w.status = 'pending');
+        }
+    });
 
     renderReadingVerses();
     updateReadingProgress();
