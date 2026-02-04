@@ -1673,6 +1673,20 @@ function processReadingResult(alternatives) {
             }
         }
 
+        // 3. Fallback: Vowel Expansion Tolerance (User Request)
+        // Check if spoken word has an extra trailing vowel (Ya, Alif, Waw) that acts as a Harakat (Kasra, Fatha, Damma)
+        if (!matchResult.isMatch) {
+            const lastChar = spokenNorm.slice(-1);
+            if (['ي', 'ا', 'و'].includes(lastChar)) {
+                const spokenWithoutVowel = spokenNorm.slice(0, -1);
+                const vowelMatch = checkWordMatch(currentTarget.normalized, spokenWithoutVowel);
+                if (vowelMatch.isMatch) {
+                    console.log(`[Reading Mode] Vowel Tolerance Match: "${spokenWord}" treated as "${spokenWithoutVowel}"`);
+                    matchResult = { isMatch: true, similarity: 0.9 };
+                }
+            }
+        }
+
         if (matchResult.isMatch) {
             console.log(`[Reading Mode] MATCH Current: "${spokenWord}" matches "${currentTarget.text}"`);
             currentTarget.status = 'correct';
