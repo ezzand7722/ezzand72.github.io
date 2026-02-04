@@ -597,7 +597,7 @@ async function fetchSurahWithWords(chapterNumber) {
     let hasMore = true;
 
     while (hasMore) {
-        const res = await fetch(`https://api.quran.com/api/v4/verses/by_chapter/${n}?language=ar&words=true&per_page=50&page=${page}`);
+        const res = await fetch(`https://api.quran.com/api/v4/verses/by_chapter/${n}?language=ar&words=true&per_page=50&page=${page}&word_fields=text_uthmani`);
         if (!res.ok) break;
 
         const data = await res.json();
@@ -1277,17 +1277,10 @@ function initSpeechRecognition() {
     rec.interimResults = true;
     rec.maxAlternatives = 1;
 
-    // Helper to log to on-screen debug box
+    // Helper to log to on-screen debug box (DISABLED per user request)
     const logToScreen = (msg, color = 'gray') => {
-        const debugEl = document.getElementById('reading-debug-info');
-        if (debugEl) {
-            debugEl.innerHTML += `<div style="color: ${color}; font-size: 0.8em;">${msg}</div>`;
-            // Keep only last 5 lines
-            const lines = debugEl.innerHTML.split('</div>');
-            if (lines.length > 6) {
-                debugEl.innerHTML = lines.slice(lines.length - 6).join('</div>');
-            }
-        }
+        // console.log(`[UI Log] ${msg}`);
+        // User wants background process only
     };
 
     rec.onstart = () => {
@@ -1453,7 +1446,7 @@ function setupReadingMode() {
     if (readingSurahInput && readingVerses.length === 0 && featuredSurahs.length > 0) {
         // Default to first surah
         // readingSurahInput.value = featuredSurahs[0].title;
-        // loadReadingSurah(0); 
+        // loadReadingSurah(0);
         // Or keep empty to force choice? Let's keep behavior consistent: load first.
 
         // Actually, let's load empty initially or placeholder?
@@ -1498,7 +1491,8 @@ async function loadReadingSurah(surahIndex) {
             const words = apiWords
                 .filter(w => w.char_type_name === 'word')
                 .map(w => {
-                    const uthmaniText = w.text || '';
+                    // Use text_uthmani (readable) instead of text (glyph)
+                    const uthmaniText = w.text_uthmani || w.text || '';
                     const translit = w.transliteration?.text || '';
 
                     // Try to get phonetic Arabic from transliteration (for Muqatta'at)
