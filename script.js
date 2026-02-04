@@ -584,6 +584,61 @@ async function fetchSurahUthmaniVerses(chapterNumber) {
     return verses;
 }
 
+// NEW: Fetch verses with word-level transliteration data
+const surahWordsCache = new Map();
+async function fetchSurahWithWords(chapterNumber) {
+    const n = Number(chapterNumber);
+    if (!Number.isFinite(n) || n < 1 || n > 114) return [];
+    if (surahWordsCache.has(n)) return surahWordsCache.get(n);
+
+    // Fetch all pages (286 verses in Baqarah requires pagination)
+    let allVerses = [];
+    let page = 1;
+    let hasMore = true;
+
+    while (hasMore) {
+        const res = await fetch(`https://api.quran.com/api/v4/verses/by_chapter/${n}?language=ar&words=true&per_page=50&page=${page}`);
+        if (!res.ok) break;
+
+        const data = await res.json();
+        if (data.verses && data.verses.length > 0) {
+            allVerses = allVerses.concat(data.verses);
+            page++;
+            hasMore = data.pagination && page <= data.pagination.total_pages;
+        } else {
+            hasMore = false;
+        }
+    }
+
+    surahWordsCache.set(n, allVerses);
+    return allVerses;
+}
+
+// Mapping from Latin transliteration components to Arabic letter names
+const translitToArabicMap = {
+    'alif': 'الف', 'lam': 'لام', 'meem': 'ميم', 'mim': 'ميم',
+    'ra': 'را', 'sad': 'صاد', 'kaf': 'كاف', 'ha': 'ها', 'haa': 'ها',
+    'ya': 'يا', 'yaa': 'يا', 'ayn': 'عين', "'ayn": 'عين',
+    'ta': 'طا', 'taa': 'طا', 'sin': 'سين', 'seen': 'سين',
+    'qaf': 'قاف', 'nun': 'نون', 'noon': 'نون',
+    'ha\'a': 'حا', 'haa\'a': 'حا'
+};
+
+// Convert transliteration like "alif-lam-meem" to Arabic phonetic "الف لام ميم"
+function translitToPhoneticArabic(translit) {
+    if (!translit) return null;
+
+    // Split by hyphens or spaces
+    const parts = translit.toLowerCase().split(/[-\s]+/);
+    const arabicParts = parts.map(p => translitToArabicMap[p]).filter(Boolean);
+
+    // Only return phonetic if ALL parts mapped (i.e., it's a letter-by-letter word)
+    if (arabicParts.length === parts.length && arabicParts.length > 1) {
+        return arabicParts.join(' ');
+    }
+    return null; // Regular word, not letter names
+}
+
 
 
 // Cache for custom local timings
@@ -1425,7 +1480,8 @@ async function loadReadingSurah(surahIndex) {
     readingDisplay.innerHTML = '<p class="reading-verse">جاري تحميل السورة...</p>';
 
     try {
-        const verses = await fetchSurahUthmaniVerses(chapterNumber);
+        // Use word-level API for transliteration data
+        const verses = await fetchSurahWithWords(chapterNumber);
 
         if (!verses || verses.length === 0) {
             readingDisplay.innerHTML = '<p class="reading-verse">تعذر تحميل السورة.</p>';
@@ -1433,28 +1489,36 @@ async function loadReadingSurah(surahIndex) {
         }
 
         readingVerses = verses.map(v => {
-            const ayahNum = (v?.verse_key && String(v.verse_key).includes(':'))
-                ? parseInt(String(v.verse_key).split(':')[1], 10)
-                : null;
+            const ayahNum = v.verse_number || null;
 
-            const text = v.text_uthmani || '';
+            // Extract words from API response
+            const apiWords = Array.isArray(v.words) ? v.words : [];
 
-            // Quranic stop/pause signs (waqf marks) - these are NOT words to recite
-            const waqfSigns = /^[\u06D6-\u06ED\u0600-\u0605\u061B-\u061F\u066A-\u066D\u06DD\u06DE\u06E9۞۩ۣۖۗۘۙۚۛۜ۟۠ۡۢۤۥۦ۪ۭۧۨ]+$/;
+            // Filter to actual words (not verse end markers)
+            const words = apiWords
+                .filter(w => w.char_type_name === 'word')
+                .map(w => {
+                    const uthmaniText = w.text || '';
+                    const translit = w.transliteration?.text || '';
 
-            // Split into words and filter out waqf signs
-            const words = text.split(/\s+/)
-                .filter(w => w.length > 0)
-                .filter(w => !waqfSigns.test(w))  // Remove standalone waqf signs
-                .map(word => ({
-                    text: word,  // Original with harakat
-                    normalized: normalizeArabicForMatching(word),  // Without harakat for loose matching
-                    status: 'pending'  // pending, correct, incorrect
-                }));
+                    // Try to get phonetic Arabic from transliteration (for Muqatta'at)
+                    const phoneticArabic = translitToPhoneticArabic(translit);
+
+                    return {
+                        text: uthmaniText,  // Original Uthmani for display
+                        normalized: normalizeArabicForMatching(uthmaniText),  // Normalized for matching
+                        transliteration: translit,  // e.g., "alif-lam-meem"
+                        phoneticArabic: phoneticArabic,  // e.g., "الف لام ميم" (if applicable)
+                        status: 'pending'
+                    };
+                });
+
+            // Build full verse text from words
+            const fullText = words.map(w => w.text).join(' ');
 
             return {
                 ayah: ayahNum,
-                text: text,
+                text: fullText,
                 words: words,
                 status: 'pending'
             };
@@ -1468,6 +1532,10 @@ async function loadReadingSurah(surahIndex) {
         renderReadingVerses();
         updateReadingProgress();
 
+        // Log first verse words for debugging
+        if (readingVerses.length > 0) {
+            console.log('[Reading Mode] First verse words:', readingVerses[0].words);
+        }
         console.log('[Reading Mode] Loaded', readingVerses.length, 'verses for Surah', chapterNumber);
     } catch (e) {
         console.error('[Reading Mode] Error loading surah:', e);
@@ -1627,16 +1695,25 @@ function processReadingResult(alternatives) {
         // 1. Check Standard Match
         let matchResult = checkWordMatch(currentTarget.normalized, spokenNorm);
 
-        // 2. Check Muqatta'at (Phonetic Expansion)
+        // 2. Check API-provided Phonetic Form (e.g., from transliteration "alif-lam-meem" -> "الف لام ميم")
+        if (!matchResult.isMatch && currentTarget.phoneticArabic) {
+            const phoneticNorm = normalizeArabicForMatching(currentTarget.phoneticArabic);
+            const phoneticMatch = checkWordMatch(phoneticNorm, spokenNorm);
+            if (phoneticMatch.isMatch || spokenNorm.includes(phoneticNorm) || phoneticNorm.includes(spokenNorm)) {
+                console.log(`[Reading Mode] Phonetic (API) Match: "${spokenWord}" matches "${currentTarget.phoneticArabic}"`);
+                matchResult = { isMatch: true, similarity: 0.95 };
+            }
+        }
+
+        // 3. Fallback: Check hardcoded Muqatta'at mapping
         if (!matchResult.isMatch) {
             const phoneticForms = muqattaatMapping[currentTarget.normalized] || muqattaatMapping[currentTarget.text];
             if (phoneticForms) {
                 for (const form of phoneticForms) {
                     const formNorm = normalizeArabicForMatching(form);
-                    // Check if spoken word matches expansion
                     const phoneticMatch = checkWordMatch(formNorm, spokenNorm);
                     if (phoneticMatch.isMatch || spokenNorm.includes(formNorm) || formNorm.includes(spokenNorm)) {
-                        console.log(`[Reading Mode] Muqatta'at Match: "${spokenWord}" matches expansion "${form}"`);
+                        console.log(`[Reading Mode] Muqatta'at (hardcoded) Match: "${spokenWord}" matches expansion "${form}"`);
                         matchResult = { isMatch: true, similarity: 0.95 };
                         break;
                     }
